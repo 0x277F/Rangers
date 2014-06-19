@@ -19,6 +19,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Rangers extends JavaPlugin implements Listener {
+	// Guess what? I have the print margin at 120 characters. If you have a tiny screen or use a terminal for Java for
+	// some insane reason, please make a pull request to reduce the margin to the 80 character mark.
+	// It will be denied anyways but at least I'll know how many people care about it that much.
+	// Without any further adieu, let us dive into the horrid mess that is code by coasterman10.
+
 	private Location lobby;
 	private Map<Integer, Game> games = new HashMap<>();
 	private Map<Location, GameSign> signs = new HashMap<>();
@@ -26,19 +31,19 @@ public class Rangers extends JavaPlugin implements Listener {
 	@Override
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
-		
+
 		// TODO: Literally copy defaults to the actual config.yml so idiots who break their config.ymls can fix them
 		saveDefaultConfig();
 		getConfig().options().copyDefaults(true);
 		loadConfig();
-		
+
 		for (Entry<Location, GameSign> entry : signs.entrySet()) {
 			Game g = new Game();
 			games.put(g.getId(), g);
 			entry.getValue().setGame(g);
 		}
 	}
-	
+
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent e) {
 		e.getPlayer().sendMessage("Welcome to Rangers!");
@@ -56,7 +61,7 @@ public class Rangers extends JavaPlugin implements Listener {
 		int lobbyY = getConfig().getInt("lobby.y");
 		int lobbyZ = getConfig().getInt("lobby.z");
 		lobby = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
-		
+
 		// Iterate over the list of maps in the config file with the sign locations
 		List<Map<?, ?>> mapList = getConfig().getMapList("signs");
 		for (Map<?, ?> map : mapList) {
@@ -64,7 +69,7 @@ public class Rangers extends JavaPlugin implements Listener {
 			Object xx = map.get("x");
 			Object yy = map.get("y");
 			Object zz = map.get("z");
-			
+
 			// Check that all the objects are numbers; if not, just cancel
 			if (xx instanceof Number && yy instanceof Number && zz instanceof Number) {
 				int x = ((Number) xx).intValue();
@@ -79,13 +84,13 @@ public class Rangers extends JavaPlugin implements Listener {
 			}
 		}
 	}
-	
+
 	private static void placeSign(Location loc) {
 		if (loc.getBlock().getRelative(BlockFace.DOWN).getType().isSolid()) {
 			loc.getBlock().setType(Material.SIGN); // There is a solid block below, we can just place a sign there
 		} else {
 			// Check every block face for a solid block; if we find a solid block, place a wall sign
-			for (BlockFace face : new BlockFace[] {BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST}) {
+			for (BlockFace face : new BlockFace[] { BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST }) {
 				if (loc.getBlock().getRelative(face).getType().isSolid()) {
 					BlockFace facing = face.getOppositeFace();
 					BlockState state = loc.getBlock().getState();
