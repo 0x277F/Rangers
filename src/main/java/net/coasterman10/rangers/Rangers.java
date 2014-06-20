@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -16,20 +15,16 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class Rangers extends JavaPlugin implements Listener {
+public class Rangers extends JavaPlugin {
     // Guess what? I have the print margin at 120 characters. If you have a tiny screen or use a terminal for Java for
     // some insane reason, please make a pull request to reduce the margin to the 80 character mark.
     // It will be denied anyways but at least I'll know how many people care about it that much.
     // Without any further adieu, let us dive into the horrid mess that is code by coasterman10.
 
     private Map<Integer, Game> games = new HashMap<>();
-    private Map<Location, GameSign> signs = new HashMap<>();
     
     private WorldListener worldListener = new WorldListener();
     private PlayerListener playerListener = new PlayerListener();
@@ -41,32 +36,13 @@ public class Rangers extends JavaPlugin implements Listener {
         loadConfig();
         
         PluginManager pm = getServer().getPluginManager();
-        pm.registerEvents(this, this);
         pm.registerEvents(worldListener, this);
         pm.registerEvents(playerListener, this);
-
-        for (Entry<Location, GameSign> entry : signs.entrySet()) {
-            Game g = new Game(entry.getValue());
-            games.put(g.getId(), g);
-            entry.getValue().setGame(g);
-        }
     }
 
     @Override
     public void onDisable() {
 
-    }
-
-    @EventHandler
-    public void onSignClick(PlayerInteractEvent e) {
-        if (e.getClickedBlock() == null)
-            return;
-        Location loc = e.getClickedBlock().getLocation();
-        if (signs.containsKey(loc)) {
-            if (!signs.get(loc).getGame().addPlayer(e.getPlayer().getUniqueId())) {
-                e.getPlayer().sendMessage(ChatColor.RED + "That game is full!");
-            }
-        }
     }
 
     private void saveDefaultConfigValues() {
@@ -89,6 +65,7 @@ public class Rangers extends JavaPlugin implements Listener {
         playerListener.setLobbyLocation(new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ));
 
         // Iterate over the list of maps in the config file with the sign locations
+        Map<Location, GameSign> signs = new HashMap<>();
         List<Map<?, ?>> mapList = getConfig().getMapList("signs");
         for (Map<?, ?> map : mapList) {
             // Objects since we don't know what type these are yet
@@ -106,13 +83,20 @@ public class Rangers extends JavaPlugin implements Listener {
                 Block b = loc.getBlock();
                 if (!(b.getState() instanceof Sign))
                     placeSign(loc); // Build a new sign at the location (idiot-proofing)
-                signs.put(loc, new GameSign(b));
+                GameSign sign = new GameSign(b);
+                signs.put(loc, sign);
+                
+                // Each sign corresponds to a game, which we initialize here
+                Game g = new Game(sign);
+                games.put(g.getId(), g);
+                sign.setGame(g);
             }
         }
+        playerListener.setSigns(signs);
         
         // Load the allowed drops list
-        List<Integer> allowedDropIds = getConfig().getIntegerList("allowed-drops");
         Collection<Material> allowedDrops = new HashSet<>();
+        List<Integer> allowedDropIds = getConfig().getIntegerList("allowed-drops");
         for (Integer i : allowedDropIds) {
             @SuppressWarnings("deprecation")
             Material m = Material.getMaterial(i);
