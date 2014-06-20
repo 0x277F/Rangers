@@ -3,4 +3,6 @@ lobby:
   x: 0.5
   y: 65
   z: 0.5
+allowed-drops:
+
 signs:

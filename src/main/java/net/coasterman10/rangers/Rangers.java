@@ -1,6 +1,8 @@
 package net.coasterman10.rangers;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,9 +18,8 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.ItemDespawnEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Rangers extends JavaPlugin implements Listener {
@@ -27,17 +28,22 @@ public class Rangers extends JavaPlugin implements Listener {
     // It will be denied anyways but at least I'll know how many people care about it that much.
     // Without any further adieu, let us dive into the horrid mess that is code by coasterman10.
 
-    private Location lobby;
     private Map<Integer, Game> games = new HashMap<>();
     private Map<Location, GameSign> signs = new HashMap<>();
+    
+    private WorldListener worldListener = new WorldListener();
+    private PlayerListener playerListener = new PlayerListener();
 
     @Override
     public void onEnable() {
-        getServer().getPluginManager().registerEvents(this, this);
-
         saveDefaultConfig();
         saveDefaultConfigValues();
         loadConfig();
+        
+        PluginManager pm = getServer().getPluginManager();
+        pm.registerEvents(this, this);
+        pm.registerEvents(worldListener, this);
+        pm.registerEvents(playerListener, this);
 
         for (Entry<Location, GameSign> entry : signs.entrySet()) {
             Game g = new Game(entry.getValue());
@@ -52,14 +58,6 @@ public class Rangers extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent e) {
-        e.getPlayer().sendMessage("Welcome to Rangers!");
-        e.getPlayer().teleport(lobby);
-        e.getPlayer().getInventory().clear();
-        e.getPlayer().getInventory().setArmorContents(null); // Essentials idiot devs still haven't figured this out
-    }
-
-    @EventHandler
     public void onSignClick(PlayerInteractEvent e) {
         if (e.getClickedBlock() == null)
             return;
@@ -69,12 +67,6 @@ public class Rangers extends JavaPlugin implements Listener {
                 e.getPlayer().sendMessage(ChatColor.RED + "That game is full!");
             }
         }
-    }
-
-    @EventHandler
-    public void onItemDespawn(ItemDespawnEvent e) {
-        if (e.getEntity().getItemStack().getType() == Material.SKULL)
-            e.setCancelled(true); // Prevent player heads from despawning
     }
 
     private void saveDefaultConfigValues() {
@@ -94,7 +86,7 @@ public class Rangers extends JavaPlugin implements Listener {
         double lobbyX = getConfig().getDouble("lobby.x");
         double lobbyY = getConfig().getDouble("lobby.y");
         double lobbyZ = getConfig().getDouble("lobby.z");
-        lobby = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
+        playerListener.setLobbyLocation(new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ));
 
         // Iterate over the list of maps in the config file with the sign locations
         List<Map<?, ?>> mapList = getConfig().getMapList("signs");
@@ -117,6 +109,16 @@ public class Rangers extends JavaPlugin implements Listener {
                 signs.put(loc, new GameSign(b));
             }
         }
+        
+        // Load the allowed drops list
+        List<Integer> allowedDropIds = getConfig().getIntegerList("allowed-drops");
+        Collection<Material> allowedDrops = new HashSet<>();
+        for (Integer i : allowedDropIds) {
+            @SuppressWarnings("deprecation")
+            Material m = Material.getMaterial(i);
+            allowedDrops.add(m);
+        }
+        playerListener.setAllowedDrops(allowedDrops);
     }
 
     private static void placeSign(Location loc) {
