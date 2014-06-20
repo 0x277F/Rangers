@@ -6,10 +6,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 
 public class GameSign {
-	/** The block state corresponding to this sign */
 	private Sign state;
-	
-	/** The game corresponding to this sign. Allows for easy access when a player clicks the sign. */
 	private Game game;
 
 	public GameSign(Block b) {
@@ -17,12 +14,6 @@ public class GameSign {
 		if (!(b.getState() instanceof Sign))
 			throw new IllegalArgumentException("Block " + b + " is not a sign");
 		state = (Sign) b.getState();
-	}
-
-	public void setMapName(String mapName) {
-		Validate.notNull(mapName);
-		state.setLine(0, mapName);
-		update();
 	}
 
 	public void setPlayers(int players) {
@@ -33,7 +24,13 @@ public class GameSign {
 		} else {
 			state.setLine(3, ChatColor.GREEN + "Click to join");
 		}
-		state.setLine(1, s);
+		state.setLine(0, s);
+		update();
+	}
+	
+	public void setMapName(String mapName) {
+		Validate.notNull(mapName);
+		state.setLine(1, mapName);
 		update();
 	}
 
@@ -56,7 +53,7 @@ public class GameSign {
 	public void setGame(Game game) {
 		this.game = game;
 	}
-	
+
 	public Game getGame() {
 		return game;
 	}

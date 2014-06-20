@@ -15,6 +15,8 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.ItemDespawnEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -38,10 +40,15 @@ public class Rangers extends JavaPlugin implements Listener {
 		loadConfig();
 
 		for (Entry<Location, GameSign> entry : signs.entrySet()) {
-			Game g = new Game();
+			Game g = new Game(entry.getValue());
 			games.put(g.getId(), g);
 			entry.getValue().setGame(g);
 		}
+	}
+
+	@Override
+	public void onDisable() {
+		
 	}
 
 	@EventHandler
@@ -50,6 +57,19 @@ public class Rangers extends JavaPlugin implements Listener {
 		e.getPlayer().teleport(lobby);
 		e.getPlayer().getInventory().clear();
 		e.getPlayer().getInventory().setArmorContents(null); // Essentials idiot devs still haven't figured this out
+	}
+
+	@EventHandler
+	public void onSignClick(PlayerInteractEvent e) {
+		if (signs.containsKey(e.getClickedBlock().getLocation())) {
+			// TODO: Send player to game
+		}
+	}
+	
+	@EventHandler
+	public void onItemDespawn(ItemDespawnEvent e) {
+		if (e.getEntity().getItemStack().getType() == Material.SKULL)
+			e.setCancelled(true); // Prevent player heads from despawning
 	}
 
 	private void loadConfig() {
