@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -61,8 +62,11 @@ public class Rangers extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onSignClick(PlayerInteractEvent e) {
-        if (signs.containsKey(e.getClickedBlock().getLocation())) {
-            // TODO: Send player to game
+        Location loc = e.getClickedBlock().getLocation();
+        if (signs.containsKey(loc)) {
+            if (!signs.get(loc).getGame().addPlayer(e.getPlayer().getUniqueId())) {
+                e.getPlayer().sendMessage(ChatColor.RED + "That game is full!");
+            }
         }
     }
 
