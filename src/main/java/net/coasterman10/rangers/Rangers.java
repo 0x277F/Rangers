@@ -61,6 +61,8 @@ public class Rangers extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onSignClick(PlayerInteractEvent e) {
+        if (e.getClickedBlock() == null)
+            return;
         Location loc = e.getClickedBlock().getLocation();
         if (signs.containsKey(loc)) {
             if (!signs.get(loc).getGame().addPlayer(e.getPlayer().getUniqueId())) {
