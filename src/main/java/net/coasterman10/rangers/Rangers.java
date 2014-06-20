@@ -35,9 +35,8 @@ public class Rangers extends JavaPlugin implements Listener {
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
 
-        // TODO: Literally copy defaults to the actual config.yml so idiots who break their config.ymls can fix them
         saveDefaultConfig();
-        getConfig().options().copyDefaults(true);
+        saveDefaultConfigValues();
         loadConfig();
 
         for (Entry<Location, GameSign> entry : signs.entrySet()) {
@@ -76,14 +75,23 @@ public class Rangers extends JavaPlugin implements Listener {
             e.setCancelled(true); // Prevent player heads from despawning
     }
 
+    private void saveDefaultConfigValues() {
+        // Iterate through all the defaults and write their values to the config if nothing is set.
+        // Purely idiot-proofing.
+        for (Entry<String, Object> value : getConfig().getDefaults().getValues(true).entrySet())
+            if (!getConfig().isSet(value.getKey()))
+                getConfig().set(value.getKey(), value.getValue());
+        saveConfig();
+    }
+
     private void loadConfig() {
         // Load the lobby spawn location. Default is in world "lobby" at location (0,64,0). If the world doesn't exist,
         // create it to save ourselves the hassle of setting the thing up.
         String lobbyWorldName = getConfig().getString("lobby.world");
         World lobbyWorld = new WorldCreator(lobbyWorldName).generator(new EmptyChunkGenerator()).createWorld();
-        int lobbyX = getConfig().getInt("lobby.x");
-        int lobbyY = getConfig().getInt("lobby.y");
-        int lobbyZ = getConfig().getInt("lobby.z");
+        double lobbyX = getConfig().getDouble("lobby.x");
+        double lobbyY = getConfig().getDouble("lobby.y");
+        double lobbyZ = getConfig().getDouble("lobby.z");
         lobby = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
 
         // Iterate over the list of maps in the config file with the sign locations
