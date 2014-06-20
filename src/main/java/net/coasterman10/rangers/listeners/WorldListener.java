@@ -1,4 +1,4 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.listeners;
 
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;

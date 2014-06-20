@@ -1,10 +1,12 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.listeners;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import net.coasterman10.rangers.GameSign;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
