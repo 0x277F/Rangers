@@ -7,8 +7,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 import net.coasterman10.rangers.GameSign;
+import net.coasterman10.rangers.Rangers;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,13 +22,14 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
 public class PlayerListener implements Listener {
+    private final Rangers plugin;
+    
     // These are initialized to failsafe values; they will and should be changed by the time any events fire.
-    private Location lobby = Bukkit.getWorlds().get(0).getSpawnLocation();
     private Map<Location, GameSign> signs = new HashMap<>();
     private Collection<Material> allowedDrops = Collections.emptySet();
     
-    public void setLobbyLocation(Location lobby) {
-        this.lobby = lobby;
+    public PlayerListener(Rangers plugin) {
+        this.plugin = plugin;
     }
     
     public void setAllowedDrops(Collection<Material> allowedDrops) {
@@ -42,7 +43,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         e.getPlayer().sendMessage("Welcome to Rangers!");
-        e.getPlayer().teleport(lobby);
+        e.getPlayer().teleport(plugin.getLobbySpawn());
         e.getPlayer().getInventory().clear();
         e.getPlayer().getInventory().setArmorContents(null); // Essentials idiot devs still haven't figured this out
     }

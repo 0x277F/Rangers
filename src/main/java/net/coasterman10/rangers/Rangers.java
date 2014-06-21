@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.WorldListener;
@@ -18,6 +19,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -26,14 +28,19 @@ public class Rangers extends JavaPlugin {
     // some insane reason, please make a pull request to reduce the margin to the 80 character mark.
     // It will be denied anyways but at least I'll know how many people care about it that much.
     // Without any further adieu, let us dive into the horrid mess that is code by coasterman10.
-
-    private Map<Integer, Game> games = new HashMap<>();
     
-    private WorldListener worldListener = new WorldListener();
-    private PlayerListener playerListener = new PlayerListener();
+    private Location lobbySpawn;
+    private Map<Integer, Game> games = new HashMap<>();
+    private Map<UUID, PlayerData> players = new HashMap<>();
+    
+    private WorldListener worldListener;
+    private PlayerListener playerListener;
 
     @Override
     public void onEnable() {
+        worldListener = new WorldListener();
+        playerListener = new PlayerListener(this);
+        
         saveDefaultConfig();
         saveDefaultConfigValues();
         loadConfig();
@@ -46,6 +53,20 @@ public class Rangers extends JavaPlugin {
     @Override
     public void onDisable() {
 
+    }
+    
+    public PlayerData getPlayerData(Player p) {
+        return getPlayerData(p.getUniqueId());
+    }
+    
+    public PlayerData getPlayerData(UUID id) {
+        if (!players.containsKey(id))
+            players.put(id, new PlayerData());
+        return players.get(id);
+    }
+    
+    public Location getLobbySpawn() {
+        return lobbySpawn;
     }
 
     private void saveDefaultConfigValues() {
@@ -65,7 +86,7 @@ public class Rangers extends JavaPlugin {
         double lobbyX = getConfig().getDouble("lobby.x");
         double lobbyY = getConfig().getDouble("lobby.y");
         double lobbyZ = getConfig().getDouble("lobby.z");
-        playerListener.setLobbyLocation(new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ));
+        lobbySpawn = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
 
         // Iterate over the list of maps in the config file with the sign locations
         Map<Location, GameSign> signs = new HashMap<>();

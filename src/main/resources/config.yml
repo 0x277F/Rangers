@@ -4,5 +4,20 @@ lobby:
   y: 65
   z: 0.5
 allowed-drops:
-
+- 297
 signs:
+
+game-lobby:
+  x: 5
+  y: 1
+  z: 5
+maps:
+  Rangers:
+    ranger-spawn:
+      x: 25
+      y: 10
+      z: 10
+    bandit-spawn:
+      x: 25
+      y: 10
+      z: 90

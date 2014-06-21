@@ -64,6 +64,14 @@ public class Game {
         broadcast(ChatColor.YELLOW + p.getName() + ChatColor.AQUA + " joined the game");
         return true;
     }
+    
+    public void removePlayer(UUID id) {
+        if (!players.contains(id))
+            return;
+        players.remove(id);
+        bandits.remove(id);
+        rangers.remove(id);
+    }
 
     private void broadcast(String msg) {
         for (UUID id : players) {
