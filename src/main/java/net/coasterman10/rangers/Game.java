@@ -8,18 +8,16 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.WorldCreator;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.util.Vector;
 
 public class Game {
     public static final int MIN_PLAYERS = 4;
     public static final int MAX_PLAYERS = 10;
 
     private static int nextId;
-    
+
     public static int getNextId() {
         return nextId;
     }
@@ -51,7 +49,7 @@ public class Game {
         this.sign = sign;
         this.lobby = lobby;
         this.arena = arena;
-        
+
         sign.setGame(this);
         sign.setPlayers(0);
         sign.setMapName(map.name);
@@ -77,7 +75,7 @@ public class Game {
         broadcast(ChatColor.YELLOW + p.getName() + ChatColor.AQUA + " joined the game");
         return true;
     }
-    
+
     public void removePlayer(UUID id) {
         if (!players.contains(id))
             return;
@@ -90,5 +88,9 @@ public class Game {
         for (UUID id : players) {
             Bukkit.getPlayer(id).sendMessage(msg);
         }
+    }
+
+    public GameMap getMap() {
+        return map;
     }
 }

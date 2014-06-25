@@ -1,5 +1,8 @@
 package net.coasterman10.rangers;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.logging.Level;
 
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.WorldListener;
@@ -20,6 +24,8 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -33,9 +39,11 @@ public class Rangers extends JavaPlugin {
 
     private Location lobbySpawn;
     private World gameWorld;
+    private Map<Location, GameSign> signs = new HashMap<>();
     private Map<Integer, Game> games = new HashMap<>();
     private Map<UUID, PlayerData> players = new HashMap<>();
     private Map<String, GameMap> maps = new HashMap<>();
+    private FileConfiguration builtArenas;
 
     private WorldListener worldListener;
     private PlayerListener playerListener;
@@ -48,6 +56,7 @@ public class Rangers extends JavaPlugin {
         saveDefaultConfig();
         saveDefaultConfigValues();
         loadConfig();
+        loadGames();
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);
@@ -97,12 +106,33 @@ public class Rangers extends JavaPlugin {
         double lobbyZ = getConfig().getDouble("spawn.z");
         lobbySpawn = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
 
+        // Schematic for the game lobbies
+        File lobbySchematicFile = new File(getDataFolder(), "schematics" + File.pathSeparator
+                + getConfig().getString("game-lobby.schematic"));
+        Schematic lobbySchematic;
+        try {
+            lobbySchematic = new Schematic(lobbySchematicFile);
+        } catch (IOException | InvalidSchematicException e) {
+            getLogger().log(Level.SEVERE, e.getMessage(), e);
+            getLogger().warning("Loading default empty schematic for game lobby");
+            lobbySchematic = new Schematic();
+        }
+
         // Vector containing the offset of the lobby spawn from its origin
         Vector gameLobbySpawn = getVector(getConfig().getConfigurationSection("game-lobby.spawn"));
-        
+
         // Load the game map configurations
         for (String mapName : getConfig().getConfigurationSection("maps").getKeys(false)) {
             GameMap map = new GameMap(mapName);
+            map.lobbySchematic = lobbySchematic;
+            try {
+                map.gameSchematic = new Schematic(new File(getDataFolder(), "schematics" + File.pathSeparator
+                        + getConfig().getString("maps." + mapName + ".schematic")));
+            } catch (IOException | InvalidSchematicException e) {
+                getLogger().log(Level.SEVERE, e.getMessage(), e);
+                getLogger().warning("Loading default empty schematic for map " + mapName);
+                map.gameSchematic = new Schematic();
+            }
             map.rangerSpawn = getVector(getConfig().getConfigurationSection("maps." + mapName + ".spawns.rangers"));
             map.banditSpawn = getVector(getConfig().getConfigurationSection("maps." + mapName + ".spawns.bandits"));
             map.rangerHopper = getVector(getConfig().getConfigurationSection("maps." + mapName + ".hoppers.rangers"))
@@ -114,7 +144,6 @@ public class Rangers extends JavaPlugin {
         }
 
         // Iterate over the map lists in the config file with the sign locations
-        Map<Location, GameSign> signs = new HashMap<>();
         List<Map<?, ?>> mapList = getConfig().getMapList("signs");
         for (Map<?, ?> map : mapList) {
             // Objects since we don't know what type these are yet
@@ -123,25 +152,23 @@ public class Rangers extends JavaPlugin {
             Object zz = map.get("z");
             Object mapName = map.get("map");
 
-            // Check that all the objects are numbers; if not, just cancel
+            // Check that all the objects are numbers; if not, just skip this sign
             if (xx instanceof Number && yy instanceof Number && zz instanceof Number && mapName instanceof String) {
                 int x = ((Number) xx).intValue();
                 int y = ((Number) yy).intValue();
                 int z = ((Number) zz).intValue();
                 GameMap gameMap = maps.get(mapName);
 
+                // Make sure the specified map exists
+                if (gameMap == null)
+                    continue;
+
                 Location loc = new Location(lobbyWorld, x, y, z);
                 Block b = loc.getBlock();
                 if (!(b.getState() instanceof Sign))
                     placeSign(loc); // Build a new sign at the location (idiot-proofing)
-                GameSign sign = new GameSign(b);
+                GameSign sign = new GameSign(b, gameMap);
                 signs.put(loc, sign);
-
-                // Each sign corresponds to a game, which we initialize here
-                Game g = new Game(this, sign, gameMap, new Location(gameWorld, Game.getNextId() * 1000, 64, 0),
-                        new Location(gameWorld, Game.getNextId() * 1000, 64, 1000));
-                games.put(g.getId(), g);
-                sign.setGame(g);
             }
         }
         playerListener.setSigns(signs);
@@ -155,6 +182,52 @@ public class Rangers extends JavaPlugin {
             allowedDrops.add(m);
         }
         playerListener.setAllowedDrops(allowedDrops);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadGames() {
+        builtArenas = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "built-arenas.yml"));
+        Collection<Vector> usedArenas = new HashSet<>();
+        for (GameSign sign : signs.values()) {
+            String mapName = sign.getMap().name;
+            List<Object> list = (List<Object>) builtArenas.getList(mapName, new ArrayList<Vector>());
+            List<Vector> arenas = new ArrayList<>();
+            for (Object o : list)
+                if (o instanceof Vector)
+                    arenas.add((Vector) o);
+
+            boolean foundArena = false;
+            for (Vector v : arenas) {
+                if (!usedArenas.contains(v) && !foundArena) {
+                    Game g = new Game(this, sign, sign.getMap(), v.toLocation(gameWorld), v.toLocation(gameWorld).add(
+                            0, 0, 1000));
+                    usedArenas.add(v);
+                    foundArena = true;
+                    games.put(g.getId(), g);
+                }
+            }
+            
+            if (foundArena)
+                continue;
+            
+            Vector newArena = new Vector(0, 0, 0);
+            for (Vector v : arenas) {
+                if (v.getBlockX() > newArena.getX() + 1000)
+                    newArena.setX(v.getBlockX() + 1000);
+            }
+            
+            usedArenas.add(newArena);
+            list.add(newArena);
+            builtArenas.set(mapName, list);
+            Game g = new Game(this, sign, sign.getMap(), newArena.toLocation(gameWorld), newArena.toLocation(gameWorld).add(0, 0, 1000));
+            games.put(g.getId(), g);
+            g.getMap().gameSchematic.buildDelayed(newArena.toLocation(gameWorld).add(0, 0, 1000), this);
+        }
+        try {
+            builtArenas.save(new File(getDataFolder(), "built-arenas.yml"));
+        } catch (IOException e) {
+            getLogger().log(Level.WARNING, e.getMessage(), e);
+        }
     }
 
     private static Vector getVector(ConfigurationSection config) {
