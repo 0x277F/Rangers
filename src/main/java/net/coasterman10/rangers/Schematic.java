@@ -66,7 +66,7 @@ public class Schematic {
                     }
                 }
                 pos++;
-                if (pos == getWidth())
+                if (pos == getLength())
                     cancel();
             }
         }.runTaskTimer(plugin, 0L, 1L);

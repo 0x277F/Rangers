@@ -107,14 +107,14 @@ public class Rangers extends JavaPlugin {
         lobbySpawn = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
 
         // Schematic for the game lobbies
-        File lobbySchematicFile = new File(getDataFolder(), "schematics" + File.pathSeparator
+        File lobbySchematicFile = new File(getDataFolder(), "schematics" + File.separator
                 + getConfig().getString("game-lobby.schematic"));
         Schematic lobbySchematic;
         try {
             lobbySchematic = new Schematic(lobbySchematicFile);
         } catch (IOException | InvalidSchematicException e) {
-            getLogger().log(Level.SEVERE, e.getMessage(), e);
-            getLogger().warning("Loading default empty schematic for game lobby");
+            getLogger().warning("Could not load game lobby schematic: " + e.getMessage());
+            getLogger().warning("Loading default empty schematic for game lobby.");
             lobbySchematic = new Schematic();
         }
 
@@ -126,10 +126,10 @@ public class Rangers extends JavaPlugin {
             GameMap map = new GameMap(mapName);
             map.lobbySchematic = lobbySchematic;
             try {
-                map.gameSchematic = new Schematic(new File(getDataFolder(), "schematics" + File.pathSeparator
+                map.gameSchematic = new Schematic(new File(getDataFolder(), "schematics" + File.separator
                         + getConfig().getString("maps." + mapName + ".schematic")));
             } catch (IOException | InvalidSchematicException e) {
-                getLogger().log(Level.SEVERE, e.getMessage(), e);
+                getLogger().warning("Could not load game map schematic for map " + mapName + ": " + e.getMessage());
                 getLogger().warning("Loading default empty schematic for map " + mapName);
                 map.gameSchematic = new Schematic();
             }
@@ -186,40 +186,62 @@ public class Rangers extends JavaPlugin {
 
     @SuppressWarnings("unchecked")
     private void loadGames() {
+        // TODO: Track location of both lobbies and arenas
+        // I just realized that this is a rather shoddy method to handle arena building, and instead the config will
+        // have to hold the locations of both the lobbies AND to be safe in case I ever decide to change the distance of
+        // the arena from the lobby.
+
+        // This file contains all of the arenas that have already been built by the plugin.
         builtArenas = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "built-arenas.yml"));
-        Collection<Vector> usedArenas = new HashSet<>();
+        Collection<Vector> usedArenas = new HashSet<>(); // Keeps track of arenas already in use by another game
         for (GameSign sign : signs.values()) {
+            getLogger().info("Loading game for sign at " + sign.getLocation());
+
             String mapName = sign.getMap().name;
+
+            // Arenas built for the map assigned to the game that we want this sign to connect to
             List<Object> list = (List<Object>) builtArenas.getList(mapName, new ArrayList<Vector>());
             List<Vector> arenas = new ArrayList<>();
+
+            // Since we can't get a vector list with the Bukkit API, we have to cast the objects ourselves
             for (Object o : list)
                 if (o instanceof Vector)
                     arenas.add((Vector) o);
 
+            // Loop through all the arenas that have the map we want, and create the game if the arena is found
             boolean foundArena = false;
             for (Vector v : arenas) {
-                if (!usedArenas.contains(v) && !foundArena) {
+                if (!usedArenas.contains(v)) {
                     Game g = new Game(this, sign, sign.getMap(), v.toLocation(gameWorld), v.toLocation(gameWorld).add(
                             0, 0, 1000));
                     usedArenas.add(v);
                     foundArena = true;
                     games.put(g.getId(), g);
+                    break;
                 }
             }
-            
+
             if (foundArena)
                 continue;
-            
-            Vector newArena = new Vector(0, 0, 0);
+
+            // We have not found any open arenas with the map we want, so it is time to build a new one.
+            // The new arena is built 1000 blocks further from the origin than the furthest one in the X direction.
+            Vector newArena = new Vector(0, 64, 0);
             for (Vector v : arenas) {
                 if (v.getBlockX() > newArena.getX() + 1000)
                     newArena.setX(v.getBlockX() + 1000);
             }
-            
+
+            getLogger().info("Building new arena at " + newArena.toLocation(gameWorld));
+
             usedArenas.add(newArena);
             list.add(newArena);
             builtArenas.set(mapName, list);
-            Game g = new Game(this, sign, sign.getMap(), newArena.toLocation(gameWorld), newArena.toLocation(gameWorld).add(0, 0, 1000));
+
+            // Create the new game, then build the schematic.
+            // The new arena is built 1000 blocks from the lobby, in the Z direction.
+            Game g = new Game(this, sign, sign.getMap(), newArena.toLocation(gameWorld), newArena.toLocation(gameWorld)
+                    .add(0, 0, 1000));
             games.put(g.getId(), g);
             g.getMap().gameSchematic.buildDelayed(newArena.toLocation(gameWorld).add(0, 0, 1000), this);
         }
