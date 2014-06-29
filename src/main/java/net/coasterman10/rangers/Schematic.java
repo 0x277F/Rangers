@@ -57,6 +57,11 @@ public class Schematic {
             
             @Override
             public void run() {
+                if (getWidth() == 0 || getHeight() == 0 || getLength() == 0) {
+                    cancel();
+                    return;
+                }
+                
                 for (int i = 0; i < getWidth(); i++) {
                     for (int j = 0; j < getHeight(); j++) {
                         int k = pos;

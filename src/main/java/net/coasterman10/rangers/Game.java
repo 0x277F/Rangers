@@ -9,18 +9,19 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.util.Vector;
 
 public class Game {
     public static final int MIN_PLAYERS = 4;
     public static final int MAX_PLAYERS = 10;
 
     private static int nextId;
-
-    public static int getNextId() {
-        return nextId;
-    }
 
     private final int id;
     private final Rangers plugin;
@@ -39,7 +40,9 @@ public class Game {
     private Collection<UUID> rangers = new HashSet<>();
     private UUID banditLeader;
 
-    public Game(Rangers plugin, GameSign sign, GameMap map, Location lobby, Location arena) {
+    private String statusMessage;
+
+    public Game(Rangers plugin, GameSign sign, GameMap map) {
         id = nextId++;
 
         Validate.notNull(sign);
@@ -47,13 +50,25 @@ public class Game {
         this.plugin = plugin;
         this.map = map;
         this.sign = sign;
-        this.lobby = lobby;
-        this.arena = arena;
+
+        scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
+        kills = scoreboard.registerNewObjective("obj", "dummy");
+        kills.setDisplayName(ChatColor.GOLD + "Heads Collected");
+        kills.setDisplaySlot(DisplaySlot.SIDEBAR);
+        kills.getScore("Rangers").setScore(0);
+        kills.getScore("Bandits").setScore(0);
+        kills.getScore("Bandit Leader").setScore(0);
 
         sign.setGame(this);
-        sign.setPlayers(0);
-        sign.setMapName(map.name);
-        sign.setStatusMessage("In Lobby");
+        statusMessage = "Waiting for Arena";
+
+        new UpdateTask().runTaskTimer(plugin, 0L, 20L);
+    }
+
+    public void setArena(Arena a) {
+        lobby = a.getLobbyLocation();
+        arena = a.getArenaLocation();
+        statusMessage = "In Lobby";
     }
 
     public int getId() {
@@ -61,6 +76,9 @@ public class Game {
     }
 
     public boolean addPlayer(UUID id) {
+        if (lobby == null || arena == null)
+            throw new IllegalStateException("Game does not yet have an arena");
+
         if (players.size() == MAX_PLAYERS)
             return false;
         players.add(id);
@@ -72,6 +90,7 @@ public class Game {
         p.setSaturation(20F);
         p.getInventory().clear();
         p.getInventory().setArmorContents(null);
+        p.setScoreboard(scoreboard);
         broadcast(ChatColor.YELLOW + p.getName() + ChatColor.AQUA + " joined the game");
         return true;
     }
@@ -90,7 +109,46 @@ public class Game {
         }
     }
 
+    public boolean hasHopper(Location loc) {
+        return loc.equals(lobby.clone().add(map.rangerHopper)) || loc.equals(lobby.clone().add(map.banditHopper));
+    }
+
+    public boolean checkHopper(Location loc, ItemStack item) {
+        Vector pos = loc.clone().subtract(lobby).toVector();
+        String owner = ((SkullMeta) item.getItemMeta()).getOwner();
+        @SuppressWarnings("deprecation") // Bloody hell, Bukkit. This shouldn't be deprecated at all!
+        UUID id = Bukkit.getOfflinePlayer(owner).getUniqueId();
+        if (pos.equals(map.rangerHopper)) {
+            if (bandits.contains(id)) {
+                // TODO Logic
+                if (banditLeader.equals(id)) {
+                    // TODO Logic
+                }
+            } else {
+                return false;
+            }
+        }
+        if (pos.equals(map.banditHopper)) {
+            if (rangers.contains(id)) {
+                // TODO Logic
+            } else {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public GameMap getMap() {
         return map;
+    }
+
+    private class UpdateTask extends BukkitRunnable {
+        @Override
+        public void run() {
+            sign.setPlayers(players.size());
+            sign.setMapName(map.name);
+            sign.setStatusMessage(statusMessage);
+        }
     }
 }

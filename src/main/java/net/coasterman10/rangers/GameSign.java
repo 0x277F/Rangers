@@ -7,21 +7,14 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 
 public class GameSign {
-    private Sign state;
-    private GameMap map;
+    private Sign state; 
     private Game game;
 
-    public GameSign(Block b, GameMap map) {
+    public GameSign(Block b) {
         Validate.notNull(b);
-        Validate.notNull(map);
         if (!(b.getState() instanceof Sign))
             throw new IllegalArgumentException("Block " + b + " is not a sign");
         state = (Sign) b.getState();
-        this.map = map;
-    }
-    
-    public GameMap getMap() {
-        return map;
     }
     
     public Location getLocation() {

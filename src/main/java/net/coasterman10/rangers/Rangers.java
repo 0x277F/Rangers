@@ -2,7 +2,6 @@ package net.coasterman10.rangers;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
-import java.util.logging.Level;
 
+import net.coasterman10.rangers.listeners.HopperListener;
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.WorldListener;
 
@@ -24,43 +23,38 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
 public class Rangers extends JavaPlugin {
-    // Guess what? I have the print margin at 120 characters. If you have a tiny screen or use a terminal for Java for
-    // some insane reason, please make a pull request to reduce the margin to the 80 character mark.
-    // It will be denied anyways but at least I'll know how many people care about it that much.
-    // Without any further adieu, let us dive into the horrid mess that is code by coasterman10.
-
     private Location lobbySpawn;
     private World gameWorld;
     private Map<Location, GameSign> signs = new HashMap<>();
-    private Map<Integer, Game> games = new HashMap<>();
     private Map<UUID, PlayerData> players = new HashMap<>();
     private Map<String, GameMap> maps = new HashMap<>();
-    private FileConfiguration builtArenas;
 
     private WorldListener worldListener;
     private PlayerListener playerListener;
+    private HopperListener hopperListener;
+    private ArenaManager arenas;
 
     @Override
     public void onEnable() {
         worldListener = new WorldListener();
         playerListener = new PlayerListener(this);
+        hopperListener = new HopperListener();
 
         saveDefaultConfig();
         saveDefaultConfigValues();
         loadConfig();
-        loadGames();
+        loadArenas();
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);
         pm.registerEvents(playerListener, this);
+        pm.registerEvents(hopperListener, this);
 
         getCommand("quit").setExecutor(new QuitCommand(this));
     }
@@ -107,8 +101,8 @@ public class Rangers extends JavaPlugin {
         lobbySpawn = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
 
         // Schematic for the game lobbies
-        File lobbySchematicFile = new File(getDataFolder(), "schematics" + File.separator
-                + getConfig().getString("game-lobby.schematic"));
+        String lobbySchematicFilename = "schematics" + File.separator + getConfig().getString("game-lobby.schematic");
+        File lobbySchematicFile = new File(getDataFolder(), lobbySchematicFilename);
         Schematic lobbySchematic;
         try {
             lobbySchematic = new Schematic(lobbySchematicFile);
@@ -123,6 +117,7 @@ public class Rangers extends JavaPlugin {
 
         // Load the game map configurations
         for (String mapName : getConfig().getConfigurationSection("maps").getKeys(false)) {
+            ConfigurationSection section = getConfig().getConfigurationSection("maps." + mapName);
             GameMap map = new GameMap(mapName);
             map.lobbySchematic = lobbySchematic;
             try {
@@ -133,16 +128,19 @@ public class Rangers extends JavaPlugin {
                 getLogger().warning("Loading default empty schematic for map " + mapName);
                 map.gameSchematic = new Schematic();
             }
-            map.rangerSpawn = getVector(getConfig().getConfigurationSection("maps." + mapName + ".spawns.rangers"));
-            map.banditSpawn = getVector(getConfig().getConfigurationSection("maps." + mapName + ".spawns.bandits"));
-            map.rangerHopper = getVector(getConfig().getConfigurationSection("maps." + mapName + ".hoppers.rangers"))
-                    .toBlockVector();
-            map.banditHopper = getVector(getConfig().getConfigurationSection("maps." + mapName + ".hoppers.bandits"))
-                    .toBlockVector();
+            map.rangerSpawn = getVector(section.getConfigurationSection("spawns.rangers"));
+            map.banditSpawn = getVector(section.getConfigurationSection("spawns.bandits"));
+            map.rangerHopper = getVector(section.getConfigurationSection("hoppers.rangers")).toBlockVector();
+            map.banditHopper = getVector(section.getConfigurationSection("hoppers.bandits")).toBlockVector();
             map.lobbySpawn = gameLobbySpawn;
             maps.put(mapName, map);
         }
+        
+        arenas = new ArenaManager(this, gameWorld, maps);
 
+        // This will be passed to the hopper listener so it can check all the games
+        Collection<Game> games = new HashSet<>();
+        
         // Iterate over the map lists in the config file with the sign locations
         List<Map<?, ?>> mapList = getConfig().getMapList("signs");
         for (Map<?, ?> map : mapList) {
@@ -167,11 +165,15 @@ public class Rangers extends JavaPlugin {
                 Block b = loc.getBlock();
                 if (!(b.getState() instanceof Sign))
                     placeSign(loc); // Build a new sign at the location (idiot-proofing)
-                GameSign sign = new GameSign(b, gameMap);
+                GameSign sign = new GameSign(b);
+                Game g = new Game(this, sign, gameMap);
+                sign.setGame(g);
+                games.add(g);
                 signs.put(loc, sign);
             }
         }
         playerListener.setSigns(signs);
+        hopperListener.setGames(games);
 
         // Load the allowed drops list
         Collection<Material> allowedDrops = new HashSet<>();
@@ -184,71 +186,11 @@ public class Rangers extends JavaPlugin {
         playerListener.setAllowedDrops(allowedDrops);
     }
 
-    @SuppressWarnings("unchecked")
-    private void loadGames() {
-        // TODO: Track location of both lobbies and arenas
-        // I just realized that this is a rather shoddy method to handle arena building, and instead the config will
-        // have to hold the locations of both the lobbies AND to be safe in case I ever decide to change the distance of
-        // the arena from the lobby.
-
-        // This file contains all of the arenas that have already been built by the plugin.
-        builtArenas = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "built-arenas.yml"));
-        Collection<Vector> usedArenas = new HashSet<>(); // Keeps track of arenas already in use by another game
+    private void loadArenas() {
         for (GameSign sign : signs.values()) {
-            getLogger().info("Loading game for sign at " + sign.getLocation());
-
-            String mapName = sign.getMap().name;
-
-            // Arenas built for the map assigned to the game that we want this sign to connect to
-            List<Object> list = (List<Object>) builtArenas.getList(mapName, new ArrayList<Vector>());
-            List<Vector> arenas = new ArrayList<>();
-
-            // Since we can't get a vector list with the Bukkit API, we have to cast the objects ourselves
-            for (Object o : list)
-                if (o instanceof Vector)
-                    arenas.add((Vector) o);
-
-            // Loop through all the arenas that have the map we want, and create the game if the arena is found
-            boolean foundArena = false;
-            for (Vector v : arenas) {
-                if (!usedArenas.contains(v)) {
-                    Game g = new Game(this, sign, sign.getMap(), v.toLocation(gameWorld), v.toLocation(gameWorld).add(
-                            0, 0, 1000));
-                    usedArenas.add(v);
-                    foundArena = true;
-                    games.put(g.getId(), g);
-                    break;
-                }
-            }
-
-            if (foundArena)
-                continue;
-
-            // We have not found any open arenas with the map we want, so it is time to build a new one.
-            // The new arena is built 1000 blocks further from the origin than the furthest one in the X direction.
-            Vector newArena = new Vector(0, 64, 0);
-            for (Vector v : arenas) {
-                if (v.getBlockX() > newArena.getX() + 1000)
-                    newArena.setX(v.getBlockX() + 1000);
-            }
-
-            getLogger().info("Building new arena at " + newArena.toLocation(gameWorld));
-
-            usedArenas.add(newArena);
-            list.add(newArena);
-            builtArenas.set(mapName, list);
-
-            // Create the new game, then build the schematic.
-            // The new arena is built 1000 blocks from the lobby, in the Z direction.
-            Game g = new Game(this, sign, sign.getMap(), newArena.toLocation(gameWorld), newArena.toLocation(gameWorld)
-                    .add(0, 0, 1000));
-            games.put(g.getId(), g);
-            g.getMap().gameSchematic.buildDelayed(newArena.toLocation(gameWorld).add(0, 0, 1000), this);
-        }
-        try {
-            builtArenas.save(new File(getDataFolder(), "built-arenas.yml"));
-        } catch (IOException e) {
-            getLogger().log(Level.WARNING, e.getMessage(), e);
+            getLogger().info("Loading arena for game linked to sign at " + sign.getLocation());
+            String mapName = sign.getGame().getMap().name;
+            sign.getGame().setArena(arenas.getArena(mapName));
         }
     }
 
