@@ -1,25 +1,26 @@
 package net.coasterman10.rangers;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.UUID;
+
+import me.confuser.barapi.BarAPI;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.util.Vector;
 
 public class Game {
-    public static final int MIN_PLAYERS = 4;
+    public static final int MIN_PLAYERS = 2;
     public static final int MAX_PLAYERS = 10;
+    public static final int COUNTDOWN_DURATION = 30;
 
     private static int nextId;
 
@@ -39,6 +40,9 @@ public class Game {
     private Collection<UUID> bandits = new HashSet<>();
     private Collection<UUID> rangers = new HashSet<>();
     private UUID banditLeader;
+
+    private State state;
+    private int seconds;
 
     private String statusMessage;
 
@@ -62,6 +66,8 @@ public class Game {
         sign.setGame(this);
         statusMessage = "Waiting for Arena";
 
+        state = State.INACTIVE;
+
         new UpdateTask().runTaskTimer(plugin, 0L, 20L);
     }
 
@@ -69,6 +75,7 @@ public class Game {
         lobby = a.getLobbyLocation();
         arena = a.getArenaLocation();
         statusMessage = "In Lobby";
+        state = State.LOBBY;
     }
 
     public int getId() {
@@ -76,8 +83,11 @@ public class Game {
     }
 
     public boolean addPlayer(UUID id) {
-        if (lobby == null || arena == null)
-            throw new IllegalStateException("Game does not yet have an arena");
+        if (state == State.INACTIVE) {
+            Bukkit.getPlayer(id).sendMessage(
+                    ChatColor.RED + "That game is not set up correctly, please notify an administrator.");
+            return true;
+        }
 
         if (players.size() == MAX_PLAYERS)
             return false;
@@ -109,36 +119,6 @@ public class Game {
         }
     }
 
-    public boolean hasHopper(Location loc) {
-        return loc.equals(lobby.clone().add(map.rangerHopper)) || loc.equals(lobby.clone().add(map.banditHopper));
-    }
-
-    public boolean checkHopper(Location loc, ItemStack item) {
-        Vector pos = loc.clone().subtract(lobby).toVector();
-        String owner = ((SkullMeta) item.getItemMeta()).getOwner();
-        @SuppressWarnings("deprecation") // Bloody hell, Bukkit. This shouldn't be deprecated at all!
-        UUID id = Bukkit.getOfflinePlayer(owner).getUniqueId();
-        if (pos.equals(map.rangerHopper)) {
-            if (bandits.contains(id)) {
-                // TODO Logic
-                if (banditLeader.equals(id)) {
-                    // TODO Logic
-                }
-            } else {
-                return false;
-            }
-        }
-        if (pos.equals(map.banditHopper)) {
-            if (rangers.contains(id)) {
-                // TODO Logic
-            } else {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     public GameMap getMap() {
         return map;
     }
@@ -146,9 +126,72 @@ public class Game {
     private class UpdateTask extends BukkitRunnable {
         @Override
         public void run() {
+            // States are programmed assuming the run() function is called immediately when the state starts.
+            // Thus, if the state changes, the next state needs to be run. This should continue until the state
+            // is not changed any longer, hence the do-while loop.
+            State old;
+            do {
+                old = state;
+                state.run(Game.this);
+            } while (state != old);
             sign.setPlayers(players.size());
             sign.setMapName(map.name);
             sign.setStatusMessage(statusMessage);
         }
+    }
+
+    private enum State {
+        INACTIVE {
+            @Override
+            public void run(final Game g) {
+
+            }
+        },
+        LOBBY {
+            @Override
+            public void run(final Game g) {
+                if (g.players.size() >= MIN_PLAYERS) {
+                    g.state = STARTING;
+                    g.seconds = COUNTDOWN_DURATION;
+                }
+            }
+        },
+        STARTING {
+            @Override
+            public void run(final Game g) {
+                g.statusMessage = "Starting in " + g.seconds;
+                if (g.seconds == 0) {
+                    for (Player p : g.players())
+                        BarAPI.removeBar(p);
+                    g.state = State.RUNNING;
+                } else {
+                    for (Player p : g.players())
+                        BarAPI.setMessage(p, ChatColor.GREEN + "Starting in " + g.seconds, g.seconds
+                                / (float) COUNTDOWN_DURATION);
+                }
+                g.seconds--;
+            }
+        },
+        RUNNING {
+            @Override
+            public void run(final Game g) {
+
+            }
+        },
+        ENDING {
+            @Override
+            public void run(final Game g) {
+
+            }
+        };
+
+        public abstract void run(final Game g);
+    }
+
+    private Collection<Player> players() {
+        Collection<Player> collection = new ArrayList<Player>();
+        for (UUID id : players)
+            collection.add(Bukkit.getPlayer(id));
+        return collection;
     }
 }

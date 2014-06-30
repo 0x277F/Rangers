@@ -30,31 +30,20 @@ public class GameSign {
             state.setLine(3, ChatColor.GREEN + "Click to join");
         }
         state.setLine(0, s);
-        update();
+        state.update(true);
     }
 
     public void setMapName(String mapName) {
         Validate.notNull(mapName);
         state.setLine(1, mapName);
-        update();
+        state.update(true);
     }
 
     public void setStatusMessage(String statusMessage) {
         state.setLine(2, statusMessage);
-        update();
+        state.update(true);
     }
-
-    public void update() {
-        if (state.getBlock().getState() instanceof Sign) {
-            // If the sign has been changed for any reason, update its facing direction and type
-            // (in case someone has decided to turn the sign or change it from a post to a wall sign)
-            org.bukkit.material.Sign data = (org.bukkit.material.Sign) state.getBlock().getState().getData();
-            ((org.bukkit.material.Sign) state.getData()).setFacingDirection(data.getFacing());
-            state.setType(state.getBlock().getType());
-            state.update();
-        }
-    }
-
+    
     public void setGame(Game game) {
         this.game = game;
     }

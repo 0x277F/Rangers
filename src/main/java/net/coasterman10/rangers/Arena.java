@@ -3,13 +3,13 @@ package net.coasterman10.rangers;
 import org.bukkit.Location;
 
 public class Arena {
-    private String mapName;
+    private GameMap map;
     private Location lobby;
     private Location arena;
     private boolean used;
     
-    public Arena(String mapName, Location lobby, Location arena) {
-        this.mapName = mapName;
+    public Arena(GameMap map, Location lobby, Location arena) {
+        this.map = map;
         this.lobby = lobby;
         this.arena = arena;
     }
@@ -22,8 +22,8 @@ public class Arena {
         return used;
     }
     
-    public String getMapName() {
-        return mapName;
+    public GameMap getMap() {
+        return map;
     }
     
     public Location getLobbyLocation() {

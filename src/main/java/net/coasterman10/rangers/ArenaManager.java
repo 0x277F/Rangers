@@ -18,13 +18,13 @@ public class ArenaManager {
     private File arenaListFile;
     private Plugin plugin;
     private World world;
+    private GameMapManager gameMapManager;
     private Map<String, Collection<Arena>> arenas = new HashMap<>();
-    private Map<String, GameMap> maps;
 
-    public ArenaManager(Plugin plugin, World world, Map<String, GameMap> maps) {
+    public ArenaManager(Plugin plugin, World world, GameMapManager gameMapManager) {
         this.plugin = plugin;
         this.world = world;
-        this.maps = maps; // The game maps know their schematics, so we need to get those by name, hence this map
+        this.gameMapManager = gameMapManager; // The game maps know their schematics, so we need to get those by name, hence this map
         
         arenaListFile = new File(plugin.getDataFolder(), "built-arenas.yml");
     }
@@ -45,7 +45,7 @@ public class ArenaManager {
             if (!arenas.containsKey(mapName)) {
                 arenas.put(mapName, new HashSet<Arena>());
             }
-            arenas.get(mapName).add(new Arena(mapName, lobbyLocation, arenaLocation));
+            arenas.get(mapName).add(new Arena(gameMapManager.getMap(mapName), lobbyLocation, arenaLocation));
         }
     }
 
@@ -70,13 +70,13 @@ public class ArenaManager {
         }
         Location arena = lobby.clone().add(new Vector(0, 0, 1000)); // Put the arena 1000 blocks south of the lobby
         
-        Arena a = new Arena(mapName, lobby, arena);
+        Arena a = new Arena(gameMapManager.getMap(mapName), lobby, arena);
         if (!arenas.containsKey(mapName))
             arenas.put(mapName, new HashSet<Arena>());
         arenas.get(mapName).add(a);
         
-        maps.get(mapName).lobbySchematic.buildDelayed(lobby, plugin);
-        maps.get(mapName).gameSchematic.buildDelayed(arena, plugin);
+        gameMapManager.getMap(mapName).lobbySchematic.buildDelayed(lobby, plugin);
+        gameMapManager.getMap(mapName).gameSchematic.buildDelayed(arena, plugin);
         
         return a;
     }
