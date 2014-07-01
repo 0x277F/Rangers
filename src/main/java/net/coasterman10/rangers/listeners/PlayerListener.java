@@ -58,9 +58,7 @@ public class PlayerListener implements Listener {
             return;
         Location loc = e.getClickedBlock().getLocation();
         if (signs.containsKey(loc)) {
-            if (!signs.get(loc).getGame().addPlayer(e.getPlayer().getUniqueId())) {
-                e.getPlayer().sendMessage(ChatColor.RED + "That game is full!");
-            }
+            signs.get(loc).getGame().addPlayer(e.getPlayer());
         }
     }
 

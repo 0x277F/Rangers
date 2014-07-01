@@ -7,7 +7,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 
 public class GameSign {
-    private Sign state; 
+    private Sign state;
     private Game game;
 
     public GameSign(Block b) {
@@ -16,7 +16,7 @@ public class GameSign {
             throw new IllegalArgumentException("Block " + b + " is not a sign");
         state = (Sign) b.getState();
     }
-    
+
     public Location getLocation() {
         return state.getLocation();
     }
@@ -30,20 +30,21 @@ public class GameSign {
             state.setLine(3, ChatColor.GREEN + "Click to join");
         }
         state.setLine(0, s);
-        state.update(true);
     }
 
     public void setMapName(String mapName) {
         Validate.notNull(mapName);
         state.setLine(1, mapName);
-        state.update(true);
     }
 
     public void setStatusMessage(String statusMessage) {
         state.setLine(2, statusMessage);
-        state.update(true);
     }
-    
+
+    public void update() {
+        state.update();
+    }
+
     public void setGame(Game game) {
         this.game = game;
     }
