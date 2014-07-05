@@ -10,8 +10,8 @@ public class GameMap {
     public Vector lobbySpawn = new Vector();
     public Vector rangerSpawn = new Vector();
     public Vector banditSpawn = new Vector();
-    public BlockVector rangerHopper = new BlockVector();
-    public BlockVector banditHopper = new BlockVector();
+    public BlockVector rangerChest = new BlockVector();
+    public BlockVector banditChest = new BlockVector();
     
     public GameMap(String name) {
         this.name = name;

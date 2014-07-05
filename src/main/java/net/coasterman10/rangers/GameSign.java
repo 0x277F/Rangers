@@ -4,45 +4,42 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 
 public class GameSign {
-    private Sign state;
+    private Block block;
     private Game game;
+    private String mapName; // TODO Remove this cheap hack
 
-    public GameSign(Block b) {
-        Validate.notNull(b);
-        if (!(b.getState() instanceof Sign))
-            throw new IllegalArgumentException("Block " + b + " is not a sign");
-        state = (Sign) b.getState();
+    public GameSign(Block block, String mapName) {
+        Validate.notNull(block);
+        this.block = block;
+
+        this.mapName = mapName;
     }
 
     public Location getLocation() {
-        return state.getLocation();
+        return block.getLocation();
     }
 
     public void setPlayers(int players) {
         String s = String.format("%s%d / %d", ChatColor.BOLD.toString(), players, Game.MAX_PLAYERS);
         if (players == Game.MAX_PLAYERS) {
             s = ChatColor.RED + s;
-            state.setLine(3, ChatColor.RED + "Full");
+            setLine(3, ChatColor.RED + "Full");
         } else {
-            state.setLine(3, ChatColor.GREEN + "Click to join");
+            setLine(3, ChatColor.GREEN + "Click to join");
         }
-        state.setLine(0, s);
+        setLine(0, s);
     }
 
     public void setMapName(String mapName) {
-        Validate.notNull(mapName);
-        state.setLine(1, mapName);
+        setLine(1, mapName);
     }
 
     public void setStatusMessage(String statusMessage) {
-        state.setLine(2, statusMessage);
-    }
-
-    public void update() {
-        state.update();
+        setLine(2, statusMessage);
     }
 
     public void setGame(Game game) {
@@ -51,5 +48,17 @@ public class GameSign {
 
     public Game getGame() {
         return game;
+    }
+    
+    private void setLine(int index, String line) {
+        BlockState state = block.getState();
+        if (state instanceof Sign) {
+            ((Sign) state).setLine(index, line);
+            state.update();
+        }
+    }
+
+    public String getMapName() {
+        return mapName;
     }
 }

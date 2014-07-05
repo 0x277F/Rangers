@@ -1,36 +1,58 @@
 package net.coasterman10.rangers;
 
 import org.bukkit.Location;
+import org.bukkit.plugin.Plugin;
 
 public class Arena {
     private GameMap map;
     private Location lobby;
-    private Location arena;
+    private Location game;
     private boolean used;
-    
-    public Arena(GameMap map, Location lobby, Location arena) {
+
+    public Arena(GameMap map, Location lobby, Location game) {
         this.map = map;
         this.lobby = lobby;
-        this.arena = arena;
+        this.game = game;
     }
-    
+
     public void setUsed(boolean used) {
         this.used = used;
     }
-    
+
     public boolean isUsed() {
         return used;
     }
-    
-    public GameMap getMap() {
-        return map;
+
+    public String getMapName() {
+        return map.name;
     }
     
-    public Location getLobbyLocation() {
+    public void build(Plugin plugin) {
+        map.lobbySchematic.buildDelayed(lobby, plugin);
+        map.gameSchematic.buildDelayed(game, plugin);
+    }
+    
+    public Location getOrigin() {
         return lobby;
     }
-    
-    public Location getArenaLocation() {
-        return arena;
+
+    public Location getLobbySpawn() {
+        return lobby.clone().add(map.lobbySpawn);
+    }
+
+    public Location getRangerSpawn() {
+        return game.clone().add(map.rangerSpawn);
+    }
+
+    public Location getBanditSpawn() {
+        return game.clone().add(map.banditSpawn);
+    }
+
+    public Location getRangerChest() {
+        return game.clone().add(map.rangerChest);
+    }
+
+    public Location getBanditChest() {
+        return game.clone().add(map.banditChest);
     }
 }

@@ -80,6 +80,14 @@ public class Rangers extends JavaPlugin {
             players.put(id, new PlayerData());
         return players.get(id);
     }
+    
+    public void removePlayerData(Player p) {
+        removePlayerData(p.getUniqueId());
+    }
+    
+    public void removePlayerData(UUID id) {
+        players.remove(id);
+    }
 
     public Location getLobbySpawn() {
         return lobbySpawn;
@@ -108,7 +116,8 @@ public class Rangers extends JavaPlugin {
         lobbySpawn = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
 
         arenas = new ArenaManager(this, gameWorld, gameMapManager);
-
+        arenas.loadArenas();
+        
         // Iterate over the map lists in the config file with the sign locations
         List<Map<?, ?>> mapList = getConfig().getMapList("signs");
         for (Map<?, ?> map : mapList) {
@@ -133,8 +142,8 @@ public class Rangers extends JavaPlugin {
                 Block b = loc.getBlock();
                 if (!(b.getState() instanceof Sign))
                     placeSign(loc); // Build a new sign at the location (idiot-proofing)
-                GameSign sign = new GameSign(b);
-                Game g = new Game(this, sign, gameMap);
+                GameSign sign = new GameSign(b, (String) mapName);
+                Game g = new Game(this, sign);
                 sign.setGame(g);
                 signs.put(loc, sign);
             }
@@ -155,7 +164,7 @@ public class Rangers extends JavaPlugin {
     private void loadArenas() {
         for (GameSign sign : signs.values()) {
             getLogger().info("Loading arena for game linked to sign at " + sign.getLocation());
-            String mapName = sign.getGame().getMap().name;
+            String mapName = sign.getMapName();
             sign.getGame().setArena(arenas.getArena(mapName));
         }
     }

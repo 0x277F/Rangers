@@ -2,13 +2,13 @@ package net.coasterman10.rangers;
 
 public class PlayerData {
     private Game game;
-    private Team team;
+    private GameTeam team;
     
-    public void setTeam(Team team) {
+    public void setTeam(GameTeam team) {
         this.team = team;
     }
     
-    public Team getTeam() {
+    public GameTeam getTeam() {
         return team;
     }
     

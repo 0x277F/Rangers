@@ -29,7 +29,7 @@ maps:
         x: 25
         y: 10
         z: 90
-    hoppers:
+    chests:
       rangers:
         x: 25
         y: 10

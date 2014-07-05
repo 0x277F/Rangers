@@ -20,7 +20,7 @@ public class QuitCommand implements CommandExecutor {
             Player p = (Player) sender;
             PlayerData data = plugin.getPlayerData(p);
             if (data.getGame() != null) {
-                data.getGame().removePlayer(p.getUniqueId());
+                data.getGame().removePlayer(p);
                 p.setHealth(20D);
                 p.setFoodLevel(20);
                 p.setSaturation(20F);

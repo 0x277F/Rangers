@@ -11,17 +11,19 @@ import net.coasterman10.rangers.PlayerData;
 import net.coasterman10.rangers.Rangers;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.SkullType;
+import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
@@ -53,12 +55,26 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onSignClick(PlayerInteractEvent e) {
-        if (e.getClickedBlock() == null)
+    public void onLeave(PlayerQuitEvent e) {
+        PlayerData data = plugin.getPlayerData(e.getPlayer());
+        if (data.getGame() != null)
+            data.getGame().removePlayer(e.getPlayer());
+        plugin.removePlayerData(e.getPlayer());
+    }
+
+    @EventHandler
+    public void onInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK)
             return;
         Location loc = e.getClickedBlock().getLocation();
         if (signs.containsKey(loc)) {
             signs.get(loc).getGame().addPlayer(e.getPlayer());
+        }
+        if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
+                && e.getPlayer().getItemInHand().getType() == Material.SKULL_ITEM) {
+            ((Chest) e.getClickedBlock().getState()).getBlockInventory().addItem(e.getPlayer().getItemInHand());
+            e.getPlayer().getInventory().remove(e.getPlayer().getItemInHand());
+            e.setCancelled(true);
         }
     }
 
