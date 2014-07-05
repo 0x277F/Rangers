@@ -19,10 +19,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Score;
-import org.bukkit.scoreboard.Scoreboard;
 
 public class Game {
     public static final int MIN_PLAYERS = 2;
@@ -30,6 +26,7 @@ public class Game {
     public static final int COUNTDOWN_DURATION = 60;
     public static final int LOCK_TIME = 50;
     public static final int TEAM_SELECT_TIME = 50;
+    public static final int RESTART_TIME = 10;
 
     private static int nextId;
 
@@ -37,9 +34,7 @@ public class Game {
     private final Rangers plugin;
     private Arena arena;
 
-    private Scoreboard scoreboard;
-    private Objective kills;
-
+    private GameScoreboard scoreboard;
     private GameSign sign;
 
     // If you are going to give me hell about using 3 collections, please stop using your grandmother's 90s PC
@@ -58,10 +53,7 @@ public class Game {
         this.plugin = plugin;
         this.sign = sign;
 
-        scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
-        kills = scoreboard.registerNewObjective("obj", "dummy");
-        kills.setDisplayName(ChatColor.GOLD + "Heads Collected");
-        kills.setDisplaySlot(DisplaySlot.SIDEBAR);
+        scoreboard = new GameScoreboard();
 
         sign.setGame(this);
         sign.setPlayers(players.size());
@@ -103,7 +95,6 @@ public class Game {
             player.setSaturation(20F);
             player.getInventory().clear();
             player.getInventory().setArmorContents(null);
-            player.setScoreboard(scoreboard);
             broadcast(ChatColor.YELLOW + player.getName() + ChatColor.AQUA + " joined the game");
             sign.setPlayers(players.size());
         } else {
@@ -135,10 +126,12 @@ public class Game {
         Collections.shuffle(ids);
         for (UUID id : ids) {
             if (team) {
+                plugin.getPlayerData(id).setTeam(GameTeam.RANGERS);
                 rangers.add(id);
                 Bukkit.getPlayer(id).sendMessage(
                         ChatColor.AQUA + "You have been selected to join the " + ChatColor.GREEN + "RANGERS");
             } else {
+                plugin.getPlayerData(id).setTeam(GameTeam.BANDITS);
                 bandits.add(id);
                 Bukkit.getPlayer(id).sendMessage(
                         ChatColor.AQUA + "You have been selected to join the " + ChatColor.RED + "BANDITS");
@@ -149,6 +142,16 @@ public class Game {
             }
             team = !team;
         }
+
+        for (Player ranger : rangers()) {
+            scoreboard.setTeam(ranger, GameTeam.RANGERS);
+            ranger.setScoreboard(scoreboard.getScoreboard(GameTeam.RANGERS));
+        }
+        for (Player bandit : bandits()) {
+            scoreboard.setTeam(bandit, GameTeam.BANDITS);
+            bandit.setScoreboard(scoreboard.getScoreboard(GameTeam.BANDITS));
+        }
+        scoreboard.setBanditLeader(Bukkit.getPlayer(banditLeader));
     }
 
     private void checkChest(GameTeam t) {
@@ -161,13 +164,12 @@ public class Game {
                     if (meta.hasOwner()) {
                         for (Player p : (t == GameTeam.RANGERS ? bandits() : rangers())) {
                             if (meta.getOwner().equals(p.getName())) {
-                                Score score = kills.getScore((t == GameTeam.RANGERS ? "Rangers" : "Bandits"));
-                                score.setScore(score.getScore() + 1);
+                                scoreboard.setScore(t == GameTeam.RANGERS ? "Rangers" : "Bandits",
+                                        scoreboard.getScore(t == GameTeam.RANGERS ? "Rangers" : "Bandits") + 1);
                             }
                         }
                         if (Bukkit.getPlayer(banditLeader).getName().equals(meta.getOwner())) {
-                            Score score = kills.getScore("Bandit Leader");
-                            score.setScore(score.getScore() + 1);
+                            scoreboard.setScore("Bandit Leader", scoreboard.getScore("Bandit Leader") + 1);
                         }
                     }
                 }
@@ -178,6 +180,7 @@ public class Game {
     private void setState(State state) {
         this.state = state;
         state.start(this);
+        state.onSecond(this);
     }
 
     private class UpdateTask extends BukkitRunnable {
@@ -207,9 +210,12 @@ public class Game {
 
             @Override
             public void onSecond(final Game g) {
+                for (Player p : g.players()) {
+                    BarAPI.setMessage(p, ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers " + ChatColor.BLUE
+                            + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA + "69.137.10.168", 1F);
+                }
                 if (g.players.size() >= MIN_PLAYERS) {
                     g.setState(State.STARTING);
-                    g.seconds = COUNTDOWN_DURATION;
                 }
             }
         },
@@ -217,9 +223,6 @@ public class Game {
             @Override
             public void start(final Game g) {
                 g.seconds = COUNTDOWN_DURATION;
-                for (Player p : g.players())
-                    BarAPI.setMessage(p, ChatColor.GREEN + "Starting in " + g.seconds, (float) g.seconds
-                            / (float) COUNTDOWN_DURATION);
             }
 
             @Override
@@ -228,25 +231,36 @@ public class Game {
                 if (g.seconds == 0) {
                     g.setState(RUNNING);
                 } else {
+                    if (g.players().size() < MIN_PLAYERS) {
+                        g.setState(LOBBY);
+                    }
                     if (g.seconds == TEAM_SELECT_TIME) {
                         g.selectTeams();
                     }
                     float percent = (float) g.seconds / (float) COUNTDOWN_DURATION;
-                    for (Player p : g.players())
+                    for (Player p : g.players()) {
                         BarAPI.setMessage(p, ChatColor.GREEN + "Starting in " + g.seconds, percent);
+                    }
+                    g.seconds--;
                 }
-                g.seconds--;
             }
         },
         RUNNING {
             @Override
             public void start(Game g) {
-                g.kills.getScore("Rangers").setScore(0);
-                g.kills.getScore("Bandits").setScore(0);
-                g.kills.getScore("Bandit Leader").setScore(0);
+                g.scoreboard.setScore("Bandits", 0);
+                g.scoreboard.setScore("Rangers", 0);
+                g.scoreboard.setScore("Bandit Leader", 0);
                 for (Player p : g.players()) {
                     BarAPI.setMessage(p, ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers " + ChatColor.BLUE
                             + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA + "69.137.10.168", 1F);
+                    g.plugin.getPlayerData(p).setAlive(true);
+                }
+                for (Player p : g.rangers()) {
+                    p.teleport(g.arena.getRangerSpawn());
+                }
+                for (Player p : g.bandits()) {
+                    p.teleport(g.arena.getBanditSpawn());
                 }
             }
 
@@ -254,17 +268,47 @@ public class Game {
             public void onSecond(Game g) {
                 g.checkChest(GameTeam.RANGERS);
                 g.checkChest(GameTeam.BANDITS);
+                
+                // Check victory conditions
+                if (!g.plugin.getPlayerData(g.banditLeader).isAlive()) {
+                    g.setState(ENDING);
+                    g.broadcast(ChatColor.RED + "The Bandit Leader has been defeated!");
+                    g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
+                } else {
+                    // If all the rangers are dead, the bandits have won
+                    boolean rangerAlive = false;
+                    for (UUID ranger : g.rangers)
+                        if (g.plugin.getPlayerData(ranger).isAlive())
+                            rangerAlive = true;
+                    if (!rangerAlive) {
+                        g.setState(ENDING);
+                        g.broadcast(ChatColor.RED + "The rangers have been defeated!");
+                        g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
+                    }
+                }
             }
         },
         ENDING {
             @Override
             public void start(Game g) {
-
+                g.seconds = RESTART_TIME;
             }
 
             @Override
             public void onSecond(Game g) {
-
+                if (g.seconds == 0) {
+                    g.setState(LOBBY);
+                    for (Player p : g.players()) {
+                        BarAPI.removeBar(p);
+                        p.teleport(g.arena.getLobbySpawn());
+                        g.scoreboard.setTeam(p, null);
+                    }
+                } else {
+                    for (Player p : g.players()) {
+                        BarAPI.setMessage(p, ChatColor.GREEN + "Restarting in " + g.seconds);
+                    }
+                    g.seconds--;
+                }
             }
         };
 
@@ -292,5 +336,13 @@ public class Game {
         for (UUID id : bandits)
             collection.add(Bukkit.getPlayer(id));
         return collection;
+    }
+
+    public Location getLobbySpawn() {
+        return arena.getLobbySpawn();
+    }
+
+    public boolean allowPvp() {
+        return state == State.RUNNING;
     }
 }

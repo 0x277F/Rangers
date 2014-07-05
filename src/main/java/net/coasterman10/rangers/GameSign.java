@@ -8,7 +8,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 
 public class GameSign {
-    private Block block;
+    private final Block block;
     private Game game;
     private String mapName; // TODO Remove this cheap hack
 
@@ -49,8 +49,10 @@ public class GameSign {
     public Game getGame() {
         return game;
     }
-    
+
     private void setLine(int index, String line) {
+        if (!block.getChunk().isLoaded())
+            block.getChunk().load();
         BlockState state = block.getState();
         if (state instanceof Sign) {
             ((Sign) state).setLine(index, line);

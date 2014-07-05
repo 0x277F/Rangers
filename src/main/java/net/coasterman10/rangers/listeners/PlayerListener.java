@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import net.coasterman10.rangers.Game;
 import net.coasterman10.rangers.GameSign;
 import net.coasterman10.rangers.PlayerData;
 import net.coasterman10.rangers.Rangers;
@@ -19,11 +20,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
@@ -91,6 +94,17 @@ public class PlayerListener implements Listener {
         meta.setOwner(e.getEntity().getName());
         head.setItemMeta(meta);
         e.getDrops().add(head);
+
+        plugin.getPlayerData(e.getEntity()).setAlive(false);
+    }
+
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent e) {
+        Game g = plugin.getPlayerData(e.getPlayer()).getGame();
+        if (g == null)
+            e.getPlayer().teleport(plugin.getLobbySpawn());
+        else
+            e.getPlayer().teleport(g.getLobbySpawn());
     }
 
     @EventHandler
@@ -106,6 +120,15 @@ public class PlayerListener implements Listener {
                     e.setCancelled(true);
                 }
             }
+        }
+    }
+
+    @EventHandler
+    public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
+        if (e.getEntity() instanceof Player && e.getDamager() instanceof Player) {
+            Game g = plugin.getPlayerData((Player) e.getEntity()).getGame();
+            if (g == null || (g != null && !g.allowPvp()))
+                e.setCancelled(true);
         }
     }
 }

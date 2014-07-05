@@ -51,8 +51,8 @@ public class GameMapManager {
             }
             map.rangerSpawn = getVector(section.getConfigurationSection("spawns.rangers"));
             map.banditSpawn = getVector(section.getConfigurationSection("spawns.bandits"));
-            map.rangerChest = getVector(section.getConfigurationSection("hoppers.rangers")).toBlockVector();
-            map.banditChest = getVector(section.getConfigurationSection("hoppers.bandits")).toBlockVector();
+            map.rangerChest = getVector(section.getConfigurationSection("chests.rangers")).toBlockVector();
+            map.banditChest = getVector(section.getConfigurationSection("chests.bandits")).toBlockVector();
             map.lobbySpawn = gameLobbySpawn;
             maps.put(mapName, map);
         }
