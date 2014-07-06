@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import me.confuser.barapi.BarAPI;
 
-import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -21,17 +20,11 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class Game {
-    public static final int MIN_PLAYERS = 2;
-    public static final int MAX_PLAYERS = 10;
-    public static final int COUNTDOWN_DURATION = 60;
-    public static final int LOCK_TIME = 50;
-    public static final int TEAM_SELECT_TIME = 50;
-    public static final int RESTART_TIME = 10;
-
     private static int nextId;
 
     private final int id;
     private final Rangers plugin;
+    private final CommonSettings settings;
     private Arena arena;
 
     private GameScoreboard scoreboard;
@@ -46,12 +39,12 @@ public class Game {
     private State state;
     private int seconds;
 
-    public Game(Rangers plugin, GameSign sign) {
+    public Game(Rangers plugin, GameSign sign, CommonSettings settings) {
         id = nextId++;
 
-        Validate.notNull(sign);
         this.plugin = plugin;
         this.sign = sign;
+        this.settings = settings;
 
         scoreboard = new GameScoreboard();
 
@@ -82,8 +75,8 @@ public class Game {
             return;
         }
 
-        if (state == State.LOBBY || (state == State.STARTING && seconds > LOCK_TIME)) {
-            if (players.size() == MAX_PLAYERS) {
+        if (state == State.LOBBY || (state == State.STARTING && seconds > settings.lockTime)) {
+            if (players.size() == settings.maxPlayers) {
                 player.sendMessage(ChatColor.RED + "This game is full!");
                 return;
             }
@@ -205,7 +198,11 @@ public class Game {
         LOBBY {
             @Override
             public void start(final Game g) {
-
+                for (Player p : g.players()) {
+                    BarAPI.removeBar(p);
+                    p.teleport(g.arena.getLobbySpawn());
+                    g.scoreboard.setTeam(p, null);
+                }
             }
 
             @Override
@@ -214,7 +211,7 @@ public class Game {
                     BarAPI.setMessage(p, ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers " + ChatColor.BLUE
                             + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA + "69.137.10.168", 1F);
                 }
-                if (g.players.size() >= MIN_PLAYERS) {
+                if (g.players.size() >= g.settings.minPlayers) {
                     g.setState(State.STARTING);
                 }
             }
@@ -222,22 +219,22 @@ public class Game {
         STARTING {
             @Override
             public void start(final Game g) {
-                g.seconds = COUNTDOWN_DURATION;
+                g.seconds = g.settings.countdownDuration;
             }
 
             @Override
             public void onSecond(final Game g) {
+                if (g.players().size() < g.settings.minPlayers) {
+                    g.setState(LOBBY);
+                }
                 g.sign.setStatusMessage("Starting in " + g.seconds);
                 if (g.seconds == 0) {
                     g.setState(RUNNING);
                 } else {
-                    if (g.players().size() < MIN_PLAYERS) {
-                        g.setState(LOBBY);
-                    }
-                    if (g.seconds == TEAM_SELECT_TIME) {
+                    if (g.seconds == g.settings.teamSelectTime) {
                         g.selectTeams();
                     }
-                    float percent = (float) g.seconds / (float) COUNTDOWN_DURATION;
+                    float percent = (float) g.seconds / (float) g.settings.countdownDuration;
                     for (Player p : g.players()) {
                         BarAPI.setMessage(p, ChatColor.GREEN + "Starting in " + g.seconds, percent);
                     }
@@ -248,6 +245,7 @@ public class Game {
         RUNNING {
             @Override
             public void start(Game g) {
+                g.sign.setStatusMessage("Running");
                 g.scoreboard.setScore("Bandits", 0);
                 g.scoreboard.setScore("Rangers", 0);
                 g.scoreboard.setScore("Bandit Leader", 0);
@@ -258,9 +256,11 @@ public class Game {
                 }
                 for (Player p : g.rangers()) {
                     p.teleport(g.arena.getRangerSpawn());
+                    g.settings.getRangerKit().apply(p);
                 }
                 for (Player p : g.bandits()) {
                     p.teleport(g.arena.getBanditSpawn());
+                    g.settings.getBanditKit().apply(p);
                 }
             }
 
@@ -268,7 +268,7 @@ public class Game {
             public void onSecond(Game g) {
                 g.checkChest(GameTeam.RANGERS);
                 g.checkChest(GameTeam.BANDITS);
-                
+
                 // Check victory conditions
                 if (!g.plugin.getPlayerData(g.banditLeader).isAlive()) {
                     g.setState(ENDING);
@@ -291,18 +291,13 @@ public class Game {
         ENDING {
             @Override
             public void start(Game g) {
-                g.seconds = RESTART_TIME;
+                g.seconds = g.settings.restartDelay;
             }
 
             @Override
             public void onSecond(Game g) {
                 if (g.seconds == 0) {
                     g.setState(LOBBY);
-                    for (Player p : g.players()) {
-                        BarAPI.removeBar(p);
-                        p.teleport(g.arena.getLobbySpawn());
-                        g.scoreboard.setTeam(p, null);
-                    }
                 } else {
                     for (Player p : g.players()) {
                         BarAPI.setMessage(p, ChatColor.GREEN + "Restarting in " + g.seconds);
@@ -344,5 +339,9 @@ public class Game {
 
     public boolean allowPvp() {
         return state == State.RUNNING;
+    }
+
+    public CommonSettings getSettings() {
+        return settings;
     }
 }

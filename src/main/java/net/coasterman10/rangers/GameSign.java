@@ -24,8 +24,8 @@ public class GameSign {
     }
 
     public void setPlayers(int players) {
-        String s = String.format("%s%d / %d", ChatColor.BOLD.toString(), players, Game.MAX_PLAYERS);
-        if (players == Game.MAX_PLAYERS) {
+        String s = String.format("%s%d / %d", ChatColor.BOLD.toString(), players, game.getSettings().maxPlayers);
+        if (players == game.getSettings().maxPlayers) {
             s = ChatColor.RED + s;
             setLine(3, ChatColor.RED + "Full");
         } else {
