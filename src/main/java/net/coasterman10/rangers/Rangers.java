@@ -36,7 +36,7 @@ public class Rangers extends JavaPlugin {
     private Location lobbySpawn;
     private World gameWorld;
     private Map<Location, GameSign> signs = new HashMap<>();
-    private Map<UUID, PlayerData> players = new HashMap<>();
+    private Map<UUID, GamePlayer> players = new HashMap<>();
 
     private GameMapManager gameMapManager;
     private WorldListener worldListener;
@@ -71,13 +71,13 @@ public class Rangers extends JavaPlugin {
 
     }
 
-    public PlayerData getPlayerData(Player p) {
+    public GamePlayer getPlayerData(Player p) {
         return getPlayerData(p.getUniqueId());
     }
 
-    public PlayerData getPlayerData(UUID id) {
+    public GamePlayer getPlayerData(UUID id) {
         if (!players.containsKey(id))
-            players.put(id, new PlayerData());
+            players.put(id, new GamePlayer(id));
         return players.get(id);
     }
     

@@ -8,7 +8,7 @@ import java.util.Map;
 
 import net.coasterman10.rangers.Game;
 import net.coasterman10.rangers.GameSign;
-import net.coasterman10.rangers.PlayerData;
+import net.coasterman10.rangers.GamePlayer;
 import net.coasterman10.rangers.Rangers;
 
 import org.bukkit.Bukkit;
@@ -59,7 +59,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
-        PlayerData data = plugin.getPlayerData(e.getPlayer());
+        GamePlayer data = plugin.getPlayerData(e.getPlayer());
         if (data.getGame() != null)
             data.getGame().removePlayer(e.getPlayer());
         plugin.removePlayerData(e.getPlayer());
@@ -114,8 +114,8 @@ public class PlayerListener implements Listener {
             if (meta.hasOwner()) {
                 @SuppressWarnings("deprecation")
                 Player owner = Bukkit.getPlayer(meta.getOwner());
-                PlayerData ownerData = plugin.getPlayerData(owner);
-                PlayerData pickupData = plugin.getPlayerData(e.getPlayer());
+                GamePlayer ownerData = plugin.getPlayerData(owner);
+                GamePlayer pickupData = plugin.getPlayerData(e.getPlayer());
                 if (ownerData.getTeam() == pickupData.getTeam()) {
                     e.setCancelled(true);
                 }

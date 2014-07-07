@@ -1,5 +1,8 @@
 package net.coasterman10.rangers;
 
+import java.util.EnumMap;
+import java.util.Map;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -10,95 +13,56 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
 public class GameScoreboard {
-    private final Scoreboard rangerBoard;
-    private final Scoreboard banditBoard;
-
-    // This class is a mess and I really didn't like writing it at all, but it's a necessity to have two scoreboards
-    // so the players names' are colored by enemy/friendly which is dependent on the team.
-
-    // TODO Use Maps instead of holding discrete variables
+    private Map<GameTeam, Scoreboard> boards = new EnumMap<>(GameTeam.class);
 
     public GameScoreboard() {
-        rangerBoard = Bukkit.getScoreboardManager().getNewScoreboard();
-        banditBoard = Bukkit.getScoreboardManager().getNewScoreboard();
+        for (GameTeam t : GameTeam.values()) {
+            Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
+            boards.put(t, board);
 
-        Objective o;
-        o = rangerBoard.registerNewObjective("obj", "dummy");
-        o.setDisplayName(ChatColor.GOLD + "Heads Collected");
-        o.setDisplaySlot(DisplaySlot.SIDEBAR);
+            Objective o = board.registerNewObjective("obj", "dummy");
+            o.setDisplayName(ChatColor.GOLD + "Heads Collected");
+            o.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-        o = banditBoard.registerNewObjective("obj", "dummy");
-        o.setDisplayName(ChatColor.GOLD + "Heads Collected");
-        o.setDisplaySlot(DisplaySlot.SIDEBAR);
-
-        Team t;
-        t = rangerBoard.registerNewTeam("RANGERS");
-        t.setAllowFriendlyFire(false);
-        t.setPrefix(ChatColor.GREEN.toString());
-        t.setCanSeeFriendlyInvisibles(true);
-        t = rangerBoard.registerNewTeam("BANDITS");
-        t.setPrefix(ChatColor.RED.toString());
-        t = rangerBoard.registerNewTeam("BANDIT_LEADER");
-        t.setPrefix(ChatColor.RED + "♛ ");
-        t.setSuffix(" ♛");
-
-        t = banditBoard.registerNewTeam("RANGERS");
-        t.setPrefix(ChatColor.RED.toString());
-        t = banditBoard.registerNewTeam("BANDITS");
-        t.setAllowFriendlyFire(false);
-        t.setPrefix(ChatColor.GREEN.toString());
-        t.setCanSeeFriendlyInvisibles(true);
-        t = banditBoard.registerNewTeam("BANDIT_LEADER");
-        t.setPrefix(ChatColor.GREEN + "♛ ");
-        t.setSuffix(" ♛");
+            Team friendly = board.registerNewTeam(t.name());
+            Team enemy = board.registerNewTeam(t.opponent().name());
+            Team banditLeader = board.registerNewTeam("BANDIT_LEADER");
+            friendly.setPrefix(ChatColor.GREEN.toString());
+            enemy.setPrefix(ChatColor.RED.toString());
+            banditLeader.setPrefix((t == GameTeam.BANDITS ? ChatColor.GREEN : ChatColor.RED) + "♛ ");
+            banditLeader.setSuffix(" ♛");
+        }
     }
 
     public Scoreboard getScoreboard(GameTeam team) {
-        switch (team) {
-        case RANGERS:
-            return rangerBoard;
-        case BANDITS:
-            return banditBoard;
-        default:
-            return null;
-        }
+        return boards.get(team);
     }
 
     public void setTeam(Player player, GameTeam team) {
-        if (team == null) {
-            for (GameTeam t : GameTeam.values()) {
-                rangerBoard.getTeam(t.name()).removePlayer(player);
-                banditBoard.getTeam(t.name()).removePlayer(player);
-            }
-            rangerBoard.getTeam("BANDIT_LEADER").removePlayer(player);
-            banditBoard.getTeam("BANDIT_LEADER").removePlayer(player);
-            return;
+        for (Scoreboard board : boards.values()) {
+            for (Team t : board.getTeams())
+                t.removePlayer(player);
+            board.getTeam(team.name()).addPlayer(player);
         }
-        rangerBoard.getTeam(team.name()).addPlayer(player);
-        rangerBoard.getTeam(team.opponent().name()).removePlayer(player);
-        rangerBoard.getTeam("BANDIT_LEADER").removePlayer(player);
-        banditBoard.getTeam(team.name()).addPlayer(player);
-        banditBoard.getTeam(team.opponent().name()).removePlayer(player);
-        rangerBoard.getTeam("BANDIT_LEADER").removePlayer(player);
     }
 
     public void setBanditLeader(Player player) {
-        for (OfflinePlayer p : rangerBoard.getTeam("BANDIT_LEADER").getPlayers())
-            rangerBoard.getTeam("BANDIT_LEADER").removePlayer(p);
-        for (OfflinePlayer p : banditBoard.getTeam("BANDIT_LEADER").getPlayers())
-            banditBoard.getTeam("BANDIT_LEADER").removePlayer(p);
-        rangerBoard.getTeam("BANDIT_LEADER").addPlayer(player);
-        banditBoard.getTeam("BANDIT_LEADER").addPlayer(player);
+        for (Scoreboard board : boards.values()) {
+            for (OfflinePlayer p : board.getTeam("BANDIT_LEADER").getPlayers())
+                board.getTeam("BANDIT_LEADER").removePlayer(p);
+            board.getTeam("BANDIT_LEADER").addPlayer(player);
+        }
     }
 
     public void setScore(String entry, int score) {
         if (score == 0)
             setScore(entry, 1); // This ensures that the score of 0 is put onto the scoreboard
-        rangerBoard.getObjective(DisplaySlot.SIDEBAR).getScore(entry).setScore(score);
-        banditBoard.getObjective(DisplaySlot.SIDEBAR).getScore(entry).setScore(score);
+        for (Scoreboard board : boards.values()) {
+            board.getObjective(DisplaySlot.SIDEBAR).getScore(entry).setScore(score);
+        }
     }
 
     public int getScore(String entry) {
-        return rangerBoard.getObjective(DisplaySlot.SIDEBAR).getScore(entry).getScore();
+        return boards.get(GameTeam.RANGERS).getObjective(DisplaySlot.SIDEBAR).getScore(entry).getScore();
     }
 }
