@@ -7,8 +7,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 import net.coasterman10.rangers.Game;
-import net.coasterman10.rangers.GameSign;
 import net.coasterman10.rangers.GamePlayer;
+import net.coasterman10.rangers.GameSign;
+import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.Rangers;
 
 import org.bukkit.Bukkit;
@@ -59,10 +60,12 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
-        GamePlayer data = plugin.getPlayerData(e.getPlayer());
-        if (data.getGame() != null)
-            data.getGame().removePlayer(e.getPlayer());
-        plugin.removePlayerData(e.getPlayer());
+        GamePlayer data = PlayerManager.getPlayer(e.getPlayer());
+        if (data.getGame() != null) {
+            data.getGame().removePlayer(data);
+            e.getPlayer().getWorld().dropItemNaturally(e.getPlayer().getEyeLocation(), getHead(e.getPlayer()));
+        }
+        PlayerManager.removePlayer(e.getPlayer());
     }
 
     @EventHandler
@@ -71,7 +74,7 @@ public class PlayerListener implements Listener {
             return;
         Location loc = e.getClickedBlock().getLocation();
         if (signs.containsKey(loc)) {
-            signs.get(loc).getGame().addPlayer(e.getPlayer());
+            signs.get(loc).getGame().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
         }
         if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
                 && e.getPlayer().getItemInHand().getType() == Material.SKULL_ITEM) {
@@ -89,22 +92,16 @@ public class PlayerListener implements Listener {
                 it.remove();
 
         // Drop the victim's head
-        ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
-        SkullMeta meta = (SkullMeta) head.getItemMeta();
-        meta.setOwner(e.getEntity().getName());
-        head.setItemMeta(meta);
-        e.getDrops().add(head);
-
-        plugin.getPlayerData(e.getEntity()).setAlive(false);
+        e.getDrops().add(getHead(e.getEntity()));
     }
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
-        Game g = plugin.getPlayerData(e.getPlayer()).getGame();
+        Game g = PlayerManager.getPlayer(e.getPlayer()).getGame();
         if (g == null)
-            e.getPlayer().teleport(plugin.getLobbySpawn());
+            e.setRespawnLocation(plugin.getLobbySpawn());
         else
-            e.getPlayer().teleport(g.getLobbySpawn());
+            e.setRespawnLocation(g.getLobbySpawn());
     }
 
     @EventHandler
@@ -114,21 +111,32 @@ public class PlayerListener implements Listener {
             if (meta.hasOwner()) {
                 @SuppressWarnings("deprecation")
                 Player owner = Bukkit.getPlayer(meta.getOwner());
-                GamePlayer ownerData = plugin.getPlayerData(owner);
-                GamePlayer pickupData = plugin.getPlayerData(e.getPlayer());
+                GamePlayer ownerData = PlayerManager.getPlayer(owner);
+                GamePlayer pickupData = PlayerManager.getPlayer(e.getPlayer());
                 if (ownerData.getTeam() == pickupData.getTeam()) {
                     e.setCancelled(true);
                 }
             }
+        } else {
+            if (!allowedDrops.contains(e.getItem().getItemStack().getType()))
+                e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
         if (e.getEntity() instanceof Player && e.getDamager() instanceof Player) {
-            Game g = plugin.getPlayerData((Player) e.getEntity()).getGame();
+            Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
             if (g == null || (g != null && !g.allowPvp()))
                 e.setCancelled(true);
         }
+    }
+    
+    private static ItemStack getHead(Player player) {
+        ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
+        SkullMeta meta = (SkullMeta) head.getItemMeta();
+        meta.setOwner(player.getName());
+        head.setItemMeta(meta);
+        return head;
     }
 }

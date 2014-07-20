@@ -34,7 +34,7 @@ public class RangerKit implements Kit {
         inv.setContents(BASE);
         inv.setArmorContents(ARMOR);
 
-        if (player.getUpgradeSelection("bow").equals("flame")) {
+        if (player.getUpgradeSelection("ranger.bow").equals("flamelongbow")) {
             new ItemStackBuilder(inv.getItem(1)).addEnchantment(Enchantment.ARROW_FIRE, 1).setDisplayName(
                     "Flame Longbow");
         }

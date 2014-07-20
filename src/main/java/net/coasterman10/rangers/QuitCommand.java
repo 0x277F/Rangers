@@ -18,9 +18,9 @@ public class QuitCommand implements CommandExecutor {
             return false;
         if (sender instanceof Player) {
             Player p = (Player) sender;
-            GamePlayer data = plugin.getPlayerData(p);
+            GamePlayer data = PlayerManager.getPlayer(p);
             if (data.getGame() != null) {
-                data.getGame().removePlayer(p);
+                data.getGame().removePlayer(data);
                 p.setHealth(20D);
                 p.setFoodLevel(20);
                 p.setSaturation(20F);

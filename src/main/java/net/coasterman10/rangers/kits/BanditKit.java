@@ -38,7 +38,7 @@ public class BanditKit implements Kit {
             inv.setItem(1, new ItemStackBuilder(Material.DIAMOND_SPADE).setDisplayName("Mace").build());
             inv.remove(Material.ARROW);
         } else {
-            if (player.getUpgradeSelection("bow").equals("flame")) {
+            if (player.getUpgradeSelection("bandit.bow").equals("flamecrossbow")) {
                 inv.setItem(1, new ItemStackBuilder(Material.BOW).addEnchantment(Enchantment.ARROW_KNOCKBACK, 1)
                         .addEnchantment(Enchantment.ARROW_FIRE, 1).setDisplayName("Flame Crossbow").build());
             }

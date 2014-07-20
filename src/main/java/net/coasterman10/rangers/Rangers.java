@@ -6,13 +6,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
+import net.coasterman10.rangers.listeners.AbilityListener;
+import net.coasterman10.rangers.listeners.MenuManager;
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.WorldListener;
+import net.coasterman10.rangers.menu.BanditSecondaryMenu;
+import net.coasterman10.rangers.menu.BowMenu;
+import net.coasterman10.rangers.menu.RangerAbilityMenu;
+import net.coasterman10.rangers.menu.RangerSecondaryMenu;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,7 +27,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -36,11 +40,13 @@ public class Rangers extends JavaPlugin {
     private Location lobbySpawn;
     private World gameWorld;
     private Map<Location, GameSign> signs = new HashMap<>();
-    private Map<UUID, GamePlayer> players = new HashMap<>();
 
     private GameMapManager gameMapManager;
     private WorldListener worldListener;
     private PlayerListener playerListener;
+    private AbilityListener abilityListener;
+    private MenuManager menuManager;
+
     private ArenaManager arenas;
 
     @Override
@@ -53,15 +59,26 @@ public class Rangers extends JavaPlugin {
 
         worldListener = new WorldListener();
         playerListener = new PlayerListener(this);
+        abilityListener = new AbilityListener(this);
+        menuManager = new MenuManager();
 
         saveDefaultConfig();
         saveDefaultConfigValues();
         loadConfig();
         loadArenas();
 
+        menuManager.addSignMenu(new RangerAbilityMenu(),
+                new SignText().setLine(1, "Select").setLine(2, "Ranger Ability"));
+        menuManager.addSignMenu(new BowMenu(), new SignText().setLine(1, "Select").setLine(2, "Bow Upgrades"));
+        menuManager.addSignMenu(new RangerSecondaryMenu(),
+                new SignText().setLine(1, "Select Ranger").setLine(2, "Secondary"));
+        menuManager.addSignMenu(new BanditSecondaryMenu(),
+                new SignText().setLine(1, "Select Bandit").setLine(2, "Secondary"));
+
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);
         pm.registerEvents(playerListener, this);
+        pm.registerEvents(abilityListener, this);
 
         getCommand("quit").setExecutor(new QuitCommand(this));
     }
@@ -69,24 +86,6 @@ public class Rangers extends JavaPlugin {
     @Override
     public void onDisable() {
 
-    }
-
-    public GamePlayer getPlayerData(Player p) {
-        return getPlayerData(p.getUniqueId());
-    }
-
-    public GamePlayer getPlayerData(UUID id) {
-        if (!players.containsKey(id))
-            players.put(id, new GamePlayer(id));
-        return players.get(id);
-    }
-    
-    public void removePlayerData(Player p) {
-        removePlayerData(p.getUniqueId());
-    }
-    
-    public void removePlayerData(UUID id) {
-        players.remove(id);
     }
 
     public Location getLobbySpawn() {
@@ -117,11 +116,11 @@ public class Rangers extends JavaPlugin {
 
         arenas = new ArenaManager(this, gameWorld, gameMapManager);
         arenas.loadArenas();
-        
+
         // Common Settings - this is the alternative to global variables
         CommonSettings settings = new CommonSettings(this);
         settings.load();
-        
+
         // Iterate over the map lists in the config file with the sign locations
         List<Map<?, ?>> mapList = getConfig().getMapList("signs");
         for (Map<?, ?> map : mapList) {

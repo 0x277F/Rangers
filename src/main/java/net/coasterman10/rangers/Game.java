@@ -7,7 +7,6 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import me.confuser.barapi.BarAPI;
 import net.coasterman10.rangers.kits.Kit;
@@ -27,7 +26,6 @@ public class Game {
     private static int nextId;
 
     private final int id;
-    private final Rangers plugin;
     private final CommonSettings settings;
     private Arena arena;
 
@@ -39,13 +37,15 @@ public class Game {
     private Map<GameTeam, Collection<GamePlayer>> teams = new EnumMap<>(GameTeam.class);
     private GamePlayer banditLeader;
 
+    // Initial ranger head-count unaffected by rangers leaving the game
+    private int totalRangers;
+
     private State state;
     private int seconds;
 
     public Game(Rangers plugin, GameSign sign, CommonSettings settings) {
         id = nextId++;
 
-        this.plugin = plugin;
         this.sign = sign;
         this.settings = settings;
 
@@ -75,42 +75,45 @@ public class Game {
         return id;
     }
 
-    public void addPlayer(Player player) {
+    public void addPlayer(GamePlayer player) {
+        Player handle = player.getHandle();
+
         if (state == State.INACTIVE) {
-            player.sendMessage(ChatColor.RED + "That game is not set up correctly, please notify an administrator.");
+            handle.sendMessage(ChatColor.RED + "That game is not set up correctly, please notify an administrator.");
             return;
         }
 
         if (state == State.LOBBY || (state == State.STARTING && seconds > settings.lockTime)) {
             if (players.size() == settings.maxPlayers) {
-                player.sendMessage(ChatColor.RED + "This game is full!");
+                handle.sendMessage(ChatColor.RED + "This game is full!");
                 return;
             }
-            players.add(plugin.getPlayerData(player));
-            plugin.getPlayerData(player).setGame(this);
-            player.teleport(arena.getLobbySpawn());
-            player.setHealth(20.0);
-            player.setFoodLevel(20);
-            player.setSaturation(20F);
-            player.getInventory().clear();
-            player.getInventory().setArmorContents(null);
-            broadcast(ChatColor.YELLOW + player.getName() + ChatColor.AQUA + " joined the game");
+            players.add(player);
+            player.setGame(this);
+            handle.teleport(arena.getLobbySpawn());
+            handle.setHealth(20.0);
+            handle.setFoodLevel(20);
+            handle.setSaturation(20F);
+            handle.getInventory().clear();
+            handle.getInventory().setArmorContents(null);
+            broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
             sign.setPlayers(players.size());
         } else {
-            player.sendMessage(ChatColor.RED + "You cannot join this game once it is in progress!");
+            handle.sendMessage(ChatColor.RED + "You cannot join this game once it is in progress!");
         }
     }
 
-    public void removePlayer(Player player) {
-        UUID id = player.getUniqueId();
-        if (!players.contains(id))
+    public void removePlayer(GamePlayer player) {
+        if (!players.contains(player))
             return;
-        players.remove(id);
+        players.remove(player);
         for (Collection<GamePlayer> team : teams.values())
             team.remove(player);
         sign.setPlayers(players.size());
-        BarAPI.removeBar(player);
-        player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+        if (player.getHandle() != null) {
+            BarAPI.removeBar(player.getHandle());
+            player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+        }
     }
 
     private void broadcast(String msg) {
@@ -142,6 +145,8 @@ public class Game {
             }
         }
 
+        totalRangers = teams.get(GameTeam.RANGERS).size();
+
         scoreboard.setBanditLeader(banditLeader.getHandle());
     }
 
@@ -161,6 +166,20 @@ public class Game {
                             }
                         }
 
+                        // Score for the bandit leader's head in this chest
+                        if (banditLeader.getHandle().getName().equals(meta.getOwner())) {
+                            // If the head is in the rangers chest, good. If in the bandit chest, no good, remove it.
+                            if (t == GameTeam.RANGERS) {
+                                scoreboard.setScore("Bandit Leader", scoreboard.getScore("Bandit Leader") + 1);
+                                state.getBlockInventory().remove(item);
+                            } else {
+                                loc.getWorld().dropItemNaturally(
+                                        loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
+                                state.getBlockInventory().remove(item);
+                                continue;
+                            }
+                        }
+
                         // Remove heads from the chest's own team that don't belong in it
                         for (GamePlayer p : teams.get(t)) {
                             if (meta.getOwner().equals(p.getHandle().getName())) {
@@ -168,17 +187,6 @@ public class Game {
                                 loc.getWorld().dropItemNaturally(
                                         loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
                             }
-                        }
-
-                        // Score for the bandit leader's head in this chest
-                        if (banditLeader.getHandle().getName().equals(meta.getOwner())) {
-                            // If the head is in the rangers chest, good. If in the bandit chest, no good, remove it.
-                            if (t == GameTeam.RANGERS)
-                                scoreboard.setScore("Bandit Leader", scoreboard.getScore("Bandit Leader") + 1);
-                            else
-                                loc.getWorld().dropItemNaturally(
-                                        loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
-                            state.getBlockInventory().remove(item);
                         }
                     }
                 }
@@ -217,15 +225,18 @@ public class Game {
                 for (GamePlayer p : g.players) {
                     BarAPI.removeBar(p.getHandle());
                     p.getHandle().teleport(g.arena.getLobbySpawn());
-                    g.scoreboard.setTeam(p.getHandle(), null);
+                    p.getHandle().getInventory().clear();
+                    p.getHandle().getInventory().setContents(null);
                 }
+                g.scoreboard.reset();
             }
 
             @Override
             public void onSecond(final Game g) {
                 for (GamePlayer p : g.players) {
-                    BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers " + ChatColor.BLUE
-                            + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA + "69.137.10.168", 1F);
+                    BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers "
+                            + ChatColor.BLUE + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA
+                            + "69.137.10.168", 1F);
                 }
                 if (g.players.size() >= g.settings.minPlayers) {
                     g.setState(State.STARTING);
@@ -266,9 +277,9 @@ public class Game {
                 g.scoreboard.setScore("Rangers", 0);
                 g.scoreboard.setScore("Bandit Leader", 0);
                 for (GamePlayer p : g.players) {
-                    BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers " + ChatColor.BLUE
-                            + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA + "69.137.10.168", 1F);
-                    p.setAlive(true);
+                    BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers "
+                            + ChatColor.BLUE + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA
+                            + "69.137.10.168", 1F);
                 }
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
                     p.getHandle().teleport(g.arena.getRangerSpawn());
@@ -286,17 +297,12 @@ public class Game {
                 g.checkChest(GameTeam.BANDITS);
 
                 // Check victory conditions
-                if (!g.banditLeader.isAlive()) {
+                if (g.scoreboard.getScore("Bandit Leader") == 1) {
                     g.setState(ENDING);
                     g.broadcast(ChatColor.RED + "The Bandit Leader has been defeated!");
                     g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
                 } else {
-                    // If all the rangers are dead, the bandits have won
-                    boolean rangerAlive = false;
-                    for (GamePlayer ranger : g.teams.get(GameTeam.RANGERS))
-                        if (ranger.isAlive())
-                            rangerAlive = true;
-                    if (!rangerAlive) {
+                    if (g.scoreboard.getScore("Rangers") == g.totalRangers) {
                         g.setState(ENDING);
                         g.broadcast(ChatColor.RED + "The rangers have been defeated!");
                         g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
@@ -338,5 +344,9 @@ public class Game {
 
     public CommonSettings getSettings() {
         return settings;
+    }
+
+    public boolean isRunning() {
+        return state == State.RUNNING;
     }
 }
