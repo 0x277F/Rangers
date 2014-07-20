@@ -1,5 +1,6 @@
 package net.coasterman10.rangers.listeners;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import net.coasterman10.rangers.SignText;
@@ -14,8 +15,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 public class MenuManager implements Listener {
-    private Map<String, Menu> menus;
-    private Map<SignText, Menu> signMenus;
+    private Map<String, Menu> menus = new HashMap<>();
+    private Map<SignText, Menu> signMenus = new HashMap<>();
     
     public void addMenu(Menu menu) {
         menus.put(menu.getTitle(), menu);
