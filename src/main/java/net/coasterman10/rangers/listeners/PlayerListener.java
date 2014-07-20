@@ -13,15 +13,19 @@ import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.Rangers;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.SkullType;
 import org.bukkit.block.Chest;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -30,6 +34,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.projectiles.ProjectileSource;
 
 public class PlayerListener implements Listener {
     private final Rangers plugin;
@@ -86,13 +91,69 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
-        // Only drop allowed items (food, possibly other items in future)
-        for (Iterator<ItemStack> it = e.getDrops().iterator(); it.hasNext();)
-            if (!allowedDrops.contains(it.next().getType()))
-                it.remove();
+        GamePlayer player = PlayerManager.getPlayer(e.getEntity());
+        if (player.getGame() != null) {
+            StringBuilder msg = new StringBuilder(64);
+            msg.append(player.getTeam().getChatColor()).append(e.getEntity().getName());
+            msg.append("(").append(player.getTeam().getName()).append(")");
+            EntityDamageEvent cause = e.getEntity().getLastDamageCause();
+            if (cause instanceof EntityDamageByEntityEvent) {
+                Entity damager = ((EntityDamageByEntityEvent) cause).getDamager();
+                if (damager instanceof Player) {
+                    msg.append(ChatColor.DARK_RED).append(" was slain by ");
+                    GamePlayer attacker = PlayerManager.getPlayer((Player) damager);
+                    msg.append(attacker.getTeam().getChatColor()).append(((Player) damager).getName());
+                    msg.append("(").append(attacker.getTeam().getName()).append(")");
+                    msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
+                    ItemStack item = ((Player) damager).getItemInHand();
+                    String itemName = item.getItemMeta().getDisplayName();
+                    if (itemName != null) {
+                        msg.append(itemName);
+                    } else {
+                        String typeName = item.getType().name();
+                        msg.append(typeName.substring(0, 1).toUpperCase()).append(typeName.substring(1).toLowerCase());
+                    }
+                } else if (damager instanceof Arrow) {
+                    ProjectileSource shooter = ((Arrow) damager).getShooter();
+                    if (shooter instanceof Player) {
+                        msg.append(ChatColor.DARK_RED).append(" was shot by ");
+                        GamePlayer attacker = PlayerManager.getPlayer((Player) shooter);
+                        msg.append(attacker.getTeam().getChatColor()).append(((Player) shooter).getName());
+                        msg.append("(").append(attacker.getTeam().getName()).append(")");
+                        msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
+                        for (ItemStack item : ((Player) damager).getInventory()) {
+                            if (item.getType() == Material.BOW) {
+                                String itemName = item.getItemMeta().getDisplayName();
+                                if (itemName != null) {
+                                    msg.append(itemName);
+                                } else {
+                                    String typeName = item.getType().name();
+                                    msg.append(typeName.substring(0, 1).toUpperCase()).append(
+                                            typeName.substring(1).toLowerCase());
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    msg.append(ChatColor.DARK_RED + " was killed");
+                }
+            } else {
+                // TODO: Fill in alternate death reasons
+                msg.append(ChatColor.DARK_RED + " died");
+            }
+            e.setDeathMessage(msg.toString());
 
-        // Drop the victim's head
-        e.getDrops().add(getHead(e.getEntity()));
+            // Only drop allowed items (food, possibly other items in future)
+            for (Iterator<ItemStack> it = e.getDrops().iterator(); it.hasNext();)
+                if (!allowedDrops.contains(it.next().getType()))
+                    it.remove();
+
+            // Drop the victim's head
+            e.getDrops().add(getHead(e.getEntity()));
+        } else {
+            e.getDrops().clear(); // There should be no drops at all outside of the game
+            e.setDeathMessage(null);
+        }
     }
 
     @EventHandler
