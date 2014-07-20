@@ -111,10 +111,12 @@ public class PlayerListener implements Listener {
             if (meta.hasOwner()) {
                 @SuppressWarnings("deprecation")
                 Player owner = Bukkit.getPlayer(meta.getOwner());
-                GamePlayer ownerData = PlayerManager.getPlayer(owner);
-                GamePlayer pickupData = PlayerManager.getPlayer(e.getPlayer());
-                if (ownerData.getTeam() == pickupData.getTeam()) {
-                    e.setCancelled(true);
+                if (owner != null) {
+                    GamePlayer ownerData = PlayerManager.getPlayer(owner);
+                    GamePlayer pickupData = PlayerManager.getPlayer(e.getPlayer());
+                    if (ownerData.getTeam() == pickupData.getTeam()) {
+                        e.setCancelled(true);
+                    }
                 }
             }
         } else {
@@ -131,7 +133,7 @@ public class PlayerListener implements Listener {
                 e.setCancelled(true);
         }
     }
-    
+
     private static ItemStack getHead(Player player) {
         ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
         SkullMeta meta = (SkullMeta) head.getItemMeta();

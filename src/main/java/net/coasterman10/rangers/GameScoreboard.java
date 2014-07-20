@@ -16,7 +16,22 @@ public class GameScoreboard {
     private Map<GameTeam, Scoreboard> boards = new EnumMap<>(GameTeam.class);
 
     public GameScoreboard() {
-        reset();
+        for (GameTeam t : GameTeam.values()) {
+            Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
+            boards.put(t, board);
+
+            Objective o = board.registerNewObjective("obj", "dummy");
+            o.setDisplayName(ChatColor.GOLD + "Heads Collected");
+            o.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+            Team friendly = board.registerNewTeam(t.name());
+            Team enemy = board.registerNewTeam(t.opponent().name());
+            Team banditLeader = board.registerNewTeam("BANDIT_LEADER");
+            friendly.setPrefix(ChatColor.GREEN.toString());
+            enemy.setPrefix(ChatColor.RED.toString());
+            banditLeader.setPrefix((t == GameTeam.BANDITS ? ChatColor.GREEN : ChatColor.RED) + "♛ ");
+            banditLeader.setSuffix(" ♛");
+        }
     }
 
     public Scoreboard getScoreboard(GameTeam team) {
@@ -54,20 +69,9 @@ public class GameScoreboard {
 
     public void reset() {
         for (GameTeam t : GameTeam.values()) {
-            Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
-            boards.put(t, board);
-
-            Objective o = board.registerNewObjective("obj", "dummy");
-            o.setDisplayName(ChatColor.GOLD + "Heads Collected");
-            o.setDisplaySlot(DisplaySlot.SIDEBAR);
-
-            Team friendly = board.registerNewTeam(t.name());
-            Team enemy = board.registerNewTeam(t.opponent().name());
-            Team banditLeader = board.registerNewTeam("BANDIT_LEADER");
-            friendly.setPrefix(ChatColor.GREEN.toString());
-            enemy.setPrefix(ChatColor.RED.toString());
-            banditLeader.setPrefix((t == GameTeam.BANDITS ? ChatColor.GREEN : ChatColor.RED) + "♛ ");
-            banditLeader.setSuffix(" ♛");
+            boards.get(t).resetScores("Rangers");
+            boards.get(t).resetScores("Bandits");
+            boards.get(t).resetScores("Bandit Leader");
         }
     }
 }

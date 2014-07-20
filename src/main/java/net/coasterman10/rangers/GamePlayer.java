@@ -24,6 +24,11 @@ public class GamePlayer {
 
     public GamePlayer(UUID id) {
         this.id = id;
+        upgrades.put("ranger.ability", "none");
+        upgrades.put("ranger.bow", "longbow");
+        upgrades.put("ranger.secondary", "throwingknife");
+        upgrades.put("bandit.bow", "crossbow");
+        upgrades.put("bandit.secondary", "bow");
     }
 
     public Player getHandle() {
@@ -59,6 +64,10 @@ public class GamePlayer {
         return s != null ? s : "default";
     }
     
+    public void setUpgradeSelection(String name, String value) {
+        upgrades.put(name, value);
+    }
+    
     public boolean isVanished() {
         return vanished;
     }
@@ -87,9 +96,5 @@ public class GamePlayer {
     @Override
     public int hashCode() {
         return id.hashCode();
-    }
-
-    public void setUpgradeSelection(String name, String value) {
-        upgrades.put(name, value);
     }
 }

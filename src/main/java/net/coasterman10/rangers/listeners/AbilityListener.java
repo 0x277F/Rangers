@@ -44,7 +44,7 @@ public class AbilityListener implements Listener {
                     throwingKnifeCooldowns.add(id);
                     Location eye = player.getEyeLocation();
                     final Entity knife = player.getWorld().dropItem(eye, e.getItem());
-                    knife.setVelocity(eye.getDirection().multiply(0.6));
+                    knife.setVelocity(eye.getDirection().multiply(0.8));
 
                     // We need to know who shot the knife in case it kills the victim
                     knife.setMetadata("shooter", new FixedMetadataValue(plugin, id));
@@ -53,6 +53,12 @@ public class AbilityListener implements Listener {
                     new BukkitRunnable() {
                         @Override
                         public void run() {
+                            // A knife on the ground has certainly missed
+                            if (knife.isOnGround()) {
+                                cancel();
+                                return;
+                            }
+                            
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 // Skip anyone not in this world
                                 if (!p.getWorld().equals(knife.getWorld()))
@@ -76,10 +82,6 @@ public class AbilityListener implements Listener {
                                     }
                                 }
                             }
-
-                            // A knife on the ground has certainly missed
-                            if (knife.isOnGround())
-                                cancel();
                         }
                     }.runTaskTimer(plugin, 0L, 1L);
 
@@ -135,6 +137,9 @@ public class AbilityListener implements Listener {
     public void onSneak(PlayerToggleSneakEvent e) {
         final GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
 
+        if (player.getGame() == null)
+            return; 
+        
         if (player.getGame().isRunning() && player.getTeam() == GameTeam.RANGERS
                 && player.getUpgradeSelection("ranger.ability").equals("vanish")) {
             if (e.getPlayer().isSneaking()) {
