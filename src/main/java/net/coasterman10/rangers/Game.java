@@ -66,6 +66,7 @@ public class Game {
 
     public void setArena(Arena arena) {
         this.arena = arena;
+        arena.setUsed(true);
         sign.setMapName(arena.getMapName());
         sign.setStatusMessage("In Lobby");
         state = State.LOBBY;
