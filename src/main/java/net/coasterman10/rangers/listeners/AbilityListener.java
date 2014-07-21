@@ -55,6 +55,7 @@ public class AbilityListener implements Listener {
                         public void run() {
                             // A knife on the ground has certainly missed
                             if (knife.isOnGround()) {
+                                knife.remove();
                                 cancel();
                                 return;
                             }
