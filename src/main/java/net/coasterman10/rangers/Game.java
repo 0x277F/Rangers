@@ -226,7 +226,7 @@ public class Game {
                     BarAPI.removeBar(p.getHandle());
                     p.getHandle().teleport(g.arena.getLobbySpawn());
                     p.getHandle().getInventory().clear();
-                    p.getHandle().getInventory().setContents(null);
+                    p.getHandle().getInventory().setArmorContents(null);
                 }
                 g.scoreboard.reset();
             }

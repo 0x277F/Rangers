@@ -73,9 +73,9 @@ public class AbilityListener implements Listener {
                                 if (kY >= pY && kY <= pY + 2.0) {
                                     // Check distance is less than 0.2 (distance square is faster)
                                     double distX = pLoc.getX() - kLoc.getX();
-                                    double distY = pLoc.getY() - kLoc.getY();
-                                    double distXYsquare = distX * distX + distY * distY;
-                                    if (distXYsquare < 0.4) {
+                                    double distZ = pLoc.getZ() - kLoc.getZ();
+                                    double distXZsquare = distX * distX + distZ * distZ;
+                                    if (distXZsquare < 0.4) {
                                         p.damage(4.0, knife);
                                         knife.remove();
                                         cancel();
