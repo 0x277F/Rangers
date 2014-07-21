@@ -126,7 +126,10 @@ public class PlayerListener implements Listener {
                         GamePlayer attacker = PlayerManager.getPlayer((Player) shooter);
                         msg.append(attacker.getTeam().getChatColor()).append(((Player) shooter).getName());
                         msg.append("(").append(attacker.getTeam().getName()).append(")");
-                        for (ItemStack item : ((Player) damager).getInventory()) {
+                        boolean foundBow = false;
+                        for (ItemStack item : ((Player) shooter).getInventory()) {
+                            if (item == null)
+                                continue;
                             if (item.getType() == Material.BOW) {
                                 msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
                                 String itemName = item.getItemMeta().getDisplayName();
@@ -137,11 +140,14 @@ public class PlayerListener implements Listener {
                                     msg.append(typeName.substring(0, 1).toUpperCase()).append(
                                             typeName.substring(1).toLowerCase());
                                 }
-                                continue;
+                                foundBow = true;
+                                break;
                             }
                         }
-                        msg.append(ChatColor.DARK_RED).append(" using their ");
-                        msg.append(ChatColor.YELLOW).append("BARE HANDS!");
+                        if (!foundBow) {
+                            msg.append(ChatColor.DARK_RED).append(" using their ");
+                            msg.append(ChatColor.YELLOW).append("BARE HANDS!");
+                        }
                     }
                 } else {
                     msg.append(ChatColor.DARK_RED + " was killed");
