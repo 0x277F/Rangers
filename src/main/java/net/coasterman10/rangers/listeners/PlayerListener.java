@@ -104,14 +104,20 @@ public class PlayerListener implements Listener {
                     GamePlayer attacker = PlayerManager.getPlayer((Player) damager);
                     msg.append(attacker.getTeam().getChatColor()).append(((Player) damager).getName());
                     msg.append("(").append(attacker.getTeam().getName()).append(")");
-                    msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
                     ItemStack item = ((Player) damager).getItemInHand();
-                    String itemName = item.getItemMeta().getDisplayName();
-                    if (itemName != null) {
-                        msg.append(itemName);
+                    if (item != null) {
+                        msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
+                        String itemName = item.getItemMeta().getDisplayName();
+                        if (itemName != null) {
+                            msg.append(itemName);
+                        } else {
+                            String typeName = item.getType().name();
+                            msg.append(typeName.substring(0, 1).toUpperCase()).append(
+                                    typeName.substring(1).toLowerCase());
+                        }
                     } else {
-                        String typeName = item.getType().name();
-                        msg.append(typeName.substring(0, 1).toUpperCase()).append(typeName.substring(1).toLowerCase());
+                        msg.append(ChatColor.DARK_RED).append(" using their ");
+                        msg.append(ChatColor.YELLOW).append("BARE HANDS!");
                     }
                 } else if (damager instanceof Arrow) {
                     ProjectileSource shooter = ((Arrow) damager).getShooter();
@@ -120,9 +126,9 @@ public class PlayerListener implements Listener {
                         GamePlayer attacker = PlayerManager.getPlayer((Player) shooter);
                         msg.append(attacker.getTeam().getChatColor()).append(((Player) shooter).getName());
                         msg.append("(").append(attacker.getTeam().getName()).append(")");
-                        msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
                         for (ItemStack item : ((Player) damager).getInventory()) {
                             if (item.getType() == Material.BOW) {
+                                msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
                                 String itemName = item.getItemMeta().getDisplayName();
                                 if (itemName != null) {
                                     msg.append(itemName);
@@ -131,8 +137,11 @@ public class PlayerListener implements Listener {
                                     msg.append(typeName.substring(0, 1).toUpperCase()).append(
                                             typeName.substring(1).toLowerCase());
                                 }
+                                continue;
                             }
                         }
+                        msg.append(ChatColor.DARK_RED).append(" using their ");
+                        msg.append(ChatColor.YELLOW).append("BARE HANDS!");
                     }
                 } else {
                     msg.append(ChatColor.DARK_RED + " was killed");
