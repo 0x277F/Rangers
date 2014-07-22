@@ -9,6 +9,7 @@ import net.coasterman10.rangers.GameTeam;
 import net.coasterman10.rangers.PlayerManager;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -17,6 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -31,6 +33,46 @@ public class AbilityListener implements Listener {
 
     public AbilityListener(Plugin plugin) {
         this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onToggleFlight(PlayerToggleFlightEvent e) {
+        if (e.isFlying() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
+            final Player p = e.getPlayer();
+            GamePlayer player = PlayerManager.getPlayer(p);
+            if (player.getGame() != null && player.getGame().isRunning() && player.getTeam() == GameTeam.RANGERS) {
+                // Double jump
+                e.setCancelled(true);
+                p.setAllowFlight(false);
+                p.setFlying(false);
+                p.setVelocity(p.getLocation().getDirection().multiply(1.5).setY(1.0));
+                p.setExp(0F);
+
+                final int PERIOD = 5;
+                final int TICKS = 160;
+                new BukkitRunnable() {
+                    int time = TICKS;
+
+                    @Override
+                    public void run() {
+                        if (p.isOnline()) {
+                            if (time == 0) {
+                                // Slightly below a full bar, this decrements the float by its smallest increment
+                                p.setExp(Float.intBitsToFloat(Float.floatToIntBits(1F) - 1));
+                                p.setAllowFlight(true); // Allow another double jump
+                                cancel();
+                            } else {
+                                p.setExp((TICKS - time) / TICKS);
+                                time -= PERIOD;
+                            }
+                        } else {
+                            // Not much point in this if they are offline
+                            cancel();
+                        }
+                    }
+                }.runTaskTimer(plugin, 0L, (long) PERIOD);
+            }
+        }
     }
 
     @EventHandler
@@ -59,12 +101,12 @@ public class AbilityListener implements Listener {
                                 cancel();
                                 return;
                             }
-                            
+
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 // Don't hurt the guy who threw it
                                 if (player.equals(p.getUniqueId()))
                                     continue;
-                                
+
                                 // Skip anyone not in this world
                                 if (!p.getWorld().equals(knife.getWorld()))
                                     continue;
@@ -104,7 +146,7 @@ public class AbilityListener implements Listener {
                 Location eye = e.getPlayer().getEyeLocation();
                 final Entity striker = eye.getWorld().dropItem(eye, new ItemStack(Material.SLIME_BALL, 1));
                 striker.setVelocity(eye.getDirection().multiply(0.4));
-                
+
                 new BukkitRunnable() {
                     @Override
                     public void run() {
@@ -114,7 +156,7 @@ public class AbilityListener implements Listener {
                             // Skip players not in the world
                             if (!player.getWorld().equals(striker.getWorld()))
                                 continue;
-                            
+
                             if (player.getLocation().distance(striker.getLocation()) < 2.5) {
                                 // Rangers are the only players that can throw these, so only bandits can be damaged
                                 GamePlayer data = PlayerManager.getPlayer(player);
@@ -127,7 +169,7 @@ public class AbilityListener implements Listener {
                         }
                     }
                 }.runTaskLater(plugin, 40L);
-                
+
                 // Remove from the player's inventory
                 if (e.getItem().getAmount() > 1) {
                     e.getPlayer().getItemInHand().setAmount(e.getPlayer().getItemInHand().getAmount() - 1);
@@ -143,8 +185,8 @@ public class AbilityListener implements Listener {
         final GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
 
         if (player.getGame() == null)
-            return; 
-        
+            return;
+
         if (player.getGame().isRunning() && player.getTeam() == GameTeam.RANGERS
                 && player.getUpgradeSelection("ranger.ability").equals("vanish")) {
             if (e.getPlayer().isSneaking()) {

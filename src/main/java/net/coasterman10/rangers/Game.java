@@ -228,6 +228,8 @@ public class Game {
                     p.getHandle().teleport(g.arena.getLobbySpawn());
                     p.getHandle().getInventory().clear();
                     p.getHandle().getInventory().setArmorContents(null);
+                    p.getHandle().setExp(0F);
+                    p.getHandle().setAllowFlight(false);
                 }
                 g.scoreboard.reset();
             }
@@ -285,6 +287,9 @@ public class Game {
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
                     p.getHandle().teleport(g.arena.getRangerSpawn());
                     Kit.RANGER.apply(p);
+                    // Set up double jump bar
+                    p.getHandle().setExp(Float.intBitsToFloat(Float.floatToIntBits(1F) - 1));
+                    p.getHandle().setAllowFlight(true);
                 }
                 for (GamePlayer p : g.teams.get(GameTeam.BANDITS)) {
                     p.getHandle().teleport(g.arena.getBanditSpawn());

@@ -16,6 +16,7 @@ import net.coasterman10.rangers.Rangers;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.SkullType;
@@ -66,6 +67,12 @@ public class PlayerListener implements Listener {
         e.getPlayer().teleport(plugin.getLobbySpawn());
         e.getPlayer().getInventory().clear();
         e.getPlayer().getInventory().setArmorContents(null); // Essentials idiot devs still haven't figured this out
+
+        // Clear residual double jump
+        e.getPlayer().setExp(0F);
+        if (e.getPlayer().getGameMode() != GameMode.CREATIVE)
+            e.getPlayer().setAllowFlight(false);
+        
     }
 
     @EventHandler

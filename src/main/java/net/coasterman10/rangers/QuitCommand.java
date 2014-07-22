@@ -1,5 +1,6 @@
 package net.coasterman10.rangers;
 
+import org.bukkit.GameMode;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -7,11 +8,11 @@ import org.bukkit.entity.Player;
 
 public class QuitCommand implements CommandExecutor {
     private final Rangers plugin;
-    
+
     public QuitCommand(Rangers plugin) {
         this.plugin = plugin;
     }
-    
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length > 0)
@@ -26,6 +27,9 @@ public class QuitCommand implements CommandExecutor {
                 p.setSaturation(20F);
                 p.getInventory().clear();
                 p.getInventory().setArmorContents(null);
+                p.setExp(0F);
+                if (p.getGameMode() != GameMode.CREATIVE)
+                    p.setAllowFlight(false);
                 p.teleport(plugin.getLobbySpawn());
             }
         } else {
