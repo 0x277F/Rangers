@@ -15,16 +15,13 @@ public class SignText {
         lines[index] = line;
         return this;
     }
-
-    @Override
-    public int hashCode() {
-        return lines.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof SignText))
-            return false;
-        return lines.equals(((SignText) o).lines);
+    
+    public boolean matches(String[] lines) {
+        for (int i = 0; i < this.lines.length && i < lines.length; i++) {
+            if (!this.lines[i].equals("") && !this.lines[i].equals(lines[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 }

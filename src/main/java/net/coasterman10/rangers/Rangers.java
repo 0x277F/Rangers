@@ -79,6 +79,7 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(worldListener, this);
         pm.registerEvents(playerListener, this);
         pm.registerEvents(abilityListener, this);
+        pm.registerEvents(menuManager, this);
 
         getCommand("quit").setExecutor(new QuitCommand(this));
     }

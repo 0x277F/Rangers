@@ -21,7 +21,7 @@ public class RangerAbilityMenu implements Menu {
     @Override
     public void open(Player player) {
         Inventory inv = Bukkit.createInventory(null, 9, getTitle());
-        inv.addItem(new ItemStackBuilder(Material.EYE_OF_ENDER).setDisplayName("None").build());
+        inv.addItem(new ItemStackBuilder(Material.EYE_OF_ENDER).setDisplayName("Default").build());
         inv.addItem(new ItemStackBuilder(new Potion(PotionType.INVISIBILITY).toItemStack(1)).setDisplayName("Vanish")
                 .build());
         player.openInventory(inv);

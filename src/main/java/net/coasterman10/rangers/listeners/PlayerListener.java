@@ -4,11 +4,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import net.coasterman10.rangers.Game;
 import net.coasterman10.rangers.GamePlayer;
 import net.coasterman10.rangers.GameSign;
+import net.coasterman10.rangers.GameTeam;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.Rangers;
 
@@ -20,6 +22,7 @@ import org.bukkit.SkullType;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -27,6 +30,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
@@ -34,6 +38,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.projectiles.ProjectileSource;
 
 public class PlayerListener implements Listener {
@@ -92,6 +97,8 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
         GamePlayer player = PlayerManager.getPlayer(e.getEntity());
+
+        // Huge mess of code to generate death message. Don't ask.
         if (player.getGame() != null) {
             StringBuilder msg = new StringBuilder(64);
             msg.append(player.getTeam().getChatColor()).append(e.getEntity().getName());
@@ -149,6 +156,25 @@ public class PlayerListener implements Listener {
                             msg.append(ChatColor.YELLOW).append("BARE HANDS!");
                         }
                     }
+                } else if (damager instanceof Item) {
+                    ItemStack item = ((Item) damager).getItemStack();
+                    if (item.getType() == Material.TRIPWIRE_HOOK) {
+                        msg.append(ChatColor.DARK_RED).append(" was killed by ");
+                        String shooter = null;
+                        List<MetadataValue> metadata = damager.getMetadata("shooter");
+                        for (MetadataValue value : metadata) {
+                            if (value.getOwningPlugin().equals(plugin)) {
+                                shooter = value.asString();
+                                break;
+                            }
+                        }
+                        // Since it's fairly messy to deal with them offline I'm just hardcoding in that they
+                        // are a Ranger (since only Rangers get the throwing knife anyway)
+                        msg.append(GameTeam.RANGERS.getChatColor()).append(shooter);
+                        msg.append("(").append(GameTeam.RANGERS.getName()).append(")");
+                        msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
+                        msg.append("Throwing Knife");
+                    }
                 } else {
                     msg.append(ChatColor.DARK_RED + " was killed");
                 }
@@ -195,10 +221,16 @@ public class PlayerListener implements Listener {
                     }
                 }
             }
-        } else {
-            if (!allowedDrops.contains(e.getItem().getItemStack().getType()))
+        } else if (!allowedDrops.contains(e.getItem().getType())) {
+            GamePlayer pickup = PlayerManager.getPlayer(e.getPlayer());
+            if (pickup.getGame() != null && pickup.getGame().isRunning())
                 e.setCancelled(true);
         }
+    }
+
+    @EventHandler
+    public void onDropItem(PlayerDropItemEvent e) {
+        e.setCancelled(true);
     }
 
     @EventHandler

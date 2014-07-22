@@ -18,6 +18,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
@@ -37,17 +38,16 @@ public class AbilityListener implements Listener {
         if (e.getItem() != null) {
             if (e.getItem().getType() == Material.TRIPWIRE_HOOK) {
                 final Player player = e.getPlayer();
-                final UUID id = player.getUniqueId();
 
                 // 5 second cooldown
-                if (!throwingKnifeCooldowns.contains(id)) {
-                    throwingKnifeCooldowns.add(id);
+                if (!throwingKnifeCooldowns.contains(player.getUniqueId())) {
+                    throwingKnifeCooldowns.add(player.getUniqueId());
                     Location eye = player.getEyeLocation();
                     final Entity knife = player.getWorld().dropItem(eye, e.getItem());
                     knife.setVelocity(eye.getDirection().multiply(0.8));
 
                     // We need to know who shot the knife in case it kills the victim
-                    knife.setMetadata("shooter", new FixedMetadataValue(plugin, id));
+                    knife.setMetadata("shooter", new FixedMetadataValue(plugin, player.getName()));
 
                     // Hit detection - because I do not feel like using NMS to create my own entity
                     new BukkitRunnable() {
@@ -61,10 +61,14 @@ public class AbilityListener implements Listener {
                             }
                             
                             for (Player p : Bukkit.getOnlinePlayers()) {
+                                // Don't hurt the guy who threw it
+                                if (player.equals(p.getUniqueId()))
+                                    continue;
+                                
                                 // Skip anyone not in this world
                                 if (!p.getWorld().equals(knife.getWorld()))
                                     continue;
-                                Location pLoc = player.getLocation();
+                                Location pLoc = p.getLocation();
                                 Location kLoc = knife.getLocation();
 
                                 // Check the Y first - low cost first check
@@ -79,7 +83,7 @@ public class AbilityListener implements Listener {
                                         p.damage(4.0, knife);
                                         knife.remove();
                                         cancel();
-                                        return;
+                                        break;
                                     }
                                 }
                             }
@@ -90,7 +94,7 @@ public class AbilityListener implements Listener {
                     new BukkitRunnable() {
                         @Override
                         public void run() {
-                            throwingKnifeCooldowns.remove(id);
+                            throwingKnifeCooldowns.remove(player.getUniqueId());
                         }
                     }.runTaskLater(plugin, 100L);
                 }
@@ -98,7 +102,7 @@ public class AbilityListener implements Listener {
 
             if (e.getItem().getType() == Material.SLIME_BALL) {
                 Location eye = e.getPlayer().getEyeLocation();
-                final Entity striker = eye.getWorld().dropItem(eye, e.getItem());
+                final Entity striker = eye.getWorld().dropItem(eye, new ItemStack(Material.SLIME_BALL, 1));
                 striker.setVelocity(eye.getDirection().multiply(0.2));
                 
                 new BukkitRunnable() {

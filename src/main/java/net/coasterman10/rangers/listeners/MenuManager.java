@@ -2,6 +2,7 @@ package net.coasterman10.rangers.listeners;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import net.coasterman10.rangers.SignText;
 import net.coasterman10.rangers.menu.Menu;
@@ -17,11 +18,11 @@ import org.bukkit.event.player.PlayerInteractEvent;
 public class MenuManager implements Listener {
     private Map<String, Menu> menus = new HashMap<>();
     private Map<SignText, Menu> signMenus = new HashMap<>();
-    
+
     public void addMenu(Menu menu) {
         menus.put(menu.getTitle(), menu);
     }
-    
+
     public void addSignMenu(Menu menu, SignText text) {
         addMenu(menu);
         signMenus.put(text, menu);
@@ -33,9 +34,10 @@ public class MenuManager implements Listener {
             if (e.getClickedBlock().getType() == Material.WALL_SIGN
                     || e.getClickedBlock().getType() == Material.SIGN_POST) {
                 Sign s = (Sign) e.getClickedBlock().getState();
-                SignText text = new SignText(s.getLines());
-                if (signMenus.containsKey(text)) {
-                    signMenus.get(text).open(e.getPlayer());
+                for (Entry<SignText, Menu> menu : signMenus.entrySet()) {
+                    if (menu.getKey().matches(s.getLines())) {
+                        menu.getValue().open(e.getPlayer());
+                    }
                 }
             }
         }
