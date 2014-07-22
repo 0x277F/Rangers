@@ -103,7 +103,7 @@ public class AbilityListener implements Listener {
             if (e.getItem().getType() == Material.SLIME_BALL) {
                 Location eye = e.getPlayer().getEyeLocation();
                 final Entity striker = eye.getWorld().dropItem(eye, new ItemStack(Material.SLIME_BALL, 1));
-                striker.setVelocity(eye.getDirection().multiply(0.2));
+                striker.setVelocity(eye.getDirection().multiply(0.4));
                 
                 new BukkitRunnable() {
                     @Override
@@ -115,7 +115,7 @@ public class AbilityListener implements Listener {
                             if (!player.getWorld().equals(striker.getWorld()))
                                 continue;
                             
-                            if (player.getLocation().distanceSquared(striker.getLocation()) < 6.25) {
+                            if (player.getLocation().distance(striker.getLocation()) < 2.5) {
                                 // Rangers are the only players that can throw these, so only bandits can be damaged
                                 GamePlayer data = PlayerManager.getPlayer(player);
                                 if (data.getTeam() == GameTeam.BANDITS) {

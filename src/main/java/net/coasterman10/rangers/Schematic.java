@@ -3,16 +3,22 @@ package net.coasterman10.rangers;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Sign;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jnbt.ByteArrayTag;
 import org.jnbt.CompoundTag;
+import org.jnbt.IntTag;
+import org.jnbt.ListTag;
 import org.jnbt.NBTInputStream;
 import org.jnbt.ShortTag;
 import org.jnbt.StringTag;
@@ -24,12 +30,11 @@ public class Schematic {
     public Schematic() {
         blocks = new BlockData[0][0][0];
     }
-    
+
     public Schematic(File file) throws IOException, InvalidSchematicException {
         blocks = loadMCEditSchematicBlocks(file);
     }
-    
-    @SuppressWarnings("deprecation")
+
     public void build(Location origin) {
         World w = origin.getWorld();
         int x0 = origin.getBlockX();
@@ -38,15 +43,12 @@ public class Schematic {
         for (int i = 0; i < getWidth(); i++) {
             for (int j = 0; j < getHeight(); j++) {
                 for (int k = 0; k < getLength(); k++) {
-                    Block b = w.getBlockAt(x0 + i, y0 + j, z0 + k);
-                    b.setTypeId(blocks[i][j][k].id);
-                    b.setData(blocks[i][j][k].data);
+                    blocks[i][j][k].build(w.getBlockAt(x0 + i, y0 + j, z0 + k));
                 }
             }
         }
     }
-    
-    @SuppressWarnings("deprecation")
+
     public void buildDelayed(final Location origin, Plugin plugin) {
         new BukkitRunnable() {
             final World w = origin.getWorld();
@@ -54,20 +56,18 @@ public class Schematic {
             final int y0 = origin.getBlockY();
             final int z0 = origin.getBlockZ();
             int pos;
-            
+
             @Override
             public void run() {
                 if (getWidth() == 0 || getHeight() == 0 || getLength() == 0) {
                     cancel();
                     return;
                 }
-                
+
                 for (int i = 0; i < getWidth(); i++) {
                     for (int j = 0; j < getHeight(); j++) {
                         int k = pos;
-                        Block b = w.getBlockAt(x0 + i, y0 + j, z0 + k);
-                        b.setTypeId(blocks[i][j][k].id);
-                        b.setData(blocks[i][j][k].data);
+                        blocks[i][j][k].build(w.getBlockAt(x0 + i, y0 + j, z0 + k));
                     }
                 }
                 pos++;
@@ -170,12 +170,59 @@ public class Schematic {
         }
 
         BlockData[][][] blocks = new BlockData[width][height][length];
-
         for (int x = 0; x < width; ++x) {
             for (int y = 0; y < height; ++y) {
                 for (int z = 0; z < length; ++z) {
                     int i = y * width * length + z * width + x;
                     blocks[x][y][z] = new BlockData(ids[i], data[i]);
+                }
+            }
+        }
+
+        List<Tag> tileEntities = getChildTag(schematic, "TileEntities", ListTag.class).getValue();
+        for (Tag tag : tileEntities) {
+            if (!(tag instanceof CompoundTag))
+                continue;
+            CompoundTag t = (CompoundTag) tag;
+
+            String id = "";
+            int x = 0;
+            int y = 0;
+            int z = 0;
+
+            Map<String, Tag> values = new HashMap<String, Tag>();
+            for (Map.Entry<String, Tag> entry : t.getValue().entrySet()) {
+                if (entry.getKey().equals("x")) {
+                    if (entry.getValue() instanceof IntTag) {
+                        x = ((IntTag) entry.getValue()).getValue();
+                    }
+                } else if (entry.getKey().equals("y")) {
+                    if (entry.getValue() instanceof IntTag) {
+                        y = ((IntTag) entry.getValue()).getValue();
+                    }
+                } else if (entry.getKey().equals("z")) {
+                    if (entry.getValue() instanceof IntTag) {
+                        z = ((IntTag) entry.getValue()).getValue();
+                    }
+                } else if (entry.getKey().equals("id")) {
+                    if (entry.getValue() instanceof StringTag) {
+                        id = ((StringTag) entry.getValue()).getValue();
+                    }
+                }
+                values.put(entry.getKey(), entry.getValue());
+            }
+
+            if (x >= 0 && x < width && y >= 0 && y < height && z >= 0 && z < length) {
+                if (id.equals("Sign")) {
+                    String[] lines = new String[4];
+                    for (int i = 0; i < 4; i++) {
+                        Tag text = values.get("Text" + (i + 1));
+                        if (text instanceof StringTag)
+                            lines[i] = (String) values.get("Text" + (i + 1)).getValue();
+                        if (lines[i] == null)
+                            lines[i] = "";
+                    }
+                    blocks[x][y][z] = new SignBlockData(blocks[x][y][z].id, blocks[x][y][z].data, lines);
                 }
             }
         }
@@ -210,6 +257,31 @@ public class Schematic {
         public BlockData(int id, byte data) {
             this.id = id;
             this.data = data;
+        }
+
+        @SuppressWarnings("deprecation")
+        public void build(Block b) {
+            b.setTypeId(id);
+            b.setData(data);
+        }
+    }
+
+    private static class SignBlockData extends BlockData {
+        private String[] lines;
+
+        public SignBlockData(int id, byte data, String[] lines) {
+            super(id, data);
+            this.lines = lines;
+        }
+
+        public void build(Block b) {
+            super.build(b);
+            BlockState state = b.getState();
+            if (state instanceof Sign) {
+                for (int i = 0; i < 4; i++)
+                    ((Sign) state).setLine(i, lines[i]);
+                state.update();
+            }
         }
     }
 }
