@@ -72,7 +72,13 @@ public class PlayerListener implements Listener {
         e.getPlayer().setExp(0F);
         if (e.getPlayer().getGameMode() != GameMode.CREATIVE)
             e.getPlayer().setAllowFlight(false);
-        
+
+        // Get it through to players this is a dev server
+        for (int i = 0; i < 10; i++) {
+            e.getPlayer().sendMessage(
+                    ChatColor.YELLOW + "" + ChatColor.BOLD + ChatColor.ITALIC
+                            + "THIS IS A DEV SERVER, EXPECT THINGS TO BREAK");
+        }
     }
 
     @EventHandler
