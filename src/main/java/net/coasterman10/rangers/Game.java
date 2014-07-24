@@ -239,7 +239,7 @@ public class Game {
                 for (GamePlayer p : g.players) {
                     BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers "
                             + ChatColor.BLUE + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA
-                            + "69.137.10.168", 1F);
+                            + "69.137.10.168", 100F);
                 }
                 if (g.players.size() >= g.settings.minPlayers) {
                     g.setState(State.STARTING);
@@ -264,7 +264,7 @@ public class Game {
                     if (g.seconds == g.settings.teamSelectTime) {
                         g.selectTeams();
                     }
-                    float percent = (float) g.seconds / (float) g.settings.countdownDuration;
+                    float percent = (float) g.seconds / (float) g.settings.countdownDuration * 100F;
                     for (GamePlayer p : g.players) {
                         BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "Starting in " + g.seconds, percent);
                     }
@@ -275,15 +275,11 @@ public class Game {
         RUNNING {
             @Override
             public void start(Game g) {
+                g.seconds = g.settings.timeLimit;
                 g.sign.setStatusMessage("Running");
                 g.scoreboard.setScore("Bandits", 0);
                 g.scoreboard.setScore("Rangers", 0);
                 g.scoreboard.setScore("Bandit Leader", 0);
-                for (GamePlayer p : g.players) {
-                    BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers "
-                            + ChatColor.BLUE + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA
-                            + "69.137.10.168", 1F);
-                }
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
                     p.getHandle().teleport(g.arena.getRangerSpawn());
                     Kit.RANGER.apply(p);
@@ -299,20 +295,36 @@ public class Game {
 
             @Override
             public void onSecond(Game g) {
-                g.checkChest(GameTeam.RANGERS);
-                g.checkChest(GameTeam.BANDITS);
-
-                // Check victory conditions
-                if (g.scoreboard.getScore("Bandit Leader") == 1) {
+                if (g.seconds == 0) {
                     g.setState(ENDING);
-                    g.broadcast(ChatColor.RED + "The Bandit Leader has been defeated!");
-                    g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
+                    g.broadcast(ChatColor.RED + "Time has expired!");
+                    g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
                 } else {
-                    if (g.scoreboard.getScore("Rangers") == g.totalRangers) {
-                        g.setState(ENDING);
-                        g.broadcast(ChatColor.RED + "The rangers have been defeated!");
-                        g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
+                    for (GamePlayer player : g.players) {
+                        int minutes = g.seconds / 60;
+                        int seconds = g.seconds % 60;
+                        float percent = (float) g.seconds / (float) g.settings.timeLimit * 100F;
+                        BarAPI.setMessage(player.getHandle(),
+                                (seconds < 30 ? ChatColor.RED : ChatColor.GREEN).toString() + minutes + ":"
+                                        + (seconds < 10 ? "0" + seconds : seconds) + " remaining", percent);
                     }
+
+                    g.checkChest(GameTeam.RANGERS);
+                    g.checkChest(GameTeam.BANDITS);
+
+                    // Check victory conditions
+                    if (g.scoreboard.getScore("Bandit Leader") == 1) {
+                        g.setState(ENDING);
+                        g.broadcast(ChatColor.RED + "The Bandit Leader has been defeated!");
+                        g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
+                    } else {
+                        if (g.scoreboard.getScore("Rangers") == g.totalRangers) {
+                            g.setState(ENDING);
+                            g.broadcast(ChatColor.RED + "The rangers have been defeated!");
+                            g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
+                        }
+                    }
+                    g.seconds--;
                 }
             }
         },

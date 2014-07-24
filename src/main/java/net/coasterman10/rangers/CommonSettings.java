@@ -15,6 +15,7 @@ public class CommonSettings {
     public int lockTime;
     public int teamSelectTime;
     public int restartDelay;
+    public int timeLimit;
 
     public CommonSettings(Plugin plugin) {
         configYml = new PluginConfigAccessor(plugin);
@@ -31,5 +32,6 @@ public class CommonSettings {
         lockTime = config.getInt("lock-time", 10);
         teamSelectTime = config.getInt("team-select-time", 10);
         restartDelay = config.getInt("restart-delay", 10);
+        timeLimit = config.getInt("time-limite", 300);
     }
 }
