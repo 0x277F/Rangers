@@ -1,6 +1,5 @@
 package net.coasterman10.rangers;
 
-import org.bukkit.GameMode;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,20 +17,7 @@ public class QuitCommand implements CommandExecutor {
         if (args.length > 0)
             return false;
         if (sender instanceof Player) {
-            Player p = (Player) sender;
-            GamePlayer data = PlayerManager.getPlayer(p);
-            if (data.getGame() != null) {
-                data.getGame().removePlayer(data);
-                p.setHealth(20D);
-                p.setFoodLevel(20);
-                p.setSaturation(20F);
-                p.getInventory().clear();
-                p.getInventory().setArmorContents(null);
-                p.setExp(0F);
-                if (p.getGameMode() != GameMode.CREATIVE)
-                    p.setAllowFlight(false);
-                p.teleport(plugin.getLobbySpawn());
-            }
+            plugin.sendToLobby((Player) sender);
         } else {
             sender.sendMessage("Only players can use this command");
         }

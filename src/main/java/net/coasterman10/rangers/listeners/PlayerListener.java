@@ -21,6 +21,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.SkullType;
 import org.bukkit.block.Chest;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
@@ -99,7 +100,13 @@ public class PlayerListener implements Listener {
         if (signs.containsKey(loc)) {
             signs.get(loc).getGame().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
         }
-        if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
+        else if (e.getClickedBlock().getState() instanceof Sign) {
+            Sign s = (Sign) e.getClickedBlock().getState();
+            if (s.getLine(1).equalsIgnoreCase("back to") && s.getLine(2).equalsIgnoreCase("lobby")) {
+                plugin.sendToLobby(e.getPlayer());
+            }
+        }
+        else if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
                 && e.getPlayer().getItemInHand().getType() == Material.SKULL_ITEM) {
             ((Chest) e.getClickedBlock().getState()).getBlockInventory().addItem(e.getPlayer().getItemInHand());
             e.getPlayer().getInventory().remove(e.getPlayer().getItemInHand());

@@ -162,7 +162,8 @@ public class Game {
                         // Score points for enemy heads placed in the chest
                         for (GamePlayer p : teams.get(t.opponent())) {
                             if (meta.getOwner().equals(p.getHandle().getName())) {
-                                scoreboard.setScore(t.getName(), scoreboard.getScore(t.getName()) + 1);
+                                scoreboard.setScore(t.opponent().getName(),
+                                        scoreboard.getScore(t.opponent().getName()) + 1);
                                 state.getBlockInventory().remove(item);
                             }
                         }
@@ -312,17 +313,11 @@ public class Game {
                     g.checkChest(GameTeam.RANGERS);
                     g.checkChest(GameTeam.BANDITS);
 
-                    // Check victory conditions
-                    if (g.scoreboard.getScore("Bandit Leader") == 1) {
+                    // Check ranger victory conditions
+                    if (g.scoreboard.getScore("Rangers") == g.totalRangers) {
                         g.setState(ENDING);
-                        g.broadcast(ChatColor.RED + "The Bandit Leader has been defeated!");
-                        g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
-                    } else {
-                        if (g.scoreboard.getScore("Rangers") == g.totalRangers) {
-                            g.setState(ENDING);
-                            g.broadcast(ChatColor.RED + "The rangers have been defeated!");
-                            g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
-                        }
+                        g.broadcast(ChatColor.RED + "The rangers have been defeated!");
+                        g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
                     }
                     g.seconds--;
                 }

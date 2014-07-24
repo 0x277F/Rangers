@@ -19,6 +19,7 @@ import net.coasterman10.rangers.menu.BowMenu;
 import net.coasterman10.rangers.menu.RangerAbilityMenu;
 import net.coasterman10.rangers.menu.RangerSecondaryMenu;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -27,6 +28,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -91,6 +93,22 @@ public class Rangers extends JavaPlugin {
 
     public Location getLobbySpawn() {
         return lobbySpawn;
+    }
+
+    public void sendToLobby(Player p) {
+        GamePlayer data = PlayerManager.getPlayer(p);
+        if (data.getGame() != null) {
+            data.getGame().removePlayer(data);
+        }
+        p.setHealth(20D);
+        p.setFoodLevel(20);
+        p.setSaturation(20F);
+        p.getInventory().clear();
+        p.getInventory().setArmorContents(null);
+        p.setExp(0F);
+        if (p.getGameMode() != GameMode.CREATIVE)
+            p.setAllowFlight(false);
+        p.teleport(lobbySpawn);
     }
 
     private void saveDefaultConfigValues() {
