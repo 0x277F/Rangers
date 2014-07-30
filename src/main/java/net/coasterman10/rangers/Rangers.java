@@ -137,7 +137,7 @@ public class Rangers extends JavaPlugin {
         arenas.loadArenas();
 
         // Common Settings - this is the alternative to global variables
-        CommonSettings settings = new CommonSettings(this);
+        GameSettings settings = new GameSettings(this);
         settings.load();
 
         // Iterate over the map lists in the config file with the sign locations
@@ -161,11 +161,10 @@ public class Rangers extends JavaPlugin {
                     continue;
 
                 Location loc = new Location(lobbyWorld, x, y, z);
-                Block b = loc.getBlock();
-                if (!(b.getState() instanceof Sign))
+                if (!(loc.getBlock().getState() instanceof Sign))
                     placeSign(loc); // Build a new sign at the location (idiot-proofing)
-                GameSign sign = new GameSign(b, (String) mapName);
-                Game g = new Game(this, sign, settings);
+                GameSign sign = new GameSign(loc);
+                Game g = new Game(this, settings);
                 sign.setGame(g);
                 signs.put(loc, sign);
             }

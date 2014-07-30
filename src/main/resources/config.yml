@@ -1,40 +1,57 @@
-game-world: games
+min-players: 2
+max-players: 10
+countdown-duration: 15
+team-select-time: 10
+time-limit: 300
+restart-delay: 5
+
+allowed-drops:
+- 297
+
 spawn:
   world: lobby
   x: 0.5
   y: 65
   z: 0.5
-allowed-drops:
-- 297
+
 signs:
-- x: 0
-  y: 65
-  z: 2
-  map: Rangers
+- map: Spring
+  join:
+    x: -2
+    y: 67
+    z: -4
+  status:
+    x: -2
+    y: 66
+    z: -4
+
+game-world: games
+
 game-lobby:
-  schematic: Lobby.schematic
+  schematic: Rangers-Lobby.schematic
   spawn:
-    x: 5
+    x: 4
     y: 1
-    z: 5
+    z: 4
+
 maps:
-  Rangers:
-    schematic: Rangers.schematic
+  Spring:
+    schematic: Spring.schematic
     spawns:
       rangers:
-        x: 25
-        y: 10
-        z: 10
+        x: 6.5
+        y: 12
+        z: 27.5
       bandits:
-        x: 25
-        y: 10
-        z: 90
+        x: 97.5
+        y: 12
+        z: 29.5
     chests:
       rangers:
-        x: 25
-        y: 10
-        z: 5
+        x: 6
+        y: 11
+        z: 26
       bandits:
-        x: 25
-        y: 10
-        z: 90
+        x: 97
+        y: 11
+        z: 30

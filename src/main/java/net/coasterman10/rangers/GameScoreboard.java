@@ -9,6 +9,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
@@ -67,11 +68,18 @@ public class GameScoreboard {
         return boards.get(GameTeam.RANGERS).getObjective(DisplaySlot.SIDEBAR).getScore(entry).getScore();
     }
 
+    public void incrementScore(GameTeam team) {
+        for (Scoreboard board : boards.values()) {
+            Score s = board.getObjective(DisplaySlot.SIDEBAR).getScore(team.getName());
+            s.setScore(s.getScore() + 1);
+        }
+    }
+
     public void reset() {
         for (GameTeam t : GameTeam.values()) {
-            boards.get(t).resetScores("Rangers");
-            boards.get(t).resetScores("Bandits");
-            boards.get(t).resetScores("Bandit Leader");
+            for (GameTeam tt : GameTeam.values()) {
+                boards.get(t).resetScores(tt.getName());
+            }
         }
     }
 }

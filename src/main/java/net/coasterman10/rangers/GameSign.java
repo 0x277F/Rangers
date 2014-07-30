@@ -1,45 +1,20 @@
 package net.coasterman10.rangers;
 
-import org.apache.commons.lang.Validate;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 
-public class GameSign {
-    private final Block block;
-    private Game game;
-    private String mapName; // TODO Remove this cheap hack
+public abstract class GameSign {
+    protected final Location location;
+    protected Game game;
 
-    public GameSign(Block block, String mapName) {
-        Validate.notNull(block);
-        this.block = block;
-
-        this.mapName = mapName;
+    public GameSign(Location location) {
+        this.location = location;
     }
 
     public Location getLocation() {
-        return block.getLocation();
-    }
-
-    public void setPlayers(int players) {
-        String s = String.format("%s%d / %d", ChatColor.BOLD.toString(), players, game.getSettings().maxPlayers);
-        if (players == game.getSettings().maxPlayers) {
-            s = ChatColor.RED + s;
-            setLine(3, ChatColor.RED + "Full");
-        } else {
-            setLine(3, ChatColor.GREEN + "Click to join");
-        }
-        setLine(0, s);
-    }
-
-    public void setMapName(String mapName) {
-        setLine(1, mapName);
-    }
-
-    public void setStatusMessage(String statusMessage) {
-        setLine(2, statusMessage);
+        return location;
     }
 
     public void setGame(Game game) {
@@ -49,18 +24,17 @@ public class GameSign {
     public Game getGame() {
         return game;
     }
+    
+    public abstract void update();
 
-    private void setLine(int index, String line) {
-        if (!block.getChunk().isLoaded())
-            block.getChunk().load();
-        BlockState state = block.getState();
+    protected void setLine(int index, String line) {
+        Block b = location.getBlock();
+        if (!b.getChunk().isLoaded())
+            b.getChunk().load();
+        BlockState state = b.getState();
         if (state instanceof Sign) {
             ((Sign) state).setLine(index, line);
             state.update();
         }
-    }
-
-    public String getMapName() {
-        return mapName;
     }
 }

@@ -19,7 +19,8 @@ public class RangerKit implements Kit {
         ARMOR[2] = new ItemStackBuilder(Material.LEATHER_CHESTPLATE).setColor(Color.GREEN).build();
         ARMOR[3] = new ItemStackBuilder(Material.LEATHER_HELMET).setColor(Color.GREEN).build();
 
-        BASE[0] = new ItemStackBuilder(Material.STONE_SWORD).setDisplayName("Dagger").build();
+        BASE[0] = new ItemStackBuilder(Material.IRON_SWORD).setDisplayName("Dagger")
+                .addEnchantment(Enchantment.DAMAGE_ALL, 1).build();
         BASE[1] = new ItemStackBuilder(Material.BOW).addEnchantment(Enchantment.ARROW_DAMAGE, 1)
                 .setDisplayName("Longbow").build();
         BASE[2] = new ItemStackBuilder(Material.TRIPWIRE_HOOK).setDisplayName("Throwing Knife").build();

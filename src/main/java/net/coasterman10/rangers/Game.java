@@ -26,11 +26,10 @@ public class Game {
     private static int nextId;
 
     private final int id;
-    private final CommonSettings settings;
+    private final GameSettings settings;
     private Arena arena;
 
     private GameScoreboard scoreboard;
-    private GameSign sign;
 
     // If you are going to give me hell about using 3 collections, please stop using your grandmother's 90s PC
     private Collection<GamePlayer> players = new HashSet<>();
@@ -43,21 +42,15 @@ public class Game {
     private State state;
     private int seconds;
 
-    public Game(Rangers plugin, GameSign sign, CommonSettings settings) {
+    public Game(Rangers plugin, GameSettings settings) {
         id = nextId++;
 
-        this.sign = sign;
         this.settings = settings;
 
         teams.put(GameTeam.RANGERS, new HashSet<GamePlayer>());
         teams.put(GameTeam.BANDITS, new HashSet<GamePlayer>());
 
         scoreboard = new GameScoreboard();
-
-        sign.setGame(this);
-        sign.setPlayers(players.size());
-        sign.setStatusMessage("Waiting for Arena");
-        sign.setMapName("N / A");
 
         state = State.INACTIVE;
 
@@ -67,8 +60,6 @@ public class Game {
     public void setArena(Arena arena) {
         this.arena = arena;
         arena.setUsed(true);
-        sign.setMapName(arena.getMapName());
-        sign.setStatusMessage("In Lobby");
         state = State.LOBBY;
     }
 
@@ -84,7 +75,7 @@ public class Game {
             return;
         }
 
-        if (state == State.LOBBY || (state == State.STARTING && seconds > settings.lockTime)) {
+        if (state == State.LOBBY || (state == State.STARTING && seconds > settings.teamSelectTime)) {
             if (players.size() == settings.maxPlayers) {
                 handle.sendMessage(ChatColor.RED + "This game is full!");
                 return;
@@ -98,7 +89,6 @@ public class Game {
             handle.getInventory().clear();
             handle.getInventory().setArmorContents(null);
             broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
-            sign.setPlayers(players.size());
         } else {
             handle.sendMessage(ChatColor.RED + "You cannot join this game once it is in progress!");
         }
@@ -110,7 +100,6 @@ public class Game {
         players.remove(player);
         for (Collection<GamePlayer> team : teams.values())
             team.remove(player);
-        sign.setPlayers(players.size());
         if (player.getHandle() != null) {
             BarAPI.removeBar(player.getHandle());
             player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -135,6 +124,9 @@ public class Game {
             if (team == GameTeam.BANDITS && banditLeader == null) {
                 banditLeader = p;
                 p.getHandle().sendMessage(ChatColor.AQUA + "You are the " + ChatColor.RED + "Bandit Leader");
+                p.setBanditLeader(true);
+            } else {
+                p.setBanditLeader(false);
             }
             team = team.opponent();
         }
@@ -209,7 +201,7 @@ public class Game {
         }
     }
 
-    private enum State {
+    public static enum State {
         INACTIVE {
             @Override
             public void start(final Game g) {
@@ -258,7 +250,6 @@ public class Game {
                 if (g.players.size() < g.settings.minPlayers) {
                     g.setState(LOBBY);
                 }
-                g.sign.setStatusMessage("Starting in " + g.seconds);
                 if (g.seconds == 0) {
                     g.setState(RUNNING);
                 } else {
@@ -277,7 +268,6 @@ public class Game {
             @Override
             public void start(Game g) {
                 g.seconds = g.settings.timeLimit;
-                g.sign.setStatusMessage("Running");
                 g.scoreboard.setScore("Bandits", 0);
                 g.scoreboard.setScore("Rangers", 0);
                 g.scoreboard.setScore("Bandit Leader", 0);
@@ -306,7 +296,7 @@ public class Game {
                         int seconds = g.seconds % 60;
                         float percent = (float) g.seconds / (float) g.settings.timeLimit * 100F;
                         BarAPI.setMessage(player.getHandle(),
-                                (seconds < 30 ? ChatColor.RED : ChatColor.GREEN).toString() + minutes + ":"
+                                (g.seconds < 30 ? ChatColor.RED : ChatColor.GREEN).toString() + minutes + ":"
                                         + (seconds < 10 ? "0" + seconds : seconds) + " remaining", percent);
                     }
 
@@ -355,11 +345,27 @@ public class Game {
         return state == State.RUNNING;
     }
 
-    public CommonSettings getSettings() {
+    public GameSettings getSettings() {
         return settings;
     }
 
     public boolean isRunning() {
         return state == State.RUNNING;
+    }
+
+    public String getMapName() {
+        return arena.getMapName();
+    }
+
+    public int getPlayerCount() {
+        return players.size();
+    }
+
+    public State getState() {
+        return state;
+    }
+    
+    public int getSeconds() {
+        return seconds;
     }
 }

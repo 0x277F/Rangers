@@ -9,6 +9,7 @@ import net.coasterman10.rangers.GameTeam;
 import net.coasterman10.rangers.PlayerManager;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Effect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,6 +18,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -30,6 +33,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class AbilityListener implements Listener {
     private final Plugin plugin;
     private Set<UUID> throwingKnifeCooldowns = new HashSet<>();
+    private Set<UUID> doubleJumpers = new HashSet<>();
 
     public AbilityListener(Plugin plugin) {
         this.plugin = plugin;
@@ -45,8 +49,11 @@ public class AbilityListener implements Listener {
                 e.setCancelled(true);
                 p.setAllowFlight(false);
                 p.setFlying(false);
-                p.setVelocity(p.getLocation().getDirection().multiply(1.5).setY(1.0));
+                p.setVelocity(p.getLocation().getDirection().multiply(1.3).setY(1.0));
+                p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
                 p.setExp(0F);
+                doubleJumpers.add(p.getUniqueId());
+                System.out.println(p.getUniqueId() + " double jumped ");
 
                 final int PERIOD = 5;
                 final int TICKS = 160;
@@ -62,7 +69,7 @@ public class AbilityListener implements Listener {
                                 p.setAllowFlight(true); // Allow another double jump
                                 cancel();
                             } else {
-                                p.setExp((TICKS - time) / TICKS);
+                                p.setExp((float) (TICKS - time) / (float) TICKS);
                                 time -= PERIOD;
                             }
                         } else {
@@ -72,6 +79,14 @@ public class AbilityListener implements Listener {
                     }
                 }.runTaskTimer(plugin, 0L, (long) PERIOD);
             }
+        }
+    }
+
+    @EventHandler
+    public void onDamage(EntityDamageEvent e) {
+        if (e.getCause() == DamageCause.FALL && doubleJumpers.contains(e.getEntity().getUniqueId())) {
+            e.setCancelled(true);
+            System.out.println("Prevented fall damage for " + e.getEntity().getUniqueId());
         }
     }
 
@@ -104,12 +119,18 @@ public class AbilityListener implements Listener {
 
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 // Don't hurt the guy who threw it
-                                if (player.equals(p.getUniqueId()))
+                                if (player.getUniqueId().equals(p.getUniqueId()))
                                     continue;
 
                                 // Skip anyone not in this world
                                 if (!p.getWorld().equals(knife.getWorld()))
                                     continue;
+
+                                // Prevent friendly fire
+                                if (PlayerManager.getPlayer(player).getTeam()
+                                        .equals(PlayerManager.getPlayer(p).getTeam()))
+                                    continue;
+
                                 Location pLoc = p.getLocation();
                                 Location kLoc = knife.getLocation();
 
@@ -145,13 +166,14 @@ public class AbilityListener implements Listener {
             if (e.getItem().getType() == Material.SLIME_BALL) {
                 Location eye = e.getPlayer().getEyeLocation();
                 final Entity striker = eye.getWorld().dropItem(eye, new ItemStack(Material.SLIME_BALL, 1));
-                striker.setVelocity(eye.getDirection().multiply(0.4));
+                striker.setVelocity(eye.getDirection().multiply(0.6));
 
                 new BukkitRunnable() {
                     @Override
                     public void run() {
                         // TODO: Particle effects and better sound
                         striker.getWorld().playSound(striker.getLocation(), Sound.BLAZE_HIT, 1F, 1.5F);
+                        striker.remove();
                         for (Player player : Bukkit.getOnlinePlayers()) {
                             // Skip players not in the world
                             if (!player.getWorld().equals(striker.getWorld()))

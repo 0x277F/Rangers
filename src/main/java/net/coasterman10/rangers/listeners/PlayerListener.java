@@ -99,14 +99,12 @@ public class PlayerListener implements Listener {
         Location loc = e.getClickedBlock().getLocation();
         if (signs.containsKey(loc)) {
             signs.get(loc).getGame().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
-        }
-        else if (e.getClickedBlock().getState() instanceof Sign) {
+        } else if (e.getClickedBlock().getState() instanceof Sign) {
             Sign s = (Sign) e.getClickedBlock().getState();
             if (s.getLine(1).equalsIgnoreCase("back to") && s.getLine(2).equalsIgnoreCase("lobby")) {
                 plugin.sendToLobby(e.getPlayer());
             }
-        }
-        else if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
+        } else if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
                 && e.getPlayer().getItemInHand().getType() == Material.SKULL_ITEM) {
             ((Chest) e.getClickedBlock().getState()).getBlockInventory().addItem(e.getPlayer().getItemInHand());
             e.getPlayer().getInventory().remove(e.getPlayer().getItemInHand());
@@ -242,8 +240,8 @@ public class PlayerListener implements Listener {
                 }
             }
         } else if (!allowedDrops.contains(e.getItem().getType())) {
-            GamePlayer pickup = PlayerManager.getPlayer(e.getPlayer());
-            if (pickup.getGame() != null && pickup.getGame().isRunning())
+            GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
+            if (player.getGame() != null && player.getGame().isRunning())
                 e.setCancelled(true);
         }
     }
@@ -258,6 +256,9 @@ public class PlayerListener implements Listener {
         if (e.getEntity() instanceof Player && e.getDamager() instanceof Player) {
             Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
             if (g == null || (g != null && !g.allowPvp()))
+                e.setCancelled(true);
+            if (PlayerManager.getPlayer((Player) e.getEntity()).getTeam() == (PlayerManager.getPlayer((Player) e
+                    .getDamager()).getTeam()))
                 e.setCancelled(true);
         }
     }
