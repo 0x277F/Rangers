@@ -60,5 +60,10 @@
 			<artifactId>BarAPI</artifactId>
 			<version>3.0</version>
 		</dependency>
+		<dependency>
+			<groupId>net.coasterman10</groupId>
+			<artifactId>SpectateAPI</artifactId>
+			<version>1.0</version>
+		</dependency>
 	</dependencies>
 </project>

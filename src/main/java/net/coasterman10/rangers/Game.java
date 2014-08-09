@@ -31,7 +31,6 @@ public class Game {
 
     private GameScoreboard scoreboard;
 
-    // If you are going to give me hell about using 3 collections, please stop using your grandmother's 90s PC
     private Collection<GamePlayer> players = new HashSet<>();
     private Map<GameTeam, Collection<GamePlayer>> teams = new EnumMap<>(GameTeam.class);
     private GamePlayer banditLeader;
@@ -103,6 +102,7 @@ public class Game {
         if (player.getHandle() != null) {
             BarAPI.removeBar(player.getHandle());
             player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+            PlayerUtil.disableDoubleJump(player.getHandle());
         }
     }
 
@@ -147,39 +147,34 @@ public class Game {
         Location loc = (t == GameTeam.RANGERS ? arena.getRangerChest() : arena.getBanditChest());
         if (loc.getBlock().getState() instanceof Chest) {
             Chest state = (Chest) loc.getBlock().getState();
-            for (ItemStack item : state.getBlockInventory()) {
-                if (item != null && item.getType() == Material.SKULL_ITEM) {
-                    SkullMeta meta = (SkullMeta) item.getItemMeta();
-                    if (meta.hasOwner()) {
-                        // Score points for enemy heads placed in the chest
-                        for (GamePlayer p : teams.get(t.opponent())) {
-                            if (meta.getOwner().equals(p.getHandle().getName())) {
-                                scoreboard.setScore(t.opponent().getName(),
-                                        scoreboard.getScore(t.opponent().getName()) + 1);
-                                state.getBlockInventory().remove(item);
+            next: for (ItemStack item : state.getBlockInventory()) {
+                if (item != null) {
+                    state.getBlockInventory().remove(item);
+                    if (item.getType() == Material.SKULL_ITEM) {
+                        SkullMeta meta = (SkullMeta) item.getItemMeta();
+                        if (meta.hasOwner()) {
+                            // Score points for enemy heads placed in the chest
+                            for (GamePlayer p : teams.get(t.opponent())) {
+                                if (meta.getOwner().equals(p.getHandle().getName())) {
+                                    scoreboard.setScore(t.opponent().getName(),
+                                            scoreboard.getScore(t.opponent().getName()) + 1);
+                                    break next; // I know this sucks
+                                }
                             }
-                        }
 
-                        // Score for the bandit leader's head in this chest
-                        if (banditLeader.getHandle().getName().equals(meta.getOwner())) {
-                            // If the head is in the rangers chest, good. If in the bandit chest, no good, remove it.
-                            if (t == GameTeam.RANGERS) {
-                                scoreboard.setScore("Bandit Leader", scoreboard.getScore("Bandit Leader") + 1);
-                                state.getBlockInventory().remove(item);
-                            } else {
-                                loc.getWorld().dropItemNaturally(
-                                        loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
-                                state.getBlockInventory().remove(item);
-                                continue;
+                            // Remove heads from the chest's own team that don't belong in it
+                            for (GamePlayer p : teams.get(t)) {
+                                if (meta.getOwner().equals(p.getHandle().getName())) {
+                                    loc.getWorld().dropItemNaturally(
+                                            loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
+                                }
                             }
-                        }
 
-                        // Remove heads from the chest's own team that don't belong in it
-                        for (GamePlayer p : teams.get(t)) {
-                            if (meta.getOwner().equals(p.getHandle().getName())) {
-                                state.getBlockInventory().remove(item);
-                                loc.getWorld().dropItemNaturally(
-                                        loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
+                            // Rangers win if this is bandit chest and bandit leader's head is in it
+                            if (meta.getOwner().equals(banditLeader.getHandle().getName())) {
+                                setState(State.ENDING);
+                                broadcast(ChatColor.RED + "The bandit leader has been killed!");
+                                broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
                             }
                         }
                     }
@@ -274,14 +269,15 @@ public class Game {
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
                     p.getHandle().teleport(g.arena.getRangerSpawn());
                     Kit.RANGER.apply(p);
-                    // Set up double jump bar
-                    p.getHandle().setExp(Float.intBitsToFloat(Float.floatToIntBits(1F) - 1));
-                    p.getHandle().setAllowFlight(true);
+                    PlayerUtil.enableDoubleJump(p.getHandle());
                 }
                 for (GamePlayer p : g.teams.get(GameTeam.BANDITS)) {
                     p.getHandle().teleport(g.arena.getBanditSpawn());
                     Kit.BANDIT.apply(p);
+                    PlayerUtil.enableDoubleJump(p.getHandle());
                 }
+                
+                g.arena.clearGround();
             }
 
             @Override
@@ -364,7 +360,7 @@ public class Game {
     public State getState() {
         return state;
     }
-    
+
     public int getSeconds() {
         return seconds;
     }

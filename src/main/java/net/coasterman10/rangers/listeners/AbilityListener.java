@@ -7,6 +7,7 @@ import java.util.UUID;
 import net.coasterman10.rangers.GamePlayer;
 import net.coasterman10.rangers.GameTeam;
 import net.coasterman10.rangers.PlayerManager;
+import net.coasterman10.rangers.PlayerUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Effect;
@@ -42,19 +43,20 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onToggleFlight(PlayerToggleFlightEvent e) {
         if (e.isFlying() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
-            final Player p = e.getPlayer();
+            Player p = e.getPlayer();
             GamePlayer player = PlayerManager.getPlayer(p);
             if (player.getGame() != null && player.getGame().isRunning() && player.getTeam() == GameTeam.RANGERS) {
                 // Double jump
                 e.setCancelled(true);
-                p.setAllowFlight(false);
+                PlayerUtil.disableDoubleJump(e.getPlayer());
                 p.setFlying(false);
                 p.setVelocity(p.getLocation().getDirection().multiply(1.3).setY(1.0));
                 p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
-                p.setExp(0F);
                 doubleJumpers.add(p.getUniqueId());
                 System.out.println(p.getUniqueId() + " double jumped ");
 
+                final UUID id = p.getUniqueId();
+                
                 final int PERIOD = 5;
                 final int TICKS = 160;
                 new BukkitRunnable() {
@@ -62,13 +64,13 @@ public class AbilityListener implements Listener {
 
                     @Override
                     public void run() {
-                        if (p.isOnline()) {
+                        Player p = Bukkit.getPlayer(id);
+                        if (p != null) {
                             if (time == 0) {
-                                // Slightly below a full bar, this decrements the float by its smallest increment
-                                p.setExp(Float.intBitsToFloat(Float.floatToIntBits(1F) - 1));
-                                p.setAllowFlight(true); // Allow another double jump
+                                PlayerUtil.enableDoubleJump(p);
                                 cancel();
                             } else {
+                                // Animate the bar refilling
                                 p.setExp((float) (TICKS - time) / (float) TICKS);
                                 time -= PERIOD;
                             }

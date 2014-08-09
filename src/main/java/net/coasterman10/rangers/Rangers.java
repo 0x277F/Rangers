@@ -1,7 +1,6 @@
 package net.coasterman10.rangers;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +12,7 @@ import net.coasterman10.rangers.config.PluginConfigAccessor;
 import net.coasterman10.rangers.listeners.AbilityListener;
 import net.coasterman10.rangers.listeners.MenuManager;
 import net.coasterman10.rangers.listeners.PlayerListener;
+import net.coasterman10.rangers.listeners.SignManager;
 import net.coasterman10.rangers.listeners.WorldListener;
 import net.coasterman10.rangers.menu.BanditSecondaryMenu;
 import net.coasterman10.rangers.menu.BowMenu;
@@ -24,13 +24,10 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.Vector;
 
 public class Rangers extends JavaPlugin {
     private static Logger log;
@@ -41,12 +38,12 @@ public class Rangers extends JavaPlugin {
 
     private Location lobbySpawn;
     private World gameWorld;
-    private Map<Location, GameSign> signs = new HashMap<>();
 
     private GameMapManager gameMapManager;
     private WorldListener worldListener;
     private PlayerListener playerListener;
     private AbilityListener abilityListener;
+    private SignManager signManager;
     private MenuManager menuManager;
 
     private ArenaManager arenas;
@@ -62,12 +59,12 @@ public class Rangers extends JavaPlugin {
         worldListener = new WorldListener();
         playerListener = new PlayerListener(this);
         abilityListener = new AbilityListener(this);
+        signManager = new SignManager(this);
         menuManager = new MenuManager();
 
         saveDefaultConfig();
         saveDefaultConfigValues();
         loadConfig();
-        loadArenas();
 
         menuManager.addSignMenu(new RangerAbilityMenu(),
                 new SignText().setLine(1, "Select").setLine(2, "Ranger Ability"));
@@ -81,6 +78,7 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(worldListener, this);
         pm.registerEvents(playerListener, this);
         pm.registerEvents(abilityListener, this);
+        pm.registerEvents(signManager, this);
         pm.registerEvents(menuManager, this);
 
         getCommand("quit").setExecutor(new QuitCommand(this));
@@ -136,40 +134,39 @@ public class Rangers extends JavaPlugin {
         arenas = new ArenaManager(this, gameWorld, gameMapManager);
         arenas.loadArenas();
 
-        // Common Settings - this is the alternative to global variables
+        // Game Settings - this is the alternative to global variables
         GameSettings settings = new GameSettings(this);
         settings.load();
 
         // Iterate over the map lists in the config file with the sign locations
         List<Map<?, ?>> mapList = getConfig().getMapList("signs");
         for (Map<?, ?> map : mapList) {
-            // Objects since we don't know what type these are yet
-            Object xx = map.get("x");
-            Object yy = map.get("y");
-            Object zz = map.get("z");
-            Object mapName = map.get("map");
+            Object mapObj = map.get("map");
+            Object joinObj = map.get("join");
+            Object statusObj = map.get("status");
 
-            // Check that all the objects are numbers; if not, just skip this sign
-            if (xx instanceof Number && yy instanceof Number && zz instanceof Number && mapName instanceof String) {
-                int x = ((Number) xx).intValue();
-                int y = ((Number) yy).intValue();
-                int z = ((Number) zz).intValue();
-                GameMap gameMap = gameMapManager.getMap((String) mapName);
+            if (mapObj instanceof String && joinObj instanceof Map && statusObj instanceof Map) {
+                Vector joinSign = parseVector((Map<?, ?>) joinObj);
+                if (joinSign == null)
+                    continue;
 
-                // Make sure the specified map exists
+                GameMap gameMap = gameMapManager.getMap((String) mapObj);
                 if (gameMap == null)
                     continue;
 
-                Location loc = new Location(lobbyWorld, x, y, z);
-                if (!(loc.getBlock().getState() instanceof Sign))
-                    placeSign(loc); // Build a new sign at the location (idiot-proofing)
-                GameSign sign = new GameSign(loc);
                 Game g = new Game(this, settings);
-                sign.setGame(g);
-                signs.put(loc, sign);
+                Location joinSignLoc = joinSign.toLocation(lobbyWorld);
+                signManager.addJoinSign(g, joinSignLoc);
+
+                Vector statusSign = parseVector((Map<?, ?>) statusObj);
+                if (statusSign != null) {
+                    Location statusSignLoc = statusSign.toLocation(lobbyWorld);
+                    signManager.addStatusSign(g, statusSignLoc);
+                }
+
+                g.setArena(arenas.getArena((String) mapObj));
             }
         }
-        playerListener.setSigns(signs);
 
         // Load the allowed drops list
         Collection<Material> allowedDrops = new HashSet<>();
@@ -182,30 +179,15 @@ public class Rangers extends JavaPlugin {
         playerListener.setAllowedDrops(allowedDrops);
     }
 
-    private void loadArenas() {
-        for (GameSign sign : signs.values()) {
-            getLogger().info("Loading arena for game linked to sign at " + sign.getLocation());
-            String mapName = sign.getMapName();
-            sign.getGame().setArena(arenas.getArena(mapName));
-        }
-    }
+    private static Vector parseVector(Map<?, ?> map) {
+        Object x = map.get("x");
+        Object y = map.get("y");
+        Object z = map.get("z");
 
-    private static void placeSign(Location loc) {
-        if (loc.getBlock().getRelative(BlockFace.DOWN).getType().isSolid()) {
-            loc.getBlock().setType(Material.SIGN); // There is a solid block below, we can just place a sign there
+        if (x instanceof Number && y instanceof Number && z instanceof Number) {
+            return new Vector(((Number) x).doubleValue(), ((Number) y).doubleValue(), ((Number) z).doubleValue());
         } else {
-            // Check every block face for a solid block; if we find a solid block, place a wall sign
-            for (BlockFace face : new BlockFace[] { BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST }) {
-                if (loc.getBlock().getRelative(face).getType().isSolid()) {
-                    BlockFace facing = face.getOppositeFace();
-                    BlockState state = loc.getBlock().getState();
-                    state.setType(Material.WALL_SIGN);
-                    org.bukkit.material.Sign data = new org.bukkit.material.Sign(state.getType());
-                    data.setFacingDirection(facing);
-                    state.update(true);
-                    break;
-                }
-            }
+            return null;
         }
     }
 }

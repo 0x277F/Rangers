@@ -1,7 +1,9 @@
 package net.coasterman10.rangers;
 
 import org.bukkit.Location;
+import org.bukkit.entity.Item;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.util.Vector;
 
 public class Arena {
     private GameMap map;
@@ -26,12 +28,12 @@ public class Arena {
     public String getMapName() {
         return map.name;
     }
-    
+
     public void build(Plugin plugin) {
         map.lobbySchematic.buildDelayed(lobby, plugin);
         map.gameSchematic.buildDelayed(game, plugin);
     }
-    
+
     public Location getOrigin() {
         return lobby;
     }
@@ -54,5 +56,16 @@ public class Arena {
 
     public Location getBanditChest() {
         return game.clone().add(map.banditChest);
+    }
+
+    public void clearGround() {
+        Vector min = game.toVector();
+        Vector max = min.clone().add(
+                new Vector(map.gameSchematic.getWidth(), map.gameSchematic.getHeight(), map.gameSchematic.getLength()));
+        for (Item i : game.getWorld().getEntitiesByClass(Item.class)) {
+            if (i.getLocation().toVector().isInAABB(min, max)) {
+                i.remove();
+            }
+        }
     }
 }

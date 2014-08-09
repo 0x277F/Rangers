@@ -1,15 +1,12 @@
 package net.coasterman10.rangers.listeners;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import net.coasterman10.rangers.Game;
 import net.coasterman10.rangers.GamePlayer;
-import net.coasterman10.rangers.GameSign;
 import net.coasterman10.rangers.GameTeam;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.Rangers;
@@ -17,7 +14,6 @@ import net.coasterman10.rangers.Rangers;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.SkullType;
 import org.bukkit.block.Chest;
@@ -29,6 +25,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -46,9 +44,7 @@ import org.bukkit.projectiles.ProjectileSource;
 public class PlayerListener implements Listener {
     private final Rangers plugin;
 
-    // These are initialized to failsafe values; they will and should be changed by the time any events fire.
-    private Map<Location, GameSign> signs = new HashMap<>();
-    private Collection<Material> allowedDrops = Collections.emptySet();
+    private Collection<Material> allowedDrops = new HashSet<>();
 
     public PlayerListener(Rangers plugin) {
         this.plugin = plugin;
@@ -56,10 +52,6 @@ public class PlayerListener implements Listener {
 
     public void setAllowedDrops(Collection<Material> allowedDrops) {
         this.allowedDrops = allowedDrops;
-    }
-
-    public void setSigns(Map<Location, GameSign> signs) {
-        this.signs = signs;
     }
 
     @EventHandler
@@ -96,10 +88,7 @@ public class PlayerListener implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK)
             return;
-        Location loc = e.getClickedBlock().getLocation();
-        if (signs.containsKey(loc)) {
-            signs.get(loc).getGame().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
-        } else if (e.getClickedBlock().getState() instanceof Sign) {
+        if (e.getClickedBlock().getState() instanceof Sign) {
             Sign s = (Sign) e.getClickedBlock().getState();
             if (s.getLine(1).equalsIgnoreCase("back to") && s.getLine(2).equalsIgnoreCase("lobby")) {
                 plugin.sendToLobby(e.getPlayer());
@@ -248,7 +237,24 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onDropItem(PlayerDropItemEvent e) {
-        e.setCancelled(true);
+        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null) {
+            if (!allowedDrops.contains(e.getItemDrop().getItemStack().getType()))
+                e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent e) {
+        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()) {
+            e.setCancelled(true);
+        }
+    }
+    
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent e) {
+        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()) {
+            e.setCancelled(true);
+        }
     }
 
     @EventHandler
