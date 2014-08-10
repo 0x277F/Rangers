@@ -212,6 +212,8 @@ public class Game {
         LOBBY {
             @Override
             public void start(final Game g) {
+                for (Collection<GamePlayer> c : g.teams.values())
+                    c.clear();
                 for (GamePlayer p : g.players) {
                     BarAPI.removeBar(p.getHandle());
                     p.getHandle().teleport(g.arena.getLobbySpawn());
