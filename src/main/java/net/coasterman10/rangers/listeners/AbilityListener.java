@@ -45,7 +45,7 @@ public class AbilityListener implements Listener {
         if (e.isFlying() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
             Player p = e.getPlayer();
             GamePlayer player = PlayerManager.getPlayer(p);
-            if (player.getGame() != null && player.getGame().isRunning() && player.getTeam() == GameTeam.RANGERS) {
+            if (player.getGame() != null && player.getGame().isRunning()) {
                 // Double jump
                 e.setCancelled(true);
                 PlayerUtil.disableDoubleJump(e.getPlayer());

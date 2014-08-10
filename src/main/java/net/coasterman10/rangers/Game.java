@@ -212,8 +212,9 @@ public class Game {
         LOBBY {
             @Override
             public void start(final Game g) {
-                for (Collection<GamePlayer> c : g.teams.values())
-                    c.clear();
+                for (Collection<GamePlayer> team : g.teams.values()) {
+                    team.clear();
+                }
                 for (GamePlayer p : g.players) {
                     BarAPI.removeBar(p.getHandle());
                     p.getHandle().teleport(g.arena.getLobbySpawn());
@@ -268,7 +269,6 @@ public class Game {
                 g.seconds = g.settings.timeLimit;
                 g.scoreboard.setScore("Bandits", 0);
                 g.scoreboard.setScore("Rangers", 0);
-                g.scoreboard.setScore("Bandit Leader", 0);
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
                     p.getHandle().teleport(g.arena.getRangerSpawn());
                     Kit.RANGER.apply(p);
