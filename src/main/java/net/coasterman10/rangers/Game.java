@@ -97,6 +97,7 @@ public class Game {
         if (!players.contains(player))
             return;
         players.remove(player);
+        player.setGame(null);
         for (Collection<GamePlayer> team : teams.values())
             team.remove(player);
         if (player.getHandle() != null) {

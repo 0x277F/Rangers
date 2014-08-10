@@ -228,7 +228,7 @@ public class PlayerListener implements Listener {
                     }
                 }
             }
-        } else if (!allowedDrops.contains(e.getItem().getType())) {
+        } else if (!allowedDrops.contains(e.getItem().getItemStack().getType())) {
             GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
             if (player.getGame() != null && player.getGame().isRunning())
                 e.setCancelled(true);
