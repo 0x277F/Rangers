@@ -56,16 +56,16 @@ public class GameScoreboard {
         }
     }
 
-    public void setScore(String entry, int score) {
+    public void setScore(GameTeam team, int score) {
         if (score == 0)
-            setScore(entry, 1); // This ensures that the score of 0 is put onto the scoreboard
+            setScore(team, 1); // This ensures that the score of 0 is put onto the scoreboard
         for (Scoreboard board : boards.values()) {
-            board.getObjective(DisplaySlot.SIDEBAR).getScore(entry).setScore(score);
+            board.getObjective(DisplaySlot.SIDEBAR).getScore(team.getName()).setScore(score);
         }
     }
 
-    public int getScore(String entry) {
-        return boards.get(GameTeam.RANGERS).getObjective(DisplaySlot.SIDEBAR).getScore(entry).getScore();
+    public int getScore(GameTeam team) {
+        return boards.get(GameTeam.RANGERS).getObjective(DisplaySlot.SIDEBAR).getScore(team.getName()).getScore();
     }
 
     public void incrementScore(GameTeam team) {

@@ -8,7 +8,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 public class GamePlayer {
-    private final UUID id;
+    public final UUID id;
     private Game game;
     private GameTeam team;
     private boolean banditLeader;

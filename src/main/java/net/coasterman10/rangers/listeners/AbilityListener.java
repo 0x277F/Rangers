@@ -1,6 +1,9 @@
 package net.coasterman10.rangers.listeners;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
@@ -16,28 +19,51 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 public class AbilityListener implements Listener {
     private final Plugin plugin;
     private Set<UUID> throwingKnifeCooldowns = new HashSet<>();
     private Set<UUID> doubleJumpers = new HashSet<>();
+    private Set<UUID> futureSneak = new HashSet<>();
+    private Map<UUID, BukkitTask> sneakTasks = new HashMap<>();
 
     public AbilityListener(Plugin plugin) {
         this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
+        if (e.getEntity() instanceof LivingEntity && e.getDamager() instanceof Player) {
+            ItemStack item = ((Player) e.getDamager()).getItemInHand();
+            if (item.getType() == Material.DIAMOND_SPADE) {
+                ItemMeta meta = item.getItemMeta();
+                if (meta.hasDisplayName() && meta.getDisplayName().contains("Mace")) {
+                    // 30% nausea I
+                    if (new Random().nextDouble() < 0.3) {
+                        ((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION,
+                                100, 0));
+                    }
+                }
+            }
+        }
     }
 
     @EventHandler
@@ -56,7 +82,7 @@ public class AbilityListener implements Listener {
                 System.out.println(p.getUniqueId() + " double jumped ");
 
                 final UUID id = p.getUniqueId();
-                
+
                 final int PERIOD = 5;
                 final int TICKS = 160;
                 new BukkitRunnable() {
@@ -103,7 +129,7 @@ public class AbilityListener implements Listener {
                     throwingKnifeCooldowns.add(player.getUniqueId());
                     Location eye = player.getEyeLocation();
                     final Entity knife = player.getWorld().dropItem(eye, e.getItem());
-                    knife.setVelocity(eye.getDirection().multiply(0.8));
+                    knife.setVelocity(eye.getDirection().multiply(1.1));
 
                     // We need to know who shot the knife in case it kills the victim
                     knife.setMetadata("shooter", new FixedMetadataValue(plugin, player.getName()));
@@ -205,28 +231,46 @@ public class AbilityListener implements Listener {
     }
 
     @EventHandler
-    public void onSneak(PlayerToggleSneakEvent e) {
+    public void onSneak(final PlayerToggleSneakEvent e) {
         final GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-
-        if (player.getGame() == null)
-            return;
-
-        if (player.getGame().isRunning() && player.getTeam() == GameTeam.RANGERS
-                && player.getUpgradeSelection("ranger.ability").equals("vanish")) {
-            if (e.getPlayer().isSneaking()) {
+        if (e.isSneaking()) {
+            if (player.getGame() != null && player.getGame().isRunning() && player.getTeam() == GameTeam.RANGERS
+                    && player.getUpgradeSelection("ranger.ability").equals("vanish")
+                    && !futureSneak.contains(player.id)) {
+                futureSneak.add(player.id);
                 // If they are still sneaking after 3 seconds, vanish
-                new BukkitRunnable() {
+                sneakTasks.put(player.id, new BukkitRunnable() {
                     @Override
                     public void run() {
-                        if (player.getHandle() != null)
-                            if (player.getHandle().isSneaking())
-                                player.vanish();
+                        if (player.getHandle() != null && player.getHandle().isSneaking()) {
+                            final Location initial = player.getHandle().getLocation();
+                            player.vanish();
+                            sneakTasks.put(player.id, new BukkitRunnable() {
+                                @Override
+                                public void run() {
+                                    if (player.getHandle() != null) {
+                                        if (player.getHandle().getLocation().distance(initial) > 1.0
+                                                && player.isVanished()) {
+                                            player.unvanish();
+                                            cancel();
+                                        }
+                                    } else {
+                                        cancel();
+                                    }
+                                }
+                            }.runTaskTimer(plugin, 0L, 5L));
+                        }
+                        futureSneak.remove(player.id);
                     }
-                }.runTaskLater(plugin, 60L);
-            } else {
-                if (player.isVanished()) {
-                    player.unvanish();
-                }
+                }.runTaskLater(plugin, 60L));
+            }
+        } else {
+            if (sneakTasks.containsKey(player.id)) {
+                sneakTasks.remove(player.id).cancel();
+            }
+            futureSneak.remove(player.id);
+            if (player.isVanished()) {
+                player.unvanish();
             }
         }
     }

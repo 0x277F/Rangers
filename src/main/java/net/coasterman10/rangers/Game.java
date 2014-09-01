@@ -157,8 +157,7 @@ public class Game {
                             // Score points for enemy heads placed in the chest
                             for (GamePlayer p : teams.get(t.opponent())) {
                                 if (meta.getOwner().equals(p.getHandle().getName())) {
-                                    scoreboard.setScore(t.opponent().getName(),
-                                            scoreboard.getScore(t.opponent().getName()) + 1);
+                                    scoreboard.incrementScore(t.opponent());
                                     break next; // I know this sucks
                                 }
                             }
@@ -267,17 +266,18 @@ public class Game {
             @Override
             public void start(Game g) {
                 g.seconds = g.settings.timeLimit;
-                g.scoreboard.setScore("Bandits", 0);
-                g.scoreboard.setScore("Rangers", 0);
+                g.scoreboard.setScore(GameTeam.RANGERS, 0);
+                g.scoreboard.setScore(GameTeam.BANDITS, 0);
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
+                    PlayerUtil.resetPlayer(p.getHandle());
                     p.getHandle().teleport(g.arena.getRangerSpawn());
                     Kit.RANGER.apply(p);
                     PlayerUtil.enableDoubleJump(p.getHandle());
                 }
                 for (GamePlayer p : g.teams.get(GameTeam.BANDITS)) {
+                    PlayerUtil.resetPlayer(p.getHandle());
                     p.getHandle().teleport(g.arena.getBanditSpawn());
                     Kit.BANDIT.apply(p);
-                    PlayerUtil.enableDoubleJump(p.getHandle());
                 }
                 
                 g.arena.clearGround();
@@ -303,7 +303,7 @@ public class Game {
                     g.checkChest(GameTeam.BANDITS);
 
                     // Check ranger victory conditions
-                    if (g.scoreboard.getScore("Rangers") == g.totalRangers) {
+                    if (g.scoreboard.getScore(GameTeam.RANGERS) == g.totalRangers) {
                         g.setState(ENDING);
                         g.broadcast(ChatColor.RED + "The rangers have been defeated!");
                         g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");

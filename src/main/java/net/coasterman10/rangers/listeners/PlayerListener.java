@@ -9,17 +9,19 @@ import net.coasterman10.rangers.Game;
 import net.coasterman10.rangers.GamePlayer;
 import net.coasterman10.rangers.GameTeam;
 import net.coasterman10.rangers.PlayerManager;
+import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.Rangers;
+import net.coasterman10.spectate.SpectateAPI;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.SkullType;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -58,13 +60,7 @@ public class PlayerListener implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         e.getPlayer().sendMessage("Welcome to Rangers!");
         e.getPlayer().teleport(plugin.getLobbySpawn());
-        e.getPlayer().getInventory().clear();
-        e.getPlayer().getInventory().setArmorContents(null); // Essentials idiot devs still haven't figured this out
-
-        // Clear residual double jump
-        e.getPlayer().setExp(0F);
-        if (e.getPlayer().getGameMode() != GameMode.CREATIVE)
-            e.getPlayer().setAllowFlight(false);
+        PlayerUtil.resetPlayer(e.getPlayer());
 
         // Get it through to players this is a dev server
         for (int i = 0; i < 10; i++) {
@@ -86,18 +82,28 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
-        if (e.getAction() != Action.RIGHT_CLICK_BLOCK)
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            if (SpectateAPI.isSpectator(e.getPlayer()))
+                SpectateAPI.removeSpectator(e.getPlayer());
             return;
+        }
         if (e.getClickedBlock().getState() instanceof Sign) {
             Sign s = (Sign) e.getClickedBlock().getState();
             if (s.getLine(1).equalsIgnoreCase("back to") && s.getLine(2).equalsIgnoreCase("lobby")) {
                 plugin.sendToLobby(e.getPlayer());
             }
-        } else if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
-                && e.getPlayer().getItemInHand().getType() == Material.SKULL_ITEM) {
-            ((Chest) e.getClickedBlock().getState()).getBlockInventory().addItem(e.getPlayer().getItemInHand());
-            e.getPlayer().getInventory().remove(e.getPlayer().getItemInHand());
-            e.setCancelled(true);
+            if (s.getLine(1).toLowerCase().contains("click here") && s.getLine(2).toLowerCase().contains("to spectate")) {
+                SpectateAPI.addSpectator(e.getPlayer());
+            }
+        } else {
+            if (SpectateAPI.isSpectator(e.getPlayer()))
+                SpectateAPI.removeSpectator(e.getPlayer());
+            if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
+                    && e.getPlayer().getItemInHand().getType() == Material.SKULL_ITEM) {
+                ((Chest) e.getClickedBlock().getState()).getBlockInventory().addItem(e.getPlayer().getItemInHand());
+                e.getPlayer().getInventory().remove(e.getPlayer().getItemInHand());
+                e.setCancelled(true);
+            }
         }
     }
 
@@ -228,7 +234,8 @@ public class PlayerListener implements Listener {
                     }
                 }
             }
-        } else if (!allowedDrops.contains(e.getItem().getItemStack().getType())) {
+        } else if (e.getItem().getType() == EntityType.DROPPED_ITEM
+                && !allowedDrops.contains(e.getItem().getItemStack().getType())) {
             GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
             if (player.getGame() != null && player.getGame().isRunning())
                 e.setCancelled(true);
@@ -249,7 +256,7 @@ public class PlayerListener implements Listener {
             e.setCancelled(true);
         }
     }
-    
+
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
         if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()) {
