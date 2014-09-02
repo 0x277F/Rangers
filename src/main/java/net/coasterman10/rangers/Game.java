@@ -20,6 +20,7 @@ import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class Game {
@@ -217,10 +218,7 @@ public class Game {
                 for (GamePlayer p : g.players) {
                     BarAPI.removeBar(p.getHandle());
                     p.getHandle().teleport(g.arena.getLobbySpawn());
-                    p.getHandle().getInventory().clear();
-                    p.getHandle().getInventory().setArmorContents(null);
-                    p.getHandle().setExp(0F);
-                    p.getHandle().setAllowFlight(false);
+                    PlayerUtil.resetPlayer(p.getHandle());
                 }
                 g.scoreboard.reset();
             }
@@ -273,11 +271,15 @@ public class Game {
                     p.getHandle().teleport(g.arena.getRangerSpawn());
                     Kit.RANGER.apply(p);
                     PlayerUtil.enableDoubleJump(p.getHandle());
+                    PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
+                    PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SPEED, 0);
                 }
                 for (GamePlayer p : g.teams.get(GameTeam.BANDITS)) {
                     PlayerUtil.resetPlayer(p.getHandle());
                     p.getHandle().teleport(g.arena.getBanditSpawn());
                     Kit.BANDIT.apply(p);
+                    PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
+                    PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW, 0);
                 }
                 
                 g.arena.clearGround();

@@ -3,6 +3,8 @@ package net.coasterman10.rangers;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 public class PlayerUtil {
     private PlayerUtil() {
@@ -34,5 +36,9 @@ public class PlayerUtil {
                 p.showPlayer(other);
             other.showPlayer(p);
         }
+    }
+
+    public static void addPermanentEffect(Player p, PotionEffectType effect, int amp) {
+        p.addPotionEffect(new PotionEffect(effect, Integer.MAX_VALUE, amp));
     }
 }
