@@ -2,6 +2,7 @@ package net.coasterman10.rangers;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -15,6 +16,7 @@ public class PlayerUtil {
         // Smallest possible increment lower than 1.0 to make the bar appear full but not give a level
         p.setExp(Float.intBitsToFloat(Float.floatToIntBits(1F) - 1));
         p.setAllowFlight(true);
+        p.playSound(p.getEyeLocation(), Sound.WITHER_SHOOT, 0.75F, 2.0F);
     }
 
     public static void disableDoubleJump(Player p) {

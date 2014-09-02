@@ -78,6 +78,7 @@ public class AbilityListener implements Listener {
                 p.setFlying(false);
                 p.setVelocity(p.getLocation().getDirection().multiply(1.3).setY(1.0));
                 p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
+                p.getWorld().playSound(p.getLocation(), Sound.ZOMBIE_INFECT, 1.0F, 2.0F);
                 doubleJumpers.add(p.getUniqueId());
                 System.out.println(p.getUniqueId() + " double jumped ");
 

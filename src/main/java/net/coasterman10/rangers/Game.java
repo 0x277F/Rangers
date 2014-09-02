@@ -228,7 +228,7 @@ public class Game {
                 for (GamePlayer p : g.players) {
                     BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers "
                             + ChatColor.BLUE + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA
-                            + "69.137.10.168", 100F);
+                            + "70.114.250.251", 100F);
                 }
                 if (g.players.size() >= g.settings.minPlayers) {
                     g.setState(State.STARTING);
