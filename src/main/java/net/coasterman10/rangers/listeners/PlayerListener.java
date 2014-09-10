@@ -83,8 +83,6 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) {
-            if (SpectateAPI.isSpectator(e.getPlayer()))
-                SpectateAPI.removeSpectator(e.getPlayer());
             return;
         }
         if (e.getClickedBlock().getState() instanceof Sign) {
@@ -204,6 +202,9 @@ public class PlayerListener implements Listener {
 
             // Drop the victim's head
             e.getDrops().add(getHead(e.getEntity()));
+
+            // Put them in spectator mode
+            SpectateAPI.addSpectator(e.getEntity());
         } else {
             e.getDrops().clear(); // There should be no drops at all outside of the game
             e.setDeathMessage(null);
@@ -212,9 +213,14 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
-        Game g = PlayerManager.getPlayer(e.getPlayer()).getGame();
+        GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
+        Game g = player.getGame();
         if (g == null)
             e.setRespawnLocation(plugin.getLobbySpawn());
+        else if (player.getTeam() == GameTeam.RANGERS)
+            e.setRespawnLocation(g.getArena().getRangerSpawn());
+        else if (player.getTeam() == GameTeam.BANDITS)
+            e.setRespawnLocation(g.getArena().getBanditSpawn());
         else
             e.setRespawnLocation(g.getLobbySpawn());
     }

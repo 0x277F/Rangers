@@ -70,4 +70,8 @@ public class Arena {
             }
         }
     }
+
+    public Location getSpectatorSpawn() {
+        return getRangerSpawn();
+    }
 }

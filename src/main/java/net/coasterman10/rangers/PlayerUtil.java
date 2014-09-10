@@ -16,7 +16,7 @@ public class PlayerUtil {
         // Smallest possible increment lower than 1.0 to make the bar appear full but not give a level
         p.setExp(Float.intBitsToFloat(Float.floatToIntBits(1F) - 1));
         p.setAllowFlight(true);
-        p.playSound(p.getEyeLocation(), Sound.WITHER_SHOOT, 0.75F, 2.0F);
+        p.playSound(p.getEyeLocation(), Sound.WITHER_SHOOT, 0.75F, 1.0F);
     }
 
     public static void disableDoubleJump(Player p) {
@@ -33,6 +33,8 @@ public class PlayerUtil {
         p.getInventory().setArmorContents(null);
         p.setExp(0F);
         p.setLevel(0);
+        for (PotionEffect effect : p.getActivePotionEffects())
+            p.removePotionEffect(effect.getType());
         for (Player other : Bukkit.getOnlinePlayers()) {
             if (!PlayerManager.getPlayer(other).isVanished())
                 p.showPlayer(other);

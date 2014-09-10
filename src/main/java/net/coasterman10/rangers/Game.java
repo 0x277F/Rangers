@@ -10,6 +10,7 @@ import java.util.Map;
 
 import me.confuser.barapi.BarAPI;
 import net.coasterman10.rangers.kits.Kit;
+import net.coasterman10.spectate.SpectateAPI;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -83,14 +84,13 @@ public class Game {
             players.add(player);
             player.setGame(this);
             handle.teleport(arena.getLobbySpawn());
-            handle.setHealth(20.0);
-            handle.setFoodLevel(20);
-            handle.setSaturation(20F);
-            handle.getInventory().clear();
-            handle.getInventory().setArmorContents(null);
+            PlayerUtil.resetPlayer(handle);
             broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
         } else {
-            handle.sendMessage(ChatColor.RED + "You cannot join this game once it is in progress!");
+            handle.sendMessage(ChatColor.DARK_AQUA
+                    + "The game is already in progress. You can spectate until it restarts.");
+            SpectateAPI.addSpectator(handle);
+            handle.teleport(arena.getSpectatorSpawn());
         }
     }
 
@@ -105,6 +105,7 @@ public class Game {
             BarAPI.removeBar(player.getHandle());
             player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
             PlayerUtil.disableDoubleJump(player.getHandle());
+            SpectateAPI.removeSpectator(player.getHandle());
         }
     }
 
@@ -218,7 +219,9 @@ public class Game {
                 for (GamePlayer p : g.players) {
                     BarAPI.removeBar(p.getHandle());
                     p.getHandle().teleport(g.arena.getLobbySpawn());
+                    p.setTeam(null);
                     PlayerUtil.resetPlayer(p.getHandle());
+                    PlayerUtil.disableDoubleJump(p.getHandle());
                 }
                 g.scoreboard.reset();
             }
@@ -281,7 +284,7 @@ public class Game {
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW, 0);
                 }
-                
+
                 g.arena.clearGround();
             }
 
@@ -356,6 +359,10 @@ public class Game {
 
     public String getMapName() {
         return arena.getMapName();
+    }
+
+    public Arena getArena() {
+        return arena;
     }
 
     public int getPlayerCount() {
