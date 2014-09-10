@@ -8,7 +8,6 @@ import java.util.Map;
 import net.coasterman10.rangers.config.ConfigAccessor;
 
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.util.Vector;
 
 public class GameMapManager {
     private final ConfigAccessor config;
@@ -34,7 +33,7 @@ public class GameMapManager {
         }
 
         // Vector containing the offset of the lobby spawn from its origin
-        Vector gameLobbySpawn = getVector(config.get().getConfigurationSection("game-lobby.spawn"));
+        SpawnVector gameLobbySpawn = getVector(config.get().getConfigurationSection("game-lobby.spawn"));
 
         for (String mapName : config.get().getConfigurationSection("maps").getKeys(false)) {
             ConfigurationSection section = config.get().getConfigurationSection("maps." + mapName);
@@ -44,13 +43,14 @@ public class GameMapManager {
                 map.gameSchematic = new Schematic(new File(schematicFolder, "schematics" + File.separator
                         + config.get().getString("maps." + mapName + ".schematic")));
             } catch (IOException | InvalidSchematicException e) {
-                Rangers.logger().warning(
-                        "Could not load game map schematic for map " + mapName + ": " + e.getMessage());
+                Rangers.logger()
+                        .warning("Could not load game map schematic for map " + mapName + ": " + e.getMessage());
                 Rangers.logger().warning("Loading default empty schematic for map " + mapName);
                 map.gameSchematic = new Schematic();
             }
             map.rangerSpawn = getVector(section.getConfigurationSection("spawns.rangers"));
             map.banditSpawn = getVector(section.getConfigurationSection("spawns.bandits"));
+            map.spectatorSpawn = getVector(section.getConfigurationSection("spectator-spawn"));
             map.rangerChest = getVector(section.getConfigurationSection("chests.rangers")).toBlockVector();
             map.banditChest = getVector(section.getConfigurationSection("chests.bandits")).toBlockVector();
             map.lobbySpawn = gameLobbySpawn;
@@ -62,10 +62,16 @@ public class GameMapManager {
         return maps.get(name);
     }
 
-    private static Vector getVector(ConfigurationSection config) {
-        if (config.isSet("x") && config.isSet("y") && config.isSet("z"))
-            return new Vector(config.getDouble("x"), config.getDouble("y"), config.getDouble("z"));
-        else
-            return new Vector();
+    private static SpawnVector getVector(ConfigurationSection config) {
+        SpawnVector vec = new SpawnVector();
+        if (config != null) {
+            if (config.isSet("x") && config.isSet("y") && config.isSet("z"))
+                vec.setX(config.getDouble("x")).setY(config.getDouble("y")).setZ(config.getDouble("z"));
+            if (config.isSet("yaw"))
+                vec.setYaw((float) config.getDouble("yaw"));
+            if (config.isSet("pitch"))
+                vec.setPitch((float) config.getDouble("pitch"));
+        }
+        return vec;
     }
 }

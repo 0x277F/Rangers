@@ -50,6 +50,10 @@ public class GamePlayer {
     public Game getGame() {
         return game;
     }
+    
+    public boolean isInGame() {
+        return game != null;
+    }
 
     public void setBanditLeader(boolean banditLeader) {
         this.banditLeader = banditLeader;

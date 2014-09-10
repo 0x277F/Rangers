@@ -80,7 +80,6 @@ public class AbilityListener implements Listener {
                 p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
                 p.getWorld().playSound(p.getLocation(), Sound.ZOMBIE_INFECT, 1.0F, 2.0F);
                 doubleJumpers.add(p.getUniqueId());
-                System.out.println(p.getUniqueId() + " double jumped ");
 
                 final UUID id = p.getUniqueId();
 
@@ -115,7 +114,6 @@ public class AbilityListener implements Listener {
     public void onDamage(EntityDamageEvent e) {
         if (e.getCause() == DamageCause.FALL && doubleJumpers.contains(e.getEntity().getUniqueId())) {
             e.setCancelled(true);
-            System.out.println("Prevented fall damage for " + e.getEntity().getUniqueId());
         }
     }
 

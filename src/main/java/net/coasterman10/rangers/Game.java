@@ -89,6 +89,9 @@ public class Game {
         } else {
             handle.sendMessage(ChatColor.DARK_AQUA
                     + "The game is already in progress. You can spectate until it restarts.");
+            players.add(player);
+            player.setGame(this);
+            PlayerUtil.resetPlayer(handle);
             SpectateAPI.addSpectator(handle);
             handle.teleport(arena.getSpectatorSpawn());
         }
@@ -156,6 +159,13 @@ public class Game {
                     if (item.getType() == Material.SKULL_ITEM) {
                         SkullMeta meta = (SkullMeta) item.getItemMeta();
                         if (meta.hasOwner()) {
+                            // Rangers win if this is bandit chest and bandit leader's head is in it
+                            if (meta.getOwner().equals(banditLeader.getHandle().getName())) {
+                                setState(State.ENDING);
+                                broadcast(ChatColor.RED + "The bandit leader has been killed!");
+                                broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
+                            }
+                            
                             // Score points for enemy heads placed in the chest
                             for (GamePlayer p : teams.get(t.opponent())) {
                                 if (meta.getOwner().equals(p.getHandle().getName())) {
@@ -170,13 +180,6 @@ public class Game {
                                     loc.getWorld().dropItemNaturally(
                                             loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
                                 }
-                            }
-
-                            // Rangers win if this is bandit chest and bandit leader's head is in it
-                            if (meta.getOwner().equals(banditLeader.getHandle().getName())) {
-                                setState(State.ENDING);
-                                broadcast(ChatColor.RED + "The bandit leader has been killed!");
-                                broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
                             }
                         }
                     }
@@ -293,7 +296,7 @@ public class Game {
                 if (g.seconds == 0) {
                     g.setState(ENDING);
                     g.broadcast(ChatColor.RED + "Time has expired!");
-                    g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
+                    g.broadcast(ChatColor.GOLD + "" + ChatColor.BOLD + "The game is a draw.");
                 } else {
                     for (GamePlayer player : g.players) {
                         int minutes = g.seconds / 60;

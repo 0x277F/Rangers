@@ -41,15 +41,15 @@ public class Arena {
     }
 
     public Location getLobbySpawn() {
-        return lobby.clone().add(map.lobbySpawn);
+        return map.lobbySpawn.addTo(lobby);
     }
 
     public Location getRangerSpawn() {
-        return game.clone().add(map.rangerSpawn);
+        return map.rangerSpawn.addTo(game);
     }
 
     public Location getBanditSpawn() {
-        return game.clone().add(map.banditSpawn);
+        return map.banditSpawn.addTo(game);
     }
 
     public Location getRangerChest() {
@@ -61,9 +61,10 @@ public class Arena {
     }
 
     public void clearGround() {
-        Vector min = game.toVector();
-        Vector max = min.clone().add(
-                new Vector(map.gameSchematic.getWidth(), map.gameSchematic.getHeight(), map.gameSchematic.getLength()));
+        Vector min = game.toVector().setY(0);
+        Vector max = min.clone()
+                .add(new Vector(map.gameSchematic.getWidth(), game.getWorld().getMaxHeight(), map.gameSchematic
+                        .getLength()));
         for (Entity e : game.getWorld().getEntitiesByClasses(Item.class, Arrow.class)) {
             if (e.getLocation().toVector().isInAABB(min, max)) {
                 e.remove();
@@ -72,6 +73,6 @@ public class Arena {
     }
 
     public Location getSpectatorSpawn() {
-        return getRangerSpawn();
+        return map.spectatorSpawn.addTo(game);
     }
 }
