@@ -3,7 +3,7 @@ package net.coasterman10.rangers;
 import java.util.EnumMap;
 import java.util.Map;
 
-import net.coasterman10.rangers.Game.State;
+import net.coasterman10.rangers.game.Game.State;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

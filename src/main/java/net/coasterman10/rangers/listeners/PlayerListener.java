@@ -5,12 +5,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-import net.coasterman10.rangers.Game;
-import net.coasterman10.rangers.GamePlayer;
-import net.coasterman10.rangers.GameTeam;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.Rangers;
+import net.coasterman10.rangers.game.Game;
+import net.coasterman10.rangers.game.GamePlayer;
+import net.coasterman10.rangers.game.GameTeam;
 import net.coasterman10.spectate.SpectateAPI;
 
 import org.bukkit.Bukkit;

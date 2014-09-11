@@ -1,5 +1,7 @@
 package net.coasterman10.rangers;
 
+import net.coasterman10.rangers.game.Game;
+
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;

@@ -1,4 +1,4 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.map;
 
 import java.io.File;
 import java.util.HashMap;

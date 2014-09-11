@@ -1,4 +1,4 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.map;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import net.coasterman10.rangers.InvalidSchematicException;
 
 import org.bukkit.Location;
 import org.bukkit.World;

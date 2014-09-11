@@ -1,4 +1,7 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.map;
+
+import net.coasterman10.rangers.game.GamePlayer;
+import net.coasterman10.rangers.game.GameTeam;
 
 import org.bukkit.Location;
 import org.bukkit.Material;

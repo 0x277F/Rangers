@@ -1,4 +1,4 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.game;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Map;
 
 import me.confuser.barapi.BarAPI;
+import net.coasterman10.rangers.PlayerUtil;
+import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.kits.Kit;
+import net.coasterman10.rangers.map.Arena;
 import net.coasterman10.spectate.SpectateAPI;
 
 import org.bukkit.Bukkit;

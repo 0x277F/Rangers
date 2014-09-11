@@ -1,9 +1,13 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.map;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
+
+import net.coasterman10.rangers.InvalidSchematicException;
+import net.coasterman10.rangers.SpawnVector;
+import net.coasterman10.rangers.game.GameTeam;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.BlockVector;

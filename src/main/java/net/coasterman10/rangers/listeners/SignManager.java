@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-import net.coasterman10.rangers.Game;
 import net.coasterman10.rangers.GameJoinSign;
 import net.coasterman10.rangers.GameSign;
 import net.coasterman10.rangers.GameStatusSign;
 import net.coasterman10.rangers.PlayerManager;
+import net.coasterman10.rangers.game.Game;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
