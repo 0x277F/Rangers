@@ -25,14 +25,25 @@ import org.jnbt.StringTag;
 import org.jnbt.Tag;
 
 public class Schematic {
+    private String filename;
     private BlockData[][][] blocks;
 
     public Schematic() {
+        filename = "empty-schematic.schematic";
         blocks = new BlockData[0][0][0];
     }
 
     public Schematic(File file) throws IOException, InvalidSchematicException {
+        filename = file.getName();
         blocks = loadMCEditSchematicBlocks(file);
+    }
+    
+    public String getFilename() {
+        return filename;
+    }
+    
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 
     public void build(Location origin) {

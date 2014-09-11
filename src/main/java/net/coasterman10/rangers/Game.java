@@ -83,17 +83,19 @@ public class Game {
             }
             players.add(player);
             player.setGame(this);
-            handle.teleport(arena.getLobbySpawn());
+            player.setTeam(null);
             PlayerUtil.resetPlayer(handle);
+            arena.sendToLobby(player);
             broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
         } else {
             handle.sendMessage(ChatColor.DARK_AQUA
                     + "The game is already in progress. You can spectate until it restarts.");
             players.add(player);
             player.setGame(this);
+            player.setTeam(GameTeam.SPECTATORS);
             PlayerUtil.resetPlayer(handle);
             SpectateAPI.addSpectator(handle);
-            handle.teleport(arena.getSpectatorSpawn());
+            
         }
     }
 
@@ -102,6 +104,7 @@ public class Game {
             return;
         players.remove(player);
         player.setGame(null);
+        player.setTeam(null);
         for (Collection<GamePlayer> team : teams.values())
             team.remove(player);
         if (player.getHandle() != null) {
@@ -150,7 +153,7 @@ public class Game {
     }
 
     private void checkChest(GameTeam t) {
-        Location loc = (t == GameTeam.RANGERS ? arena.getRangerChest() : arena.getBanditChest());
+        Location loc = arena.getChest(t);
         if (loc.getBlock().getState() instanceof Chest) {
             Chest state = (Chest) loc.getBlock().getState();
             next: for (ItemStack item : state.getBlockInventory()) {
@@ -221,7 +224,7 @@ public class Game {
                 }
                 for (GamePlayer p : g.players) {
                     BarAPI.removeBar(p.getHandle());
-                    p.getHandle().teleport(g.arena.getLobbySpawn());
+                    g.arena.sendToLobby(p);
                     p.setTeam(null);
                     PlayerUtil.resetPlayer(p.getHandle());
                     PlayerUtil.disableDoubleJump(p.getHandle());
@@ -272,17 +275,17 @@ public class Game {
                 g.seconds = g.settings.timeLimit;
                 g.scoreboard.setScore(GameTeam.RANGERS, 0);
                 g.scoreboard.setScore(GameTeam.BANDITS, 0);
-                for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
+                for (GamePlayer p : g.players) {
                     PlayerUtil.resetPlayer(p.getHandle());
-                    p.getHandle().teleport(g.arena.getRangerSpawn());
+                    g.arena.sendToGame(p);
+                }
+                for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
                     Kit.RANGER.apply(p);
                     PlayerUtil.enableDoubleJump(p.getHandle());
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SPEED, 0);
                 }
                 for (GamePlayer p : g.teams.get(GameTeam.BANDITS)) {
-                    PlayerUtil.resetPlayer(p.getHandle());
-                    p.getHandle().teleport(g.arena.getBanditSpawn());
                     Kit.BANDIT.apply(p);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW, 0);
@@ -342,10 +345,6 @@ public class Game {
         public abstract void start(final Game g);
 
         public abstract void onSecond(final Game g);
-    }
-
-    public Location getLobbySpawn() {
-        return arena.getLobbySpawn();
     }
 
     public boolean allowPvp() {

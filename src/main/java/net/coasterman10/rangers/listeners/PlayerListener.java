@@ -217,12 +217,10 @@ public class PlayerListener implements Listener {
         Game g = player.getGame();
         if (g == null)
             e.setRespawnLocation(plugin.getLobbySpawn());
-        else if (player.getTeam() == GameTeam.RANGERS)
-            e.setRespawnLocation(g.getArena().getRangerSpawn());
-        else if (player.getTeam() == GameTeam.BANDITS)
-            e.setRespawnLocation(g.getArena().getBanditSpawn());
+        else if (player.getTeam() != null)
+            e.setRespawnLocation(g.getArena().getMap().getSpawn(player.getTeam()).addTo(g.getArena().getOrigin()));
         else
-            e.setRespawnLocation(g.getLobbySpawn());
+            e.setRespawnLocation(g.getArena().getLobbySpawn());
     }
 
     @EventHandler

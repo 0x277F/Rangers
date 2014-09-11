@@ -3,7 +3,7 @@ package net.coasterman10.rangers;
 import org.bukkit.ChatColor;
 
 public enum GameTeam {
-    RANGERS(ChatColor.GREEN), BANDITS(ChatColor.RED);
+    RANGERS(ChatColor.GREEN), BANDITS(ChatColor.RED), SPECTATORS(ChatColor.DARK_AQUA);
     
     static {
         RANGERS.opponent = BANDITS;
