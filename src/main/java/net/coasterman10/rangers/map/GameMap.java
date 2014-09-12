@@ -43,7 +43,8 @@ public class GameMap {
     }
 
     public void save(ConfigurationSection config) {
-        config.set("schematic", schematic.getFilename());
+        if (schematic != null)
+            config.set("schematic", schematic.getFilename());
         setVector(config.createSection("lobby"), lobbySpawn);
         config.createSection("spawns");
         config.createSection("chests");
@@ -118,7 +119,7 @@ public class GameMap {
     }
 
     private static void setVector(ConfigurationSection config, Vector vector) {
-        if (config != null) {
+        if (config != null && vector != null) {
             if (vector instanceof BlockVector) {
                 config.set("x", vector.getBlockX());
                 config.set("y", vector.getBlockY());

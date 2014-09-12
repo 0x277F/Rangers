@@ -28,6 +28,16 @@ public class GameMapManager {
                 maps.put(mapName, map);
         }
     }
+    
+    public GameMap createMap(String name) {
+        if (!maps.containsKey(name)) {
+            GameMap map = new GameMap(name);
+            map.save(config.get().getConfigurationSection("maps." + map.name));
+            return map;
+        } else {
+            return maps.get(name);
+        }
+    }
 
     public GameMap getMap(String name) {
         return maps.get(name);

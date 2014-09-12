@@ -10,6 +10,7 @@ import java.util.Map;
 import net.coasterman10.rangers.InvalidSchematicException;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -35,15 +36,33 @@ public class Schematic {
         blocks = new BlockData[0][0][0];
     }
 
+    @SuppressWarnings("deprecation")
+    public Schematic(Location min, Location max) {
+        blocks = new BlockData[max.getBlockX() - min.getBlockX() + 1][max.getBlockY() - min.getBlockY() + 1][max
+                .getBlockZ() - min.getBlockZ() + 1];
+        for (int x = min.getBlockX(); x <= max.getBlockX(); x++) {
+            for (int y = min.getBlockY(); y <= max.getBlockY(); y++) {
+                for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++) {
+                    Block b = min.getWorld().getBlockAt(x, y, z);
+                    Material type = b.getType();
+                    if (type == Material.SIGN)
+                        blocks[x][y][z] = new SignBlockData(type.getId(), b.getData(), ((Sign) b.getState()).getLines());
+                    else
+                        blocks[x][y][z] = new BlockData(type.getId(), b.getData());
+                }
+            }
+        }
+    }
+
     public Schematic(File file) throws IOException, InvalidSchematicException {
         filename = file.getName();
         blocks = loadMCEditSchematicBlocks(file);
     }
-    
+
     public String getFilename() {
         return filename;
     }
-    
+
     public void setFilename(String filename) {
         this.filename = filename;
     }

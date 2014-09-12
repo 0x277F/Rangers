@@ -31,37 +31,40 @@ public class EditorManager implements Listener, CommandExecutor {
         this.maps = maps;
     }
 
-    public void openEditor(Player player, GameMap map) {
-
-    }
-
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
             if (args.length >= 1) {
-                if (args[0].equalsIgnoreCase("bounds")) {
-
-                }
                 if (args[0].equalsIgnoreCase("list")) {
                     player.sendMessage(ChatColor.YELLOW + "Maps:");
                     for (GameMap map : maps.getMaps())
                         player.sendMessage(ChatColor.YELLOW + "- " + ChatColor.AQUA + map.name);
                 }
                 if (args[0].equalsIgnoreCase("create")) {
-
+                    if (args.length >= 2) {
+                        if (!sessions.containsKey(player.getUniqueId())) {
+                            GameMap map = maps.getMap(args[1]);
+                            if (map == null) {
+                                openEditor(player, maps.createMap(args[1]));
+                            } else {
+                                player.sendMessage(ChatColor.RED + "Map \"" + args[1]
+                                        + "\" already exists, edit it with " + ChatColor.YELLOW + "/map edit "
+                                        + ChatColor.BLUE + args[1]);
+                            }
+                        } else {
+                            player.sendMessage(ChatColor.RED + "You are already editing a map.");
+                        }
+                    } else {
+                        player.sendMessage(ChatColor.RED + "Usage: " + ChatColor.YELLOW + "/map create <name>");
+                    }
                 }
                 if (args[0].equalsIgnoreCase("edit")) {
                     if (args.length >= 2) {
                         if (!sessions.containsKey(player.getUniqueId())) {
                             GameMap map = maps.getMap(args[1]);
                             if (map != null) {
-                                World world = new WorldCreator("editor-" + player.getUniqueId()).generator(
-                                        new EmptyChunkGenerator()).createWorld();
-                                Location origin = new Location(world, 0, 64, 0);
-                                EditorSession session = new EditorSession(plugin, player, map, origin);
-                                session.load();
-                                sessions.put(player.getUniqueId(), session);
+                                openEditor(player, map);
                             } else {
                                 player.sendMessage(ChatColor.RED + "Map \"" + args[1] + "\" does not exist.");
                             }
@@ -114,5 +117,15 @@ public class EditorManager implements Listener, CommandExecutor {
             sender.sendMessage("Only players can use the editor");
         }
         return true;
+    }
+
+    private void openEditor(Player player, GameMap map) {
+        WorldCreator wc = new WorldCreator("editor-" + player.getUniqueId());
+        wc.generator(new EmptyChunkGenerator());
+        World w = wc.createWorld();
+        Location origin = new Location(w, 0, 64, 0);
+        EditorSession session = new EditorSession(plugin, player, map, origin);
+        session.load();
+        sessions.put(player.getUniqueId(), session);
     }
 }
