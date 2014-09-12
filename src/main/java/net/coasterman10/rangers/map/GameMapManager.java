@@ -31,4 +31,8 @@ public class GameMapManager {
     public GameMap getMap(String name) {
         return maps.get(name);
     }
+
+    public void saveMap(GameMap map) {
+        map.save(config.get().getConfigurationSection("maps." + map.name));
+    }
 }
