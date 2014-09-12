@@ -27,31 +27,36 @@ signs:
 
 game-world: games
 
-game-lobby:
-  schematic: Rangers-Lobby.schematic
-  spawn:
-    x: 4
-    y: 1
-    z: 4
-
 maps:
   Spring:
     schematic: Spring.schematic
+    lobby:
+        x: 4
+        y: 1
+        z: 4
+        yaw: 180
     spawns:
       rangers:
         x: 6.5
         y: 12
         z: 27.5
+        yaw: -90
       bandits:
         x: 97.5
         y: 12
         z: 29.5
+        yaw: 90
+      spectators:
+        x: 48
+        y: 20
+        z: 45
+        yaw: 180
     chests:
       rangers:
         x: 6
         y: 11
-        z: 26
+        z: 30
       bandits:
-        x: 97
+        x: 96
         y: 11
         z: 30

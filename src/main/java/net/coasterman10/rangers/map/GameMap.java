@@ -28,6 +28,7 @@ public class GameMap {
         try {
             schematic = new Schematic(new File(schematicFolder, config.getString("schematic")));
         } catch (IOException | InvalidSchematicException e) {
+            e.printStackTrace();
             schematic = null;
         }
 

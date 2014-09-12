@@ -29,4 +29,8 @@ public enum GameTeam {
     public ChatColor getChatColor() {
         return chatColor;
     }
+
+    public static GameTeam[] teams() {
+        return new GameTeam[] { RANGERS, BANDITS };
+    }
 }

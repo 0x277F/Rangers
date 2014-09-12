@@ -17,7 +17,7 @@ public class GameScoreboard {
     private Map<GameTeam, Scoreboard> boards = new EnumMap<>(GameTeam.class);
 
     public GameScoreboard() {
-        for (GameTeam t : GameTeam.values()) {
+        for (GameTeam t : GameTeam.teams()) {
             Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
             boards.put(t, board);
 

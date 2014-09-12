@@ -1,6 +1,7 @@
 package net.coasterman10.rangers.map;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,5 +35,10 @@ public class GameMapManager {
 
     public void saveMap(GameMap map) {
         map.save(config.get().getConfigurationSection("maps." + map.name));
+        config.save();
+    }
+
+    public Collection<GameMap> getMaps() {
+        return maps.values();
     }
 }

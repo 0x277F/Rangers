@@ -6,3 +6,5 @@ depend: [BarAPI, SpectateAPI]
 commands:
   quit:
     
+  map:
+    

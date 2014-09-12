@@ -1,5 +1,6 @@
 package net.coasterman10.rangers;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +21,7 @@ import net.coasterman10.rangers.listeners.WorldListener;
 import net.coasterman10.rangers.map.ArenaManager;
 import net.coasterman10.rangers.map.GameMap;
 import net.coasterman10.rangers.map.GameMapManager;
+import net.coasterman10.rangers.map.editor.EditorManager;
 import net.coasterman10.rangers.menu.BanditSecondaryMenu;
 import net.coasterman10.rangers.menu.BowMenu;
 import net.coasterman10.rangers.menu.RangerAbilityMenu;
@@ -51,7 +53,7 @@ public class Rangers extends JavaPlugin {
     private AbilityListener abilityListener;
     private SignManager signManager;
     private MenuManager menuManager;
-
+    private EditorManager editor;
     private ArenaManager arenas;
 
     @Override
@@ -59,7 +61,7 @@ public class Rangers extends JavaPlugin {
         log = getLogger();
         ConfigAccessor configYml = new PluginConfigAccessor(this);
 
-        gameMapManager = new GameMapManager(configYml, getDataFolder());
+        gameMapManager = new GameMapManager(configYml, new File(getDataFolder(), "schematics"));
         gameMapManager.loadMaps();
 
         worldListener = new WorldListener();
@@ -67,9 +69,10 @@ public class Rangers extends JavaPlugin {
         abilityListener = new AbilityListener(this);
         signManager = new SignManager(this);
         menuManager = new MenuManager();
+        editor = new EditorManager(this, gameMapManager);
 
         saveDefaultConfig();
-        saveDefaultConfigValues();
+        //saveDefaultConfigValues();
         loadConfig();
 
         menuManager.addSignMenu(new RangerAbilityMenu(),
@@ -86,8 +89,10 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(abilityListener, this);
         pm.registerEvents(signManager, this);
         pm.registerEvents(menuManager, this);
+        pm.registerEvents(editor, this);
 
         getCommand("quit").setExecutor(new QuitCommand(this));
+        getCommand("map").setExecutor(editor);
     }
 
     @Override
