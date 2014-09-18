@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import net.coasterman10.rangers.config.ConfigAccessor;
@@ -18,10 +17,10 @@ import net.coasterman10.rangers.listeners.MenuManager;
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.SignManager;
 import net.coasterman10.rangers.listeners.WorldListener;
+import net.coasterman10.rangers.map.Arena;
 import net.coasterman10.rangers.map.ArenaManager;
 import net.coasterman10.rangers.map.GameMap;
 import net.coasterman10.rangers.map.GameMapManager;
-import net.coasterman10.rangers.map.editor.EditorManager;
 import net.coasterman10.rangers.menu.BanditSecondaryMenu;
 import net.coasterman10.rangers.menu.BowMenu;
 import net.coasterman10.rangers.menu.RangerAbilityMenu;
@@ -53,7 +52,6 @@ public class Rangers extends JavaPlugin {
     private AbilityListener abilityListener;
     private SignManager signManager;
     private MenuManager menuManager;
-    private EditorManager editor;
     private ArenaManager arenas;
 
     @Override
@@ -69,10 +67,8 @@ public class Rangers extends JavaPlugin {
         abilityListener = new AbilityListener(this);
         signManager = new SignManager(this);
         menuManager = new MenuManager();
-        editor = new EditorManager(this, gameMapManager);
 
         saveDefaultConfig();
-        //saveDefaultConfigValues();
         loadConfig();
 
         menuManager.addSignMenu(new RangerAbilityMenu(),
@@ -89,10 +85,8 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(abilityListener, this);
         pm.registerEvents(signManager, this);
         pm.registerEvents(menuManager, this);
-        pm.registerEvents(editor, this);
 
         getCommand("quit").setExecutor(new QuitCommand(this));
-        getCommand("map").setExecutor(editor);
     }
 
     @Override
@@ -120,15 +114,6 @@ public class Rangers extends JavaPlugin {
         p.teleport(lobbySpawn);
     }
 
-    private void saveDefaultConfigValues() {
-        // Iterate through all the defaults and write their values to the config if nothing is set.
-        // Purely idiot-proofing.
-        for (Entry<String, Object> value : getConfig().getDefaults().getValues(true).entrySet())
-            if (!getConfig().isSet(value.getKey()))
-                getConfig().set(value.getKey(), value.getValue());
-        saveConfig();
-    }
-
     private void loadConfig() {
         String gameWorldName = getConfig().getString("game-world");
         gameWorld = new WorldCreator(gameWorldName).generator(new EmptyChunkGenerator()).createWorld();
@@ -141,6 +126,10 @@ public class Rangers extends JavaPlugin {
         double lobbyY = getConfig().getDouble("spawn.y");
         double lobbyZ = getConfig().getDouble("spawn.z");
         lobbySpawn = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
+        if (getConfig().contains("spawn.yaw"))
+            lobbySpawn.setYaw((float) getConfig().getDouble("spawn.yaw"));
+        if (getConfig().contains("spawn.pitch"))
+            lobbySpawn.setPitch((float) getConfig().getDouble("spawn.pitch"));
 
         arenas = new ArenaManager(this, gameWorld, gameMapManager);
         arenas.loadArenas();
@@ -175,7 +164,9 @@ public class Rangers extends JavaPlugin {
                     signManager.addStatusSign(g, statusSignLoc);
                 }
 
-                g.setArena(arenas.getArena((String) mapObj));
+                Arena a = arenas.getArena((String) mapObj);
+                if (a != null)
+                    g.setArena(a);
             }
         }
 

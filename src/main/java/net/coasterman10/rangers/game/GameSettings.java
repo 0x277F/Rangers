@@ -3,7 +3,7 @@ package net.coasterman10.rangers.game;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
 
-import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 
 public class GameSettings {
@@ -23,7 +23,7 @@ public class GameSettings {
     public void load() {
         configYml.reload();
 
-        FileConfiguration config = configYml.get();
+        ConfigurationSection config = configYml.get();
 
         minPlayers = config.getInt("min-players", 2);
         maxPlayers = config.getInt("max-players", 10);

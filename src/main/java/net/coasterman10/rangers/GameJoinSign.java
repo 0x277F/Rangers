@@ -1,5 +1,7 @@
 package net.coasterman10.rangers;
 
+import net.coasterman10.rangers.game.Game.State;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 
@@ -9,7 +11,7 @@ public class GameJoinSign extends GameSign {
     }
 
     public void update() {
-        if (game != null) {
+        if (game != null && game.getState() != State.INACTIVE) {
             setLine(0, ChatColor.BOLD + game.getMapName());
             setLine(1, "Classic");
             if (game.getPlayerCount() < game.getSettings().maxPlayers) {

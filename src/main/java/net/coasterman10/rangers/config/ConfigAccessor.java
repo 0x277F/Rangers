@@ -1,11 +1,11 @@
 package net.coasterman10.rangers.config;
 
-import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.ConfigurationSection;
 
 public interface ConfigAccessor {
     void reload();
 
     void save();
 
-    FileConfiguration get();
+    ConfigurationSection get();
 }

@@ -46,7 +46,10 @@ public class ArenaManager {
             if (!arenas.containsKey(mapName)) {
                 arenas.put(mapName, new HashSet<Arena>());
             }
-            arenas.get(mapName).add(new Arena(gameMapManager.getMap(mapName), origin));
+
+            GameMap gameMap = gameMapManager.getMap(mapName);
+            if (gameMap != null && gameMap.isValid())
+                arenas.get(mapName).add(new Arena(gameMap, origin));
         }
     }
 
@@ -71,20 +74,24 @@ public class ArenaManager {
             }
         }
 
-        Arena a = new Arena(gameMapManager.getMap(mapName), origin);
+        GameMap map = gameMapManager.getMap(mapName);
+        if (map == null || !map.isValid())
+            return null;
+
+        Arena a = new Arena(map, origin);
         if (!arenas.containsKey(mapName))
             arenas.put(mapName, new HashSet<Arena>());
         arenas.get(mapName).add(a);
-        
+
         a.build(plugin);
 
         FileConfiguration arenaListConfig = YamlConfiguration.loadConfiguration(arenaListFile);
         List<Map<String, Object>> arenaList = (List<Map<String, Object>>) arenaListConfig.getList("arenas",
                 new ArrayList<>());
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("map", mapName);
-        map.put("origin", serializeVector(origin.toVector()));
-        arenaList.add(map);
+        Map<String, Object> arena = new LinkedHashMap<>();
+        arena.put("map", mapName);
+        arena.put("origin", serializeVector(origin.toVector()));
+        arenaList.add(arena);
         arenaListConfig.set("arenas", arenaList);
         try {
             arenaListConfig.save(arenaListFile);
