@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import net.coasterman10.rangers.config.ConfigAccessor;
+import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
 import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.GamePlayer;
@@ -59,7 +60,7 @@ public class Rangers extends JavaPlugin {
         log = getLogger();
         ConfigAccessor configYml = new PluginConfigAccessor(this);
 
-        gameMapManager = new GameMapManager(configYml, new File(getDataFolder(), "schematics"));
+        gameMapManager = new GameMapManager(new ConfigSectionAccessor(configYml, "maps"), new File(getDataFolder(), "schematics"));
         gameMapManager.loadMaps();
 
         worldListener = new WorldListener();

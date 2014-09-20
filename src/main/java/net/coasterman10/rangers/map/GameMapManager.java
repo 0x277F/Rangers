@@ -50,16 +50,16 @@ public class GameMapManager {
         return maps.values();
     }
 
-    public void saveMap(GameMap map) { 
+    public void saveMap(GameMap map) {
         ConfigurationSection section = config.get().createSection(map.name);
-        
+
         section.set("schematic", map.getSchematic().getFile().getName());
-        
+
         if (map.getLobbySpawn() != null) {
             ConfigurationSection lobby = section.createSection("lobby");
             setVector(map.getLobbySpawn(), lobby);
         }
-        
+
         ConfigurationSection spawns = section.createSection("spawns");
         for (GameTeam team : GameTeam.values()) {
             if (map.getSpawn(team) != null) {
@@ -67,7 +67,7 @@ public class GameMapManager {
                 setVector(map.getSpawn(team), spawn);
             }
         }
-        
+
         ConfigurationSection chests = section.createSection("chests");
         for (GameTeam team : GameTeam.teams()) {
             if (map.getChest(team) != null) {
@@ -75,7 +75,7 @@ public class GameMapManager {
                 setVector(map.getChest(team), chest);
             }
         }
-        
+
         config.save();
     }
 
@@ -86,7 +86,7 @@ public class GameMapManager {
 
         GameMap map = new GameMap(name);
 
-        String schematicName = section.getString("schematic");
+        String schematicName = section.getString("schematic", name + ".schematic");
         File schematicFile = new File(schematicFolder, schematicName);
         Schematic s = new Schematic(schematicFile);
         try {

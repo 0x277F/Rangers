@@ -112,7 +112,8 @@ public class PlayerListener implements Listener {
         // Huge mess of code to generate death message. Don't ask.
         if (player.getGame() != null) {
             StringBuilder msg = new StringBuilder(64);
-            msg.append(player.getTeam().getChatColor()).append(e.getEntity().getName());
+            ChatColor teamColor = (player.getTeam() != null ? player.getTeam().getChatColor() : ChatColor.WHITE);
+            msg.append(teamColor).append(e.getEntity().getName());
             msg.append("(").append(player.getTeam().getName()).append(")");
             EntityDamageEvent cause = e.getEntity().getLastDamageCause();
             if (cause instanceof EntityDamageByEntityEvent) {
