@@ -10,8 +10,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.coasterman10.rangers.InvalidSchematicException;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;

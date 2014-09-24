@@ -38,10 +38,8 @@ public class Game {
 
     private Collection<GamePlayer> players = new HashSet<>();
     private Map<GameTeam, Collection<GamePlayer>> teams = new EnumMap<>(GameTeam.class);
+    private Collection<GamePlayer> headsRedeemed = new HashSet<>();
     private GamePlayer banditLeader;
-
-    // Initial ranger head-count unaffected by rangers leaving the game
-    private int totalRangers;
 
     private State state;
     private int seconds;
@@ -90,15 +88,14 @@ public class Game {
             PlayerUtil.resetPlayer(handle);
             arena.sendToLobby(player);
             broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
+            scoreboard.setForPlayer(handle);
         } else {
             handle.sendMessage(ChatColor.DARK_AQUA
                     + "The game is already in progress. You can spectate until it restarts.");
+            arena.sendToGame(player);
             players.add(player);
             player.setGame(this);
-            player.setTeam(GameTeam.SPECTATORS);
             PlayerUtil.resetPlayer(handle);
-            SpectateAPI.addSpectator(handle);
-            
         }
     }
 
@@ -112,7 +109,7 @@ public class Game {
             team.remove(player);
         if (player.getHandle() != null) {
             BarAPI.removeBar(player.getHandle());
-            player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+            player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
             PlayerUtil.disableDoubleJump(player.getHandle());
             SpectateAPI.removeSpectator(player.getHandle());
         }
@@ -130,27 +127,21 @@ public class Game {
         Collections.shuffle(playerList);
         for (GamePlayer p : playerList) {
             p.setTeam(team);
+            scoreboard.setTeam(p.getHandle(), team);
             teams.get(team).add(p);
             p.getHandle().sendMessage(
                     ChatColor.AQUA + "You have been selected to join the " + ChatColor.YELLOW + team.name());
             if (team == GameTeam.BANDITS && banditLeader == null) {
                 banditLeader = p;
-                p.getHandle().sendMessage(ChatColor.AQUA + "You are the " + ChatColor.RED + "Bandit Leader");
+                scoreboard.setBanditLeader(p.getHandle());
+                broadcast(ChatColor.YELLOW + p.getHandle().getName() + ChatColor.AQUA + " is the " + ChatColor.RED
+                        + "Bandit Leader");
                 p.setBanditLeader(true);
             } else {
                 p.setBanditLeader(false);
             }
             team = team.opponent();
         }
-
-        for (GameTeam t : GameTeam.values()) {
-            for (GamePlayer p : teams.get(t)) {
-                scoreboard.setTeam(p.getHandle(), team);
-                p.getHandle().setScoreboard(scoreboard.getScoreboard(t));
-            }
-        }
-
-        totalRangers = teams.get(GameTeam.RANGERS).size();
 
         scoreboard.setBanditLeader(banditLeader.getHandle());
     }
@@ -159,37 +150,30 @@ public class Game {
         Location loc = arena.getChest(t);
         if (loc.getBlock().getState() instanceof Chest) {
             Chest state = (Chest) loc.getBlock().getState();
-            next: for (ItemStack item : state.getBlockInventory()) {
-                if (item != null) {
-                    state.getBlockInventory().remove(item);
-                    if (item.getType() == Material.SKULL_ITEM) {
-                        SkullMeta meta = (SkullMeta) item.getItemMeta();
-                        if (meta.hasOwner()) {
-                            // Rangers win if this is bandit chest and bandit leader's head is in it
-                            if (meta.getOwner().equals(banditLeader.getHandle().getName())) {
-                                setState(State.ENDING);
-                                broadcast(ChatColor.RED + "The bandit leader has been killed!");
-                                broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
-                            }
-                            
-                            // Score points for enemy heads placed in the chest
-                            for (GamePlayer p : teams.get(t.opponent())) {
-                                if (meta.getOwner().equals(p.getHandle().getName())) {
-                                    scoreboard.incrementScore(t.opponent());
-                                    break next; // I know this sucks
-                                }
-                            }
+            for (ItemStack item : state.getBlockInventory()) {
+                if (item == null)
+                    continue;
+                if (item.getType() == Material.SKULL_ITEM) {
+                    SkullMeta meta = (SkullMeta) item.getItemMeta();
+                    if (meta.hasOwner()) {
+                        String name = meta.getOwner();
 
-                            // Remove heads from the chest's own team that don't belong in it
-                            for (GamePlayer p : teams.get(t)) {
-                                if (meta.getOwner().equals(p.getHandle().getName())) {
-                                    loc.getWorld().dropItemNaturally(
-                                            loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
-                                }
+                        for (GamePlayer player : teams.get(t.opponent())) {
+                            if (name.equals(player.getHandle().getName())) {
+                                scoreboard.incrementScore(t.opponent());
+                                headsRedeemed.add(player);
+                            }
+                        }
+
+                        for (GamePlayer player : teams.get(t)) {
+                            if (name.equals(player.getHandle().getName())) {
+                                loc.getWorld().dropItem(loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
                             }
                         }
                     }
                 }
+
+                state.getBlockInventory().remove(item);
             }
         }
     }
@@ -227,12 +211,15 @@ public class Game {
                 }
                 for (GamePlayer p : g.players) {
                     BarAPI.removeBar(p.getHandle());
+                    SpectateAPI.removeSpectator(p.getHandle());
                     g.arena.sendToLobby(p);
                     p.setTeam(null);
                     PlayerUtil.resetPlayer(p.getHandle());
                     PlayerUtil.disableDoubleJump(p.getHandle());
                 }
                 g.scoreboard.reset();
+                g.banditLeader = null;
+                g.headsRedeemed.clear();
             }
 
             @Override
@@ -315,13 +302,20 @@ public class Game {
 
                     g.checkChest(GameTeam.RANGERS);
                     g.checkChest(GameTeam.BANDITS);
-
-                    // Check ranger victory conditions
-                    if (g.scoreboard.getScore(GameTeam.RANGERS) == g.totalRangers) {
+                    
+                    // Check victory conditions
+                    if (g.headsRedeemed.containsAll(g.teams.get(GameTeam.RANGERS))) {
                         g.setState(ENDING);
                         g.broadcast(ChatColor.RED + "The rangers have been defeated!");
                         g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
                     }
+
+                    if (g.headsRedeemed.contains(g.banditLeader)) {
+                        g.setState(State.ENDING);
+                        g.broadcast(ChatColor.RED + "The bandit leader has been killed!");
+                        g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
+                    }
+                    
                     g.seconds--;
                 }
             }

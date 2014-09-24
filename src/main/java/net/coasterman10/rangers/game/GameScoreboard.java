@@ -1,6 +1,7 @@
 package net.coasterman10.rangers.game;
 
 import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
@@ -14,72 +15,68 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
 public class GameScoreboard {
-    private Map<GameTeam, Scoreboard> boards = new EnumMap<>(GameTeam.class);
+    private Scoreboard board;
+    private final Map<GameTeam, Team> teams = new EnumMap<>(GameTeam.class);
+    private final Map<GameTeam, Score> scores = new EnumMap<>(GameTeam.class);
 
     public GameScoreboard() {
-        for (GameTeam t : GameTeam.teams()) {
-            Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
-            boards.put(t, board);
+        board = Bukkit.getScoreboardManager().getNewScoreboard();
 
-            Objective o = board.registerNewObjective("obj", "dummy");
-            o.setDisplayName(ChatColor.GOLD + "Heads Collected");
-            o.setDisplaySlot(DisplaySlot.SIDEBAR);
+        Objective o = board.registerNewObjective("obj", "dummy");
+        o.setDisplayName(ChatColor.GOLD + "Heads Collected");
+        o.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-            Team friendly = board.registerNewTeam(t.name());
-            Team enemy = board.registerNewTeam(t.opponent().name());
-            Team banditLeader = board.registerNewTeam("BANDIT_LEADER");
-            friendly.setPrefix(ChatColor.GREEN.toString());
-            enemy.setPrefix(ChatColor.RED.toString());
-            banditLeader.setPrefix((t == GameTeam.BANDITS ? ChatColor.GREEN : ChatColor.RED) + "♛ ");
-            banditLeader.setSuffix(" ♛");
+        for (GameTeam t : GameTeam.values()) {
+            Team team = board.registerNewTeam(t.name());
+            team.setAllowFriendlyFire(false);
+            team.setCanSeeFriendlyInvisibles(true);
+            team.setPrefix(t.getChatColor().toString());
+            teams.put(t, team);
+
+            scores.put(t, o.getScore(t.getName()));
+            setScore(t, 0);
         }
     }
 
-    public Scoreboard getScoreboard(GameTeam team) {
-        return boards.get(team);
+    public void setForPlayer(Player p) {
+        p.setScoreboard(board);
     }
 
     public void setTeam(Player player, GameTeam team) {
-        for (Scoreboard board : boards.values()) {
-            for (Team t : board.getTeams())
-                t.removePlayer(player);
-            if (team != null)
-                board.getTeam(team.name()).addPlayer(player);
-        }
+        if (board.getPlayerTeam(player) != null)
+            board.getPlayerTeam(player).removePlayer(player);
+        teams.get(team).addPlayer(player);
     }
 
     public void setBanditLeader(Player player) {
-        for (Scoreboard board : boards.values()) {
-            for (OfflinePlayer p : board.getTeam("BANDIT_LEADER").getPlayers())
-                board.getTeam("BANDIT_LEADER").removePlayer(p);
-            board.getTeam("BANDIT_LEADER").addPlayer(player);
-        }
+        // TODO
     }
 
     public void setScore(GameTeam team, int score) {
         if (score == 0)
             setScore(team, 1); // This ensures that the score of 0 is put onto the scoreboard
-        for (Scoreboard board : boards.values()) {
-            board.getObjective(DisplaySlot.SIDEBAR).getScore(team.getName()).setScore(score);
-        }
+
+        scores.get(team).setScore(score);
     }
 
     public int getScore(GameTeam team) {
-        return boards.get(GameTeam.RANGERS).getObjective(DisplaySlot.SIDEBAR).getScore(team.getName()).getScore();
+        return scores.get(team).getScore();
     }
 
     public void incrementScore(GameTeam team) {
-        for (Scoreboard board : boards.values()) {
-            Score s = board.getObjective(DisplaySlot.SIDEBAR).getScore(team.getName());
-            s.setScore(s.getScore() + 1);
-        }
+        setScore(team, getScore(team) + 1);
     }
 
     public void reset() {
         for (GameTeam t : GameTeam.values()) {
-            for (GameTeam tt : GameTeam.values()) {
-                boards.get(t).resetScores(tt.getName());
-            }
+            clearTeam(teams.get(t));
+            setScore(t, 0);
+        }
+    }
+
+    private static void clearTeam(Team team) {
+        for (Iterator<OfflinePlayer> it = team.getPlayers().iterator(); it.hasNext();) {
+            team.removePlayer(it.next());
         }
     }
 }

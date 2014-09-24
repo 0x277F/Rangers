@@ -25,6 +25,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
@@ -64,6 +66,18 @@ public class AbilityListener implements Listener {
                 }
             }
         }
+        
+        if (e.getEntity() instanceof Player) {
+            GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
+            if (player.isVanished())
+                player.unvanish();
+        }
+        
+        if (e.getDamager() instanceof Player) {
+            GamePlayer player = PlayerManager.getPlayer((Player) e.getDamager());
+            if (player.isVanished())
+                player.unvanish();
+        }
     }
 
     @EventHandler
@@ -71,7 +85,7 @@ public class AbilityListener implements Listener {
         if (e.isFlying() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
             Player p = e.getPlayer();
             GamePlayer player = PlayerManager.getPlayer(p);
-            if (player.getGame() != null && player.getGame().isRunning()) {
+            if (player.getGame() != null && player.getGame().isRunning() && player.getHandle().getExp() > 0.99F) {
                 // Double jump
                 e.setCancelled(true);
                 PlayerUtil.disableDoubleJump(e.getPlayer());
@@ -115,6 +129,21 @@ public class AbilityListener implements Listener {
         if (e.getCause() == DamageCause.FALL && doubleJumpers.contains(e.getEntity().getUniqueId())) {
             e.setCancelled(true);
         }
+        
+        if (e.getEntity() instanceof Player) {
+            GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
+            if (player.isVanished())
+                player.unvanish();
+        }
+    }
+    
+    @EventHandler
+    public void onFireBow(EntityShootBowEvent e) {
+        if (e.getEntity() instanceof Player) {
+            GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
+            if (player.isVanished())
+                player.unvanish();
+        }
     }
 
     @EventHandler
@@ -128,20 +157,26 @@ public class AbilityListener implements Listener {
                     throwingKnifeCooldowns.add(player.getUniqueId());
                     Location eye = player.getEyeLocation();
                     final Entity knife = player.getWorld().dropItem(eye, e.getItem());
-                    knife.setVelocity(eye.getDirection().multiply(1.1));
+                    knife.setVelocity(eye.getDirection().multiply(1.3));
 
                     // We need to know who shot the knife in case it kills the victim
                     knife.setMetadata("shooter", new FixedMetadataValue(plugin, player.getName()));
 
                     // Hit detection - because I do not feel like using NMS to create my own entity
                     new BukkitRunnable() {
+                        int ticksOnGround = 0;
+
                         @Override
                         public void run() {
                             // A knife on the ground has certainly missed
                             if (knife.isOnGround()) {
-                                knife.remove();
-                                cancel();
-                                return;
+                                // Slight tolerance to hitbox being on ground
+                                ticksOnGround++;
+                                if (ticksOnGround == 5) {
+                                    knife.remove();
+                                    cancel();
+                                    return;
+                                }
                             }
 
                             for (Player p : Bukkit.getOnlinePlayers()) {
@@ -170,7 +205,7 @@ public class AbilityListener implements Listener {
                                     double distZ = pLoc.getZ() - kLoc.getZ();
                                     double distXZsquare = distX * distX + distZ * distZ;
                                     if (distXZsquare < 0.4) {
-                                        p.damage(4.0, knife);
+                                        p.damage(6.0, knife);
                                         knife.remove();
                                         cancel();
                                         break;
@@ -186,7 +221,7 @@ public class AbilityListener implements Listener {
                         public void run() {
                             throwingKnifeCooldowns.remove(player.getUniqueId());
                         }
-                    }.runTaskLater(plugin, 100L);
+                    }.runTaskLater(plugin, 80L);
                 }
             }
 
@@ -271,6 +306,15 @@ public class AbilityListener implements Listener {
             if (player.isVanished()) {
                 player.unvanish();
             }
+        }
+    }
+    
+    @EventHandler
+    public void onDeath(PlayerDeathEvent e) {
+        // Bandits get regeneration II for 2 seconds when they kill a player
+        if (e.getEntity().getKiller() != null) {
+            if (PlayerManager.getPlayer(e.getEntity().getKiller()).getTeam() == GameTeam.BANDITS)
+                e.getEntity().getKiller().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 1, 40));
         }
     }
 }

@@ -51,6 +51,10 @@ public class Arena {
             player.getHandle().teleport(map.getSpawn(player.getTeam()).addTo(origin));
     }
     
+    public void sendSpectatorToGame(GamePlayer player) {
+        player.getHandle().teleport(map.getSpectatorSpawn().addTo(origin));
+    }
+    
     public Location getChest(GameTeam team) {
         return origin.clone().add(map.getChest(team));
     }
@@ -59,8 +63,6 @@ public class Arena {
         Block b = location.getBlock();
         if (b.getType() == Material.CHEST || b.getType() == Material.ENDER_CHEST) {
             for (GameTeam team : GameTeam.values()) {
-                if (team == GameTeam.SPECTATORS)
-                    continue;
                 if (map.getChest(team).equals(location))
                     return team;
             }

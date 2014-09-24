@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
 public class GamePlayer {
@@ -16,18 +17,16 @@ public class GamePlayer {
 
     // Upgrades the player can get:
     // ranger.ability - none, vanish
-    // ranger.bow - longbow, flamelongbow
+    // ranger.bow - none, 16arrows
     // ranger.secondary - throwingknife, strikers
-    // bandit.bow - crossbow, flamecrossbow
     // bandit.secondary - bow, mace
     private HashMap<String, String> upgrades = new HashMap<>();
 
     public GamePlayer(UUID id) {
         this.id = id;
         upgrades.put("ranger.ability", "none");
-        upgrades.put("ranger.bow", "longbow");
+        upgrades.put("ranger.bow", "none");
         upgrades.put("ranger.secondary", "throwingknife");
-        upgrades.put("bandit.bow", "crossbow");
         upgrades.put("bandit.secondary", "bow");
     }
 
@@ -78,6 +77,7 @@ public class GamePlayer {
 
     public void vanish() {
         getHandle().sendMessage(ChatColor.RED + "Vanished");
+        getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
             p.hidePlayer(getHandle());
         vanished = true;
@@ -85,6 +85,7 @@ public class GamePlayer {
 
     public void unvanish() {
         getHandle().sendMessage(ChatColor.RED + "UnVanished");
+        getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
             p.showPlayer(getHandle());
         vanished = false;

@@ -12,6 +12,7 @@ public class GameMap {
     public final String name;
     private Schematic schematic;
     private SpawnVector lobbySpawn;
+    private SpawnVector spectatorSpawn;
     private Map<GameTeam, SpawnVector> spawns = new EnumMap<>(GameTeam.class);
     private Map<GameTeam, BlockVector> chests = new EnumMap<>(GameTeam.class);
 
@@ -25,6 +26,10 @@ public class GameMap {
 
     public SpawnVector getLobbySpawn() {
         return lobbySpawn;
+    }
+    
+    public SpawnVector getSpectatorSpawn() {
+        return spectatorSpawn;
     }
 
     public SpawnVector getSpawn(GameTeam team) {
@@ -42,6 +47,10 @@ public class GameMap {
     public void setLobbySpawn(SpawnVector lobbySpawn) {
         this.lobbySpawn = lobbySpawn;
     }
+    
+    public void setSpectatorSpawn(SpawnVector spectatorSpawn) {
+        this.spectatorSpawn = spectatorSpawn;
+    }
 
     public void setSpawn(GameTeam team, SpawnVector spawn) {
         spawns.put(team, spawn);
@@ -52,12 +61,12 @@ public class GameMap {
     }
 
     public boolean isValid() {
-        if (schematic == null || lobbySpawn == null)
+        if (schematic == null || lobbySpawn == null || spectatorSpawn == null)
             return false;
         for (GameTeam team : GameTeam.values()) {
             if (!spawns.containsKey(team))
                 return false;
-            if (!chests.containsKey(team) && team != GameTeam.SPECTATORS)
+            if (!chests.containsKey(team))
                 return false;
         }
         return true;

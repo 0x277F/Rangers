@@ -74,7 +74,7 @@ public class Rangers extends JavaPlugin {
 
         menuManager.addSignMenu(new RangerAbilityMenu(),
                 new SignText().setLine(1, "Select").setLine(2, "Ranger Ability"));
-        menuManager.addSignMenu(new BowMenu(), new SignText().setLine(1, "Select").setLine(2, "Bow Upgrades"));
+        menuManager.addSignMenu(new BowMenu(), new SignText().setLine(1, "Select Ranger").setLine(2, "Bow Upgrades"));
         menuManager.addSignMenu(new RangerSecondaryMenu(),
                 new SignText().setLine(1, "Select Ranger").setLine(2, "Secondary"));
         menuManager.addSignMenu(new BanditSecondaryMenu(),

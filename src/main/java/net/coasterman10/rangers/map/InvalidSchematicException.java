@@ -1,4 +1,4 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.map;
 
 
 public class InvalidSchematicException extends Exception {

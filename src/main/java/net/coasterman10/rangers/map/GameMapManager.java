@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.coasterman10.rangers.InvalidSchematicException;
 import net.coasterman10.rangers.SpawnVector;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.game.GameTeam;
@@ -69,7 +68,7 @@ public class GameMapManager {
         }
 
         ConfigurationSection chests = section.createSection("chests");
-        for (GameTeam team : GameTeam.teams()) {
+        for (GameTeam team : GameTeam.values()) {
             if (map.getChest(team) != null) {
                 ConfigurationSection chest = chests.createSection(team.name().toLowerCase());
                 setVector(map.getChest(team), chest);
@@ -108,11 +107,15 @@ public class GameMapManager {
                 SpawnVector sv = getVector(vec);
                 map.setSpawn(team, sv);
             }
+            
+            ConfigurationSection vec = spawns.getConfigurationSection("spectators");
+            SpawnVector sv = getVector(vec);
+            map.setSpectatorSpawn(sv);
         }
 
         ConfigurationSection chests = section.getConfigurationSection("chests");
         if (chests != null) {
-            for (GameTeam team : GameTeam.teams()) {
+            for (GameTeam team : GameTeam.values()) {
                 ConfigurationSection vec = chests.getConfigurationSection(team.name().toLowerCase());
                 BlockVector bv = getVector(vec).toBlockVector();
                 map.setChest(team, bv);

@@ -61,13 +61,6 @@ public class PlayerListener implements Listener {
         e.getPlayer().sendMessage("Welcome to Rangers!");
         e.getPlayer().teleport(plugin.getLobbySpawn());
         PlayerUtil.resetPlayer(e.getPlayer());
-
-        // Get it through to players this is a dev server
-        for (int i = 0; i < 10; i++) {
-            e.getPlayer().sendMessage(
-                    ChatColor.YELLOW + "" + ChatColor.BOLD + ChatColor.ITALIC
-                            + "THIS IS A DEV SERVER, EXPECT THINGS TO BREAK");
-        }
     }
 
     @EventHandler
@@ -82,6 +75,13 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
+        if (SpectateAPI.isSpectator(e.getPlayer())) {
+            GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
+            if (player.getGame() != null) {
+                SpectateAPI.removeSpectator(e.getPlayer());
+                player.getGame().getArena().sendToLobby(player);
+            }
+        }
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
         }
@@ -91,11 +91,18 @@ public class PlayerListener implements Listener {
                 plugin.sendToLobby(e.getPlayer());
             }
             if (s.getLine(1).toLowerCase().contains("click here") && s.getLine(2).toLowerCase().contains("to spectate")) {
-                SpectateAPI.addSpectator(e.getPlayer());
+                GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
+                if (player.getGame() != null) {
+                    SpectateAPI.addSpectator(e.getPlayer());
+                    player.getGame().getArena().sendSpectatorToGame(player);
+                    e.getPlayer().setAllowFlight(true);
+                    e.getPlayer().setFlying(true);
+                    e.getPlayer().sendMessage(
+                            ChatColor.DARK_AQUA
+                                    + "You are now spectating the match. Click anywhere to return to the lobby.");
+                }
             }
         } else {
-            if (SpectateAPI.isSpectator(e.getPlayer()))
-                SpectateAPI.removeSpectator(e.getPlayer());
             if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
                     && e.getPlayer().getItemInHand().getType() == Material.SKULL_ITEM) {
                 ((Chest) e.getClickedBlock().getState()).getBlockInventory().addItem(e.getPlayer().getItemInHand());
@@ -114,7 +121,10 @@ public class PlayerListener implements Listener {
             StringBuilder msg = new StringBuilder(64);
             ChatColor teamColor = (player.getTeam() != null ? player.getTeam().getChatColor() : ChatColor.WHITE);
             msg.append(teamColor).append(e.getEntity().getName());
-            msg.append("(").append(player.getTeam().getName()).append(")");
+            if (player.isBanditLeader())
+                msg.append("(Bandit Leader)");
+            else
+                msg.append("(").append(player.getTeam().getName()).append(")");
             EntityDamageEvent cause = e.getEntity().getLastDamageCause();
             if (cause instanceof EntityDamageByEntityEvent) {
                 Entity damager = ((EntityDamageByEntityEvent) cause).getDamager();
@@ -122,7 +132,10 @@ public class PlayerListener implements Listener {
                     msg.append(ChatColor.DARK_RED).append(" was slain by ");
                     GamePlayer attacker = PlayerManager.getPlayer((Player) damager);
                     msg.append(attacker.getTeam().getChatColor()).append(((Player) damager).getName());
-                    msg.append("(").append(attacker.getTeam().getName()).append(")");
+                    if (attacker.isBanditLeader())
+                        msg.append("(Bandit Leader)");
+                    else
+                        msg.append("(").append(attacker.getTeam().getName()).append(")");
                     ItemStack item = ((Player) damager).getItemInHand();
                     if (item != null) {
                         msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
@@ -144,7 +157,10 @@ public class PlayerListener implements Listener {
                         msg.append(ChatColor.DARK_RED).append(" was shot by ");
                         GamePlayer attacker = PlayerManager.getPlayer((Player) shooter);
                         msg.append(attacker.getTeam().getChatColor()).append(((Player) shooter).getName());
-                        msg.append("(").append(attacker.getTeam().getName()).append(")");
+                        if (attacker.isBanditLeader())
+                            msg.append("(Bandit Leader)");
+                        else
+                            msg.append("(").append(attacker.getTeam().getName()).append(")");
                         boolean foundBow = false;
                         for (ItemStack item : ((Player) shooter).getInventory()) {
                             if (item == null)
@@ -201,8 +217,11 @@ public class PlayerListener implements Listener {
                 if (!allowedDrops.contains(it.next().getType()))
                     it.remove();
 
-            // Drop the victim's head
-            e.getDrops().add(getHead(e.getEntity()));
+            // Give the victim's head to the killer or drop the victim's head if null
+            if (e.getEntity().getKiller() != null)
+                e.getEntity().getKiller().getInventory().addItem(getHead(e.getEntity()));
+            else
+                e.getDrops().add(getHead(e.getEntity()));
 
             // Put them in spectator mode
             SpectateAPI.addSpectator(e.getEntity());
@@ -214,12 +233,13 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
+        PlayerUtil.disableDoubleJump(e.getPlayer());
         GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
         Game g = player.getGame();
         if (g == null)
             e.setRespawnLocation(plugin.getLobbySpawn());
         else if (player.getTeam() != null)
-            e.setRespawnLocation(g.getArena().getMap().getSpawn(player.getTeam()).addTo(g.getArena().getOrigin()));
+            e.setRespawnLocation(g.getArena().getLobbySpawn());
         else
             e.setRespawnLocation(g.getArena().getLobbySpawn());
     }
@@ -273,10 +293,16 @@ public class PlayerListener implements Listener {
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
         if (e.getEntity() instanceof Player && e.getDamager() instanceof Player) {
             Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
-            if (g == null || (g != null && !g.allowPvp()))
+            if (g == null || !g.allowPvp())
                 e.setCancelled(true);
-            if (PlayerManager.getPlayer((Player) e.getEntity()).getTeam() == (PlayerManager.getPlayer((Player) e
-                    .getDamager()).getTeam()))
+        }
+    }
+    
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent e) {
+        if (e.getEntity() instanceof Player) {
+            Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
+            if (g == null || !g.allowPvp())
                 e.setCancelled(true);
         }
     }
