@@ -100,6 +100,7 @@ public class Game {
     }
 
     public void removePlayer(GamePlayer player) {
+        broadcast(ChatColor.YELLOW + player.getHandle().getName() + ChatColor.AQUA + " left the game");
         if (!players.contains(player))
             return;
         players.remove(player);

@@ -38,5 +38,9 @@ public class PlayerManager {
         instance().players.remove(id);
     }
 
+    public static boolean isPlayerInGame(Player player){
+        return instance().players.containsKey(player.getUniqueId());
+    }
+
     private Map<UUID, GamePlayer> players = new HashMap<>();
 }

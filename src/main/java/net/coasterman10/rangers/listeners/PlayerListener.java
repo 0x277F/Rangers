@@ -42,6 +42,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.projectiles.ProjectileSource;
+import org.kitteh.tag.AsyncPlayerReceiveNameTagEvent;
 
 public class PlayerListener implements Listener {
     private final Rangers plugin;
@@ -304,6 +305,13 @@ public class PlayerListener implements Listener {
             Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
             if (g == null || !g.allowPvp())
                 e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onTag(AsyncPlayerReceiveNameTagEvent e){
+        if(PlayerManager.isPlayerInGame(e.getPlayer()) && PlayerManager.isPlayerInGame(e.getNamedPlayer())){
+            e.setTag("§§§§");//I saw this on the bukkit forums, but am unable to test it.
         }
     }
 

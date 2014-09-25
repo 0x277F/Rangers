@@ -1,0 +1,3 @@
+[submodule "spectateapi"]
+	path = spectateapi
+	url = https://github.com/coasterman10/spectateapi
