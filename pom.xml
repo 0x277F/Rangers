@@ -79,5 +79,7 @@
             <artifactId>tagapi</artifactId>
             <version>3.0.6-SNAPSHOT</version>
         </dependency>
+        <!--Due to the takedown of the repos for CraftBukkit and Spigot, I'm adding Spigot #1543 to
+        my build path manually.-->
     </dependencies>
 </project>
