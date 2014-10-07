@@ -9,7 +9,7 @@ import java.util.Map;
 
 public enum EntityTypes //Taken from the Spigot forums
 {
-    GOLEM_BOSS("Kalkara", 54, EntityGolemBoss.class); //You can add as many as you want.
+    GOLEM_BOSS("Kalkara", 99, EntityGolemBoss.class); //You can add as many as you want.
     protected Class<? extends Entity> clazz;
     private EntityTypes(String name, int id, Class<? extends Entity> custom)
     {

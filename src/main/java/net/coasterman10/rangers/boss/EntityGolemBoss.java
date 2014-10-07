@@ -1,5 +1,6 @@
 package net.coasterman10.rangers.boss;
 
+import me.confuser.barapi.BarAPI;
 import net.minecraft.server.v1_7_R3.Entity;
 import net.minecraft.server.v1_7_R3.EntityIronGolem;
 import net.minecraft.server.v1_7_R3.EntityPlayer;
@@ -36,6 +37,8 @@ public class EntityGolemBoss extends EntityIronGolem {
 
     private boolean hasStomped = false;
 
+    public BossFight match;
+
     public EntityGolemBoss(World world) {
         super(world);
         try {//Clear original pathfinder goals
@@ -63,6 +66,11 @@ public class EntityGolemBoss extends EntityIronGolem {
         this.setCustomName("Kalkara");
         ((LivingEntity)this).addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,Integer.MAX_VALUE, 1, false));
         random = new Random();
+    }
+
+    public EntityGolemBoss(World world, BossFight fight){
+        this(world);
+        this.match = fight;
     }
 
     @Override
@@ -101,6 +109,7 @@ public class EntityGolemBoss extends EntityIronGolem {
             }
             hasStomped = true;
         }
+        BarAPI.setHealth(this.match.player, this.getHealth());
     }
     public void launch(){
         org.bukkit.entity.Entity e = (org.bukkit.entity.Entity)this;
