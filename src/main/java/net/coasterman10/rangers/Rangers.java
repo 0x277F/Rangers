@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import net.coasterman10.rangers.boss.DebugBossSpawnCommand;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
@@ -88,6 +89,7 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(menuManager, this);
 
         getCommand("quit").setExecutor(new QuitCommand(this));
+        getCommand("spawnboss").setExecutor(new DebugBossSpawnCommand());
     }
 
     @Override

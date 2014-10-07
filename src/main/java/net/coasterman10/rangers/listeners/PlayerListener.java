@@ -300,10 +300,6 @@ public class PlayerListener implements Listener {
             Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
             if (g == null || !g.allowPvp())
                 e.setCancelled(true);
-        } else if(((CraftEntity)e.getDamager()).getHandle() instanceof EntityGolemBoss){
-            if(new Random().nextInt(3) == 0){//1 in 4 chance
-                e.getEntity().setFireTicks(100);//5 seconds of fire
-            }
         }
     }
     
