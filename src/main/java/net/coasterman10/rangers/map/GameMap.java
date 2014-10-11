@@ -5,12 +5,14 @@ import java.util.Map;
 
 import net.coasterman10.rangers.SpawnVector;
 import net.coasterman10.rangers.game.GameTeam;
+import net.coasterman10.schematicutil.Schematic;
 
 import org.bukkit.util.BlockVector;
 
 public class GameMap {
     public final String name;
     private Schematic schematic;
+    private String schematicFilename;
     private SpawnVector lobbySpawn;
     private SpawnVector spectatorSpawn;
     private Map<GameTeam, SpawnVector> spawns = new EnumMap<>(GameTeam.class);
@@ -22,6 +24,10 @@ public class GameMap {
 
     public Schematic getSchematic() {
         return schematic;
+    }
+    
+    public String getSchematicFilename() {
+        return schematicFilename;
     }
 
     public SpawnVector getLobbySpawn() {
@@ -42,6 +48,10 @@ public class GameMap {
 
     public void setSchematic(Schematic schematic) {
         this.schematic = schematic;
+    }
+    
+    public void setSchematicFilename(String schematicFilename) {
+        this.schematicFilename = schematicFilename;
     }
 
     public void setLobbySpawn(SpawnVector lobbySpawn) {

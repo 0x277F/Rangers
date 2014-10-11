@@ -5,11 +5,13 @@ import net.coasterman10.rangers.game.GameTeam;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 public class Arena {
@@ -35,7 +37,32 @@ public class Arena {
     }
 
     public void build(Plugin plugin) {
-        map.getSchematic().buildDelayed(origin, plugin);
+        new BukkitRunnable() {
+            final World w = origin.getWorld();
+            final int x0 = origin.getBlockX();
+            final int y0 = origin.getBlockY();
+            final int z0 = origin.getBlockZ();
+            final Vector size = map.getSchematic().getSize();
+            int pos;
+
+            @Override
+            public void run() {
+                if (size.getBlockX() == 0 || size.getBlockY() == 0 || size.getBlockZ() == 0) {
+                    cancel();
+                    return;
+                }
+
+                for (int i = 0; i < size.getBlockX(); i++) {
+                    for (int j = 0; j < size.getBlockY(); j++) {
+                        int k = pos;
+                        map.getSchematic().getBlock(i, j, k).build(w.getBlockAt(x0 + i, y0 + j, z0 + k));
+                    }
+                }
+                pos++;
+                if (pos == size.getBlockZ())
+                    cancel();
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
     }
 
     public Location getOrigin() {
@@ -50,11 +77,11 @@ public class Arena {
         if (player.getTeam() != null)
             player.getHandle().teleport(map.getSpawn(player.getTeam()).addTo(origin));
     }
-    
+
     public void sendSpectatorToGame(GamePlayer player) {
         player.getHandle().teleport(map.getSpectatorSpawn().addTo(origin));
     }
-    
+
     public Location getChest(GameTeam team) {
         return origin.clone().add(map.getChest(team));
     }
@@ -72,9 +99,7 @@ public class Arena {
 
     public void clearGround() {
         Vector min = origin.toVector();
-        Vector max = min.clone().add(
-                new Vector(map.getSchematic().getWidth(), origin.getWorld().getMaxHeight(), map.getSchematic()
-                        .getLength()));
+        Vector max = min.clone().add(map.getSchematic().getSize().setY(origin.getWorld().getMaxHeight()));
         for (Entity e : origin.getWorld().getEntitiesByClasses(Item.class, Arrow.class)) {
             if (e.getLocation().toVector().isInAABB(min, max)) {
                 e.remove();

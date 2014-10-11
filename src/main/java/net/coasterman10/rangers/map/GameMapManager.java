@@ -9,6 +9,8 @@ import java.util.Map;
 import net.coasterman10.rangers.SpawnVector;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.game.GameTeam;
+import net.coasterman10.schematicutil.Schematic;
+import net.coasterman10.schematicutil.SchematicException;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.BlockVector;
@@ -52,7 +54,7 @@ public class GameMapManager {
     public void saveMap(GameMap map) {
         ConfigurationSection section = config.get().createSection(map.name);
 
-        section.set("schematic", map.getSchematic().getFile().getName());
+        section.set("schematic", map.getSchematicFilename());
 
         if (map.getLobbySpawn() != null) {
             ConfigurationSection lobby = section.createSection("lobby");
@@ -87,13 +89,14 @@ public class GameMapManager {
 
         String schematicName = section.getString("schematic", name + ".schematic");
         File schematicFile = new File(schematicFolder, schematicName);
-        Schematic s = new Schematic(schematicFile);
+        Schematic s = new Schematic();
         try {
-            s.load();
-        } catch (IOException | InvalidSchematicException e) {
+            s.load(schematicFile);
+        } catch (IOException | SchematicException e) {
             e.printStackTrace();
         }
         map.setSchematic(s);
+        map.setSchematicFilename(schematicName);
 
         ConfigurationSection lobby = section.getConfigurationSection("lobby");
         if (lobby != null) {

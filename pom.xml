@@ -59,11 +59,22 @@
 			<groupId>me.confuser</groupId>
 			<artifactId>BarAPI</artifactId>
 			<version>3.0</version>
+			<type>jar</type>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>net.coasterman10</groupId>
 			<artifactId>SpectateAPI</artifactId>
 			<version>1.0</version>
+			<type>jar</type>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.coasterman10</groupId>
+			<artifactId>SchematicUtil</artifactId>
+			<version>1.0</version>
+			<type>jar</type>
+			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 </project>
