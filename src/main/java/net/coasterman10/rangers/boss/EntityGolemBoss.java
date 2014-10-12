@@ -35,8 +35,6 @@ public class EntityGolemBoss extends EntityIronGolem {
     public int tick = Integer.MAX_VALUE;
     private Random random;
 
-    private boolean hasStomped = false;
-
     public BossFight match;
 
     public EntityGolemBoss(World world) {
@@ -85,6 +83,7 @@ public class EntityGolemBoss extends EntityIronGolem {
 
     @Override
     public boolean n(Entity entity){//Called whenever this entity damages another entity
+        super.n(entity);
         if(tick == Integer.MAX_VALUE)//First attack after spawn
             tick = 0;
         boolean flag = super.n(entity);
@@ -103,11 +102,10 @@ public class EntityGolemBoss extends EntityIronGolem {
         }
         if(tick == 415){
             this.smash();
+        }
+        if(tick == 515){
+            this.fireBreath();
             tick = 0;
-            if(this.hasStomped){
-                //Fire breath
-            }
-            hasStomped = true;
         }
         BarAPI.setHealth(this.match.player, this.getHealth());
     }
@@ -117,6 +115,7 @@ public class EntityGolemBoss extends EntityIronGolem {
         vec.add(new Vector(0.0D, 5.0D, 0.0D));
         vec.multiply(2);//Speed
         e.setVelocity(vec);
+        e.setFallDistance(-100.0F);
     }
     @SuppressWarnings("deprecation")
     public void smash(){
@@ -129,7 +128,7 @@ public class EntityGolemBoss extends EntityIronGolem {
             }
         }
         for(org.bukkit.entity.Entity entity : e.getNearbyEntities(10, 10, 10)){
-            if(entity instanceof Damageable){
+            if(entity instanceof Damageable && entity != this){
                 ((Damageable)entity).damage(15, e);
             }
         }
@@ -140,6 +139,11 @@ public class EntityGolemBoss extends EntityIronGolem {
         //TODO calculate the blocks that need particles
         for(Location l : blocks){
             ((org.bukkit.World)this.world).playEffect(l, Effect.MOBSPAWNER_FLAMES, 1, 1);
+            for(org.bukkit.entity.Entity be : ((org.bukkit.World) this.world).getEntities()){
+                if(be == this.getGoalTarget()){
+                    be.setFireTicks(1000);
+                }
+            }
         }
     }
 }
