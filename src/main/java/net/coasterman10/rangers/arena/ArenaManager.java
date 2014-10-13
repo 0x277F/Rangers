@@ -17,6 +17,8 @@ public class ArenaManager {
 
     public void loadArenas() {
         ConfigurationSection arenaConfig = config.get();
+        if (arenaConfig == null)
+            return;
         for (String name : arenaConfig.getKeys(false)) {
             ConfigurationSection section = arenaConfig.getConfigurationSection(name);
             Arena arena = new Arena(name);
@@ -24,7 +26,7 @@ public class ArenaManager {
             arenas.put(arena.getId(), arena);
         }
     }
-    
+
     public Arena getArena(String name) {
         return arenas.get(name);
     }

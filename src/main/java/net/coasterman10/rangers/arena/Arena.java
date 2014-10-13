@@ -24,10 +24,10 @@ public class Arena {
     private String name;
     private World world;
     private Location min, max;
+    private Location lobby;
+    private Location spectatorSpawn;
     private Map<GameTeam, Location> spawns = new HashMap<>();
     private Map<GameTeam, Location> chests = new HashMap<>();
-    private Location spectatorSpawn;
-    private Location lobby;
     private boolean used;
 
     public Arena(String id) {
