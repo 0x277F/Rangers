@@ -19,9 +19,10 @@ import net.coasterman10.rangers.listeners.MenuManager;
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.SignManager;
 import net.coasterman10.rangers.listeners.WorldListener;
+import net.coasterman10.rangers.menu.BanditBowMenu;
 import net.coasterman10.rangers.menu.BanditSecondaryMenu;
-import net.coasterman10.rangers.menu.BowMenu;
 import net.coasterman10.rangers.menu.RangerAbilityMenu;
+import net.coasterman10.rangers.menu.RangerBowMenu;
 import net.coasterman10.rangers.menu.RangerSecondaryMenu;
 
 import org.bukkit.GameMode;
@@ -67,11 +68,14 @@ public class Rangers extends JavaPlugin {
 
         menuManager.addSignMenu(new RangerAbilityMenu(),
                 new SignText().setLine(1, "Select").setLine(2, "Ranger Ability"));
-        menuManager.addSignMenu(new BowMenu(), new SignText().setLine(1, "Select Ranger").setLine(2, "Bow Upgrades"));
+        menuManager.addSignMenu(new RangerBowMenu(),
+                new SignText().setLine(1, "Select Ranger").setLine(2, "Bow Upgrades"));
         menuManager.addSignMenu(new RangerSecondaryMenu(),
                 new SignText().setLine(1, "Select Ranger").setLine(2, "Secondary"));
         menuManager.addSignMenu(new BanditSecondaryMenu(),
                 new SignText().setLine(1, "Select Bandit").setLine(2, "Secondary"));
+        menuManager.addSignMenu(new BanditBowMenu(),
+                new SignText().setLine(1, "Select Bandit").setLine(2, "Bow Upgrades"));
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);

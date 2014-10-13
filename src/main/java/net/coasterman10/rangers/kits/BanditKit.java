@@ -37,8 +37,11 @@ public class BanditKit implements Kit {
         if (player.getUpgradeSelection("bandit.secondary").equals("mace")) {
             inv.setItem(1, new ItemStackBuilder(Material.DIAMOND_SPADE).setDisplayName("Mace").build());
             inv.remove(Material.ARROW);
+        } else {
+            ItemStack arrows = inv.getItem(8);
+            arrows.setAmount(arrows.getAmount() + 8);
         }
-        
+
         if (player.isBanditLeader()) {
             inv.setBoots(new ItemStack(Material.GOLD_BOOTS));
             inv.setHelmet(new ItemStack(Material.GOLD_HELMET));

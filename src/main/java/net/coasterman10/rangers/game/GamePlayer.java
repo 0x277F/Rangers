@@ -20,6 +20,7 @@ public class GamePlayer {
     // ranger.bow - none, 16arrows
     // ranger.secondary - throwingknife, strikers
     // bandit.secondary - bow, mace
+    // bandit.bow - none, 8arrows
     private HashMap<String, String> upgrades = new HashMap<>();
 
     public GamePlayer(UUID id) {
@@ -28,6 +29,7 @@ public class GamePlayer {
         upgrades.put("ranger.bow", "none");
         upgrades.put("ranger.secondary", "throwingknife");
         upgrades.put("bandit.secondary", "bow");
+        upgrades.put("bandit.bow", "none");
     }
 
     public Player getHandle() {
