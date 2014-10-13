@@ -240,9 +240,9 @@ public class PlayerListener implements Listener {
         if (g == null)
             e.setRespawnLocation(plugin.getLobbySpawn());
         else if (player.getTeam() != null)
-            e.setRespawnLocation(g.getArena().getLobbySpawn());
+            e.setRespawnLocation(g.getArena().getLobby());
         else
-            e.setRespawnLocation(g.getArena().getLobbySpawn());
+            e.setRespawnLocation(g.getArena().getLobby());
     }
 
     @EventHandler

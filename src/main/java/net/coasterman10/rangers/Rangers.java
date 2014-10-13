@@ -1,12 +1,13 @@
 package net.coasterman10.rangers;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import net.coasterman10.rangers.arena.Arena;
+import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
@@ -18,10 +19,6 @@ import net.coasterman10.rangers.listeners.MenuManager;
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.SignManager;
 import net.coasterman10.rangers.listeners.WorldListener;
-import net.coasterman10.rangers.map.Arena;
-import net.coasterman10.rangers.map.ArenaManager;
-import net.coasterman10.rangers.map.GameMap;
-import net.coasterman10.rangers.map.GameMapManager;
 import net.coasterman10.rangers.menu.BanditSecondaryMenu;
 import net.coasterman10.rangers.menu.BowMenu;
 import net.coasterman10.rangers.menu.RangerAbilityMenu;
@@ -45,29 +42,25 @@ public class Rangers extends JavaPlugin {
     }
 
     private Location lobbySpawn;
-    private World gameWorld;
 
-    private GameMapManager gameMapManager;
     private WorldListener worldListener;
     private PlayerListener playerListener;
     private AbilityListener abilityListener;
     private SignManager signManager;
     private MenuManager menuManager;
-    private ArenaManager arenas;
+    private ArenaManager arenaManager;
 
     @Override
     public void onEnable() {
         log = getLogger();
         ConfigAccessor configYml = new PluginConfigAccessor(this);
 
-        gameMapManager = new GameMapManager(new ConfigSectionAccessor(configYml, "maps"), new File(getDataFolder(), "schematics"));
-        gameMapManager.loadMaps();
-
         worldListener = new WorldListener();
         playerListener = new PlayerListener(this);
         abilityListener = new AbilityListener(this);
         signManager = new SignManager(this);
         menuManager = new MenuManager();
+        arenaManager = new ArenaManager(new ConfigSectionAccessor(configYml, "arenas"));
 
         saveDefaultConfig();
         loadConfig();
@@ -116,9 +109,6 @@ public class Rangers extends JavaPlugin {
     }
 
     private void loadConfig() {
-        String gameWorldName = getConfig().getString("game-world");
-        gameWorld = new WorldCreator(gameWorldName).generator(new EmptyChunkGenerator()).createWorld();
-
         // Load the lobby spawn location. Default is in world "lobby" at location (0,64,0). If the world doesn't exist,
         // create it to save ourselves the hassle of setting the thing up.
         String lobbyWorldName = getConfig().getString("spawn.world");
@@ -132,8 +122,7 @@ public class Rangers extends JavaPlugin {
         if (getConfig().contains("spawn.pitch"))
             lobbySpawn.setPitch((float) getConfig().getDouble("spawn.pitch"));
 
-        arenas = new ArenaManager(this, gameWorld, gameMapManager);
-        arenas.loadArenas();
+        arenaManager.loadArenas();
 
         // Game Settings - this is the alternative to global variables
         GameSettings settings = new GameSettings(this);
@@ -142,17 +131,13 @@ public class Rangers extends JavaPlugin {
         // Iterate over the map lists in the config file with the sign locations
         List<Map<?, ?>> mapList = getConfig().getMapList("signs");
         for (Map<?, ?> map : mapList) {
-            Object mapObj = map.get("map");
+            Object mapObj = map.get("arena");
             Object joinObj = map.get("join");
             Object statusObj = map.get("status");
 
             if (mapObj instanceof String && joinObj instanceof Map && statusObj instanceof Map) {
                 Vector joinSign = parseVector((Map<?, ?>) joinObj);
                 if (joinSign == null)
-                    continue;
-
-                GameMap gameMap = gameMapManager.getMap((String) mapObj);
-                if (gameMap == null)
                     continue;
 
                 Game g = new Game(this, settings);
@@ -165,7 +150,7 @@ public class Rangers extends JavaPlugin {
                     signManager.addStatusSign(g, statusSignLoc);
                 }
 
-                Arena a = arenas.getArena((String) mapObj);
+                Arena a = arenaManager.getArena((String) mapObj);
                 if (a != null)
                     g.setArena(a);
             }

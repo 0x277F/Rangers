@@ -11,8 +11,8 @@ import java.util.Map;
 import me.confuser.barapi.BarAPI;
 import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.Rangers;
+import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.kits.Kit;
-import net.coasterman10.rangers.map.Arena;
 import net.coasterman10.spectate.SpectateAPI;
 
 import org.bukkit.Bukkit;
@@ -60,9 +60,11 @@ public class Game {
     }
 
     public void setArena(Arena arena) {
-        this.arena = arena;
-        arena.setUsed(true);
-        state = State.LOBBY;
+        if (arena.isValid()) {
+            this.arena = arena;
+            arena.setUsed(true);
+            state = State.LOBBY;
+        }
     }
 
     public int getId() {
@@ -196,12 +198,10 @@ public class Game {
         INACTIVE {
             @Override
             public void start(final Game g) {
-
             }
 
             @Override
             public void onSecond(final Game g) {
-
             }
         },
         LOBBY {
@@ -303,7 +303,7 @@ public class Game {
 
                     g.checkChest(GameTeam.RANGERS);
                     g.checkChest(GameTeam.BANDITS);
-                    
+
                     // Check victory conditions
                     if (g.headsRedeemed.containsAll(g.teams.get(GameTeam.RANGERS))) {
                         g.setState(ENDING);
@@ -316,7 +316,7 @@ public class Game {
                         g.broadcast(ChatColor.RED + "The bandit leader has been killed!");
                         g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
                     }
-                    
+
                     g.seconds--;
                 }
             }
@@ -355,10 +355,6 @@ public class Game {
 
     public boolean isRunning() {
         return state == State.RUNNING;
-    }
-
-    public String getMapName() {
-        return arena.getMapName();
     }
 
     public Arena getArena() {

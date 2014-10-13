@@ -12,7 +12,7 @@ public class GameJoinSign extends GameSign {
 
     public void update() {
         if (game != null && game.getState() != State.INACTIVE) {
-            setLine(0, ChatColor.BOLD + game.getMapName());
+            setLine(0, ChatColor.BOLD + game.getArena().getName());
             setLine(1, "Classic");
             if (game.getPlayerCount() < game.getSettings().maxPlayers) {
                 setLine(2, ChatColor.GREEN + "Right Click");

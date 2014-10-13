@@ -23,8 +23,7 @@ public class SpawnVector extends Vector {
     }
 
     public SpawnVector(Location loc) {
-        this(round(loc.getX(), 0.5F), round(loc.getY(), 0.5F), round(loc.getZ(), 0.5F), round(loc.getYaw(), 90F),
-                round(loc.getPitch(), 90F));
+        this(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
     }
 
     public SpawnVector setYaw(float yaw) {
@@ -44,12 +43,20 @@ public class SpawnVector extends Vector {
     public float getPitch() {
         return pitch;
     }
+    
+    public void round() {
+        x = round(x, 0.5);
+        y = round(y, 0.5);
+        z = round(z, 0.5);
+        yaw = round(yaw, 45F);
+        pitch = round(pitch, 45F);
+    }
 
     @Override
     public Location toLocation(World world) {
         return super.toLocation(world, yaw, pitch);
     }
-    
+
     @Override
     public SpawnVector subtract(Vector vec) {
         return (SpawnVector) super.subtract(vec);
