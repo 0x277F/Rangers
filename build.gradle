@@ -1,3 +1,10 @@
+def mcVersion = "1.7.9"
+def bukkitVersion = "$mcVersion-R0.2"
+def spigotVersion = "1543"
+def rangersVersion = "0.0.1-SNAPSHOT"
+
+version = "$mcVersion-$rangersVersion" as Object
+
 apply plugin: 'java'
 apply plugin: 'maven'
 repositories {
@@ -14,10 +21,18 @@ repositories {
     }
 }
 dependencies {
-    compile 'org.bukkit:bukkit:1.7.9-R0.2'
-    compile 'jnbt:jnbt:1.1'
-    compile 'me.confuser:BarAPI:3.0'
-    compile 'net.coasterman10:SpectateAPI:1.0'
-    compile 'org.kitteh:tagapi:3.0.6-SNAPSHOT'
-    compile files('lib/spigot1543.jar') //This jarfile is not tracked by git because of the DMCA takedown of bukkit-based repos.
+    compile "org.bukkit:bukkit:$bukkitVersion"
+    compile "jnbt:jnbt:1.1"
+    compile "me.confuser:BarAPI:3.0"
+    compile "net.coasterman10:SpectateAPI:1.0"
+    compile "org.kitteh:tagapi:3.0.6-SNAPSHOT"
+    compile files("lib/spigot"+spigotVersion+".jar") //This jarfile is not tracked by git because of the DMCA takedown of bukkit-based repos.
+}
+
+task getVersion << {
+    println("Minecraft version $mcVersion")
+    println("Bukkit version $bukkitVersion")
+    println("Spigot Server Version $spigotVersion")
+    println("Rangers version $rangersVersion")
+    return version
 }
