@@ -1,4 +1,6 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.command;
+
+import net.coasterman10.rangers.Rangers;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

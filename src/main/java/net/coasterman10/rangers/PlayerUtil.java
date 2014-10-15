@@ -33,6 +33,7 @@ public class PlayerUtil {
         p.getInventory().setArmorContents(null);
         p.setExp(0F);
         p.setLevel(0);
+        p.setFireTicks(0);
         for (PotionEffect effect : p.getActivePotionEffects())
             p.removePotionEffect(effect.getType());
         for (Player other : Bukkit.getOnlinePlayers()) {
