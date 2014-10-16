@@ -10,6 +10,8 @@ import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.boss.DebugBossSpawnCommand;
 import net.coasterman10.rangers.command.QuitCommand;
+import net.coasterman10.rangers.command.RangersSettingSubcommand;
+import net.coasterman10.rangers.command.SubcommandExecutor;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
@@ -53,6 +55,8 @@ public class Rangers extends JavaPlugin {
     private MenuManager menuManager;
     private ArenaManager arenaManager;
 
+    private GameSettings settings;
+
     @Override
     public void onEnable() {
         log = getLogger();
@@ -64,6 +68,8 @@ public class Rangers extends JavaPlugin {
         signManager = new SignManager(this);
         menuManager = new MenuManager();
         arenaManager = new ArenaManager(new ConfigSectionAccessor(configYml, "arenas"));
+
+        settings = new GameSettings(configYml);
 
         saveDefaultConfig();
         loadConfig();
@@ -86,6 +92,10 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(signManager, this);
         pm.registerEvents(menuManager, this);
 
+        SubcommandExecutor rangersCommand = new SubcommandExecutor("rangers");
+        rangersCommand.registerSubcommand(new RangersSettingSubcommand(settings));
+
+        getCommand("rangers").setExecutor(rangersCommand);
         getCommand("quit").setExecutor(new QuitCommand(this));
         getCommand("spawnboss").setExecutor(new DebugBossSpawnCommand());
     }
@@ -132,7 +142,6 @@ public class Rangers extends JavaPlugin {
         arenaManager.loadArenas();
 
         // Game Settings - this is the alternative to global variables
-        GameSettings settings = new GameSettings(this);
         settings.load();
 
         // Iterate over the map lists in the config file with the sign locations

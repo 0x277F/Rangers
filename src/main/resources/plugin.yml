@@ -3,11 +3,12 @@ main: net.coasterman10.rangers.Rangers
 version: 1.0
 author: coasterman10
 authors: [coasterman10, Wunderpus]
-depend: [BarAPI, SpectateAPI]
+depend: [BarAPI, SpectateAPI, TagAPI]
+
 commands:
   quit:
     
-  map:
+  rangers:
 
   spawnboss:
 

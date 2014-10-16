@@ -41,7 +41,7 @@ public class SubcommandExecutor implements CommandExecutor {
         sender.sendMessage(ChatColor.GOLD + "Help for " + ChatColor.YELLOW + "/" + name);
         for (Subcommand subcommand : subcommands.values()) {
             sender.sendMessage(ChatColor.GOLD + "/" + name + " " + ChatColor.YELLOW + subcommand.getName()
-                    + ChatColor.GRAY + ": " + subcommand.getDescription());
+                    + ChatColor.WHITE + ": " + subcommand.getDescription());
         }
     }
 }
