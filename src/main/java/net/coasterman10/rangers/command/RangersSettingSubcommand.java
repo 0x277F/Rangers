@@ -48,6 +48,7 @@ public class RangersSettingSubcommand implements Subcommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (args.length == 0) {
+            sender.sendMessage(ChatColor.GOLD + "Usage: /rangers " + ChatColor.YELLOW + "setting " + getArguments());
             sender.sendMessage(ChatColor.GOLD + "Game settings: ");
             for (Field field : fields.values()) {
                 try {
@@ -57,7 +58,7 @@ public class RangersSettingSubcommand implements Subcommand {
                     sender.sendMessage(ChatColor.RED + "Failed to get " + ChatColor.GOLD + field.getName());
                 }
             }
-        } else if (args.length >= 1) {
+        } else {
             Field field = fields.get(args[0].toLowerCase());
             if (field != null) {
                 if (args.length == 1) {
@@ -76,9 +77,8 @@ public class RangersSettingSubcommand implements Subcommand {
                             int value = Integer.parseInt(args[1]);
                             try {
                                 field.set(settings, value);
-                                sender.sendMessage(ChatColor.GREEN + "Updated " + ChatColor.YELLOW
-                                        + field.getName() + ChatColor.GOLD + " = " + ChatColor.GREEN
-                                        + field.get(settings));
+                                sender.sendMessage(ChatColor.GREEN + "Updated " + ChatColor.YELLOW + field.getName()
+                                        + ChatColor.GOLD + " = " + ChatColor.GREEN + field.get(settings));
                             } catch (IllegalArgumentException | IllegalAccessException e) {
                                 sender.sendMessage(ChatColor.RED + "Failed to set " + ChatColor.GOLD + field.getName());
                             }

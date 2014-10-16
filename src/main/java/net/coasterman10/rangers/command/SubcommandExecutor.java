@@ -8,6 +8,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 public class SubcommandExecutor implements CommandExecutor {
     private final String name;
@@ -29,7 +30,12 @@ public class SubcommandExecutor implements CommandExecutor {
         } else {
             String subcommandLabel = args[0].toLowerCase();
             if (subcommands.containsKey(subcommandLabel)) {
-                subcommands.get(subcommandLabel).execute(sender, Arrays.copyOfRange(args, 1, args.length));
+                Subcommand subcommand = subcommands.get(subcommandLabel);
+                if (subcommand.canConsoleUse() || sender instanceof Player) {
+                    subcommands.get(subcommandLabel).execute(sender, Arrays.copyOfRange(args, 1, args.length));
+                } else {
+                    sender.sendMessage("Only players can use that command");
+                }
             } else {
                 showHelp(sender);
             }

@@ -1,5 +1,6 @@
 package net.coasterman10.rangers.arena;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,5 +30,9 @@ public class ArenaManager {
 
     public Arena getArena(String name) {
         return arenas.get(name);
+    }
+
+    public Collection<Arena> getArenas() {
+        return arenas.values();
     }
 }
