@@ -4,12 +4,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.Rangers;
-import net.coasterman10.rangers.boss.EntityGolemBoss;
 import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
@@ -21,10 +19,8 @@ import org.bukkit.Material;
 import org.bukkit.SkullType;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
-import org.bukkit.craftbukkit.v1_7_R3.entity.CraftEntity;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -216,10 +212,13 @@ public class PlayerListener implements Listener {
             }
             e.setDeathMessage(msg.toString());
 
-            // Only drop allowed items (food, possibly other items in future)
-            for (Iterator<ItemStack> it = e.getDrops().iterator(); it.hasNext();)
-                if (!allowedDrops.contains(it.next().getType()))
+            // Only drop heads and allowed items (food, possibly other items in future)
+            for (Iterator<ItemStack> it = e.getDrops().iterator(); it.hasNext();) {
+                Material type = it.next().getType();
+                if (!allowedDrops.contains(type) && type != Material.SKULL_ITEM) {
                     it.remove();
+                }
+            }
 
             // Give the victim's head to the killer or drop the victim's head if null
             if (e.getEntity().getKiller() != null)
@@ -249,7 +248,6 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-
     public void onPickupItem(PlayerPickupItemEvent e) {
         if (e.getItem().getItemStack().getType() == Material.SKULL_ITEM) {
             SkullMeta meta = (SkullMeta) e.getItem().getItemStack().getItemMeta();
@@ -264,8 +262,7 @@ public class PlayerListener implements Listener {
                     }
                 }
             }
-        } else if (e.getItem().getType() == EntityType.DROPPED_ITEM
-                && !allowedDrops.contains(e.getItem().getItemStack().getType())) {
+        } else if (!allowedDrops.contains(e.getItem().getItemStack().getType())) {
             GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
             if (player.getGame() != null && player.getGame().isRunning())
                 e.setCancelled(true);
