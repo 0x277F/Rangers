@@ -4,10 +4,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.Rangers;
+import net.coasterman10.rangers.boss.EntityGolemBoss;
 import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
@@ -19,6 +21,7 @@ import org.bukkit.Material;
 import org.bukkit.SkullType;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
+import org.bukkit.craftbukkit.v1_7_R3.entity.CraftEntity;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -246,6 +249,7 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
+
     public void onPickupItem(PlayerPickupItemEvent e) {
         if (e.getItem().getItemStack().getType() == Material.SKULL_ITEM) {
             SkullMeta meta = (SkullMeta) e.getItem().getItemStack().getItemMeta();
