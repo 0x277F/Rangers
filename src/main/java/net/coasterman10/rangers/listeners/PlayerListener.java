@@ -21,7 +21,6 @@ import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -213,10 +212,13 @@ public class PlayerListener implements Listener {
             }
             e.setDeathMessage(msg.toString());
 
-            // Only drop allowed items (food, possibly other items in future)
-            for (Iterator<ItemStack> it = e.getDrops().iterator(); it.hasNext();)
-                if (!allowedDrops.contains(it.next().getType()))
+            // Only drop heads and allowed items (food, possibly other items in future)
+            for (Iterator<ItemStack> it = e.getDrops().iterator(); it.hasNext();) {
+                Material type = it.next().getType();
+                if (!allowedDrops.contains(type) && type != Material.SKULL_ITEM) {
                     it.remove();
+                }
+            }
 
             // Give the victim's head to the killer or drop the victim's head if null
             if (e.getEntity().getKiller() != null)
@@ -260,8 +262,7 @@ public class PlayerListener implements Listener {
                     }
                 }
             }
-        } else if (e.getItem().getType() == EntityType.DROPPED_ITEM
-                && !allowedDrops.contains(e.getItem().getItemStack().getType())) {
+        } else if (!allowedDrops.contains(e.getItem().getItemStack().getType())) {
             GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
             if (player.getGame() != null && player.getGame().isRunning())
                 e.setCancelled(true);
