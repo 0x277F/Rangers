@@ -46,7 +46,7 @@ public class RangersSettingSubcommand implements Subcommand {
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
+    public void execute(CommandSender sender, String label, String[] args, Object[] data) {
         if (args.length == 0) {
             sender.sendMessage(ChatColor.GOLD + "Usage: /rangers " + ChatColor.YELLOW + "setting " + getArguments());
             sender.sendMessage(ChatColor.GOLD + "Game settings: ");

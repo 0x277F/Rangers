@@ -10,6 +10,12 @@ import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.boss.DebugBossSpawnCommand;
 import net.coasterman10.rangers.command.QuitCommand;
+import net.coasterman10.rangers.command.RangersArenaAddCommand;
+import net.coasterman10.rangers.command.RangersArenaConfigCommand;
+import net.coasterman10.rangers.command.RangersArenaListCommand;
+import net.coasterman10.rangers.command.RangersArenaRemoveCommand;
+import net.coasterman10.rangers.command.RangersArenaSubcommand;
+import net.coasterman10.rangers.command.RangersReloadSubcommand;
 import net.coasterman10.rangers.command.RangersSettingSubcommand;
 import net.coasterman10.rangers.command.SubcommandExecutor;
 import net.coasterman10.rangers.config.ConfigAccessor;
@@ -94,6 +100,13 @@ public class Rangers extends JavaPlugin {
 
         SubcommandExecutor rangersCommand = new SubcommandExecutor("rangers");
         rangersCommand.registerSubcommand(new RangersSettingSubcommand(settings));
+        rangersCommand.registerSubcommand(new RangersReloadSubcommand(this));
+
+        SubcommandExecutor arenaCommand = new RangersArenaSubcommand();
+        arenaCommand.registerSubcommand(new RangersArenaAddCommand(arenaManager));
+        arenaCommand.registerSubcommand(new RangersArenaRemoveCommand(arenaManager));
+        arenaCommand.registerSubcommand(new RangersArenaListCommand(arenaManager));
+        arenaCommand.registerSubcommand(new RangersArenaConfigCommand(arenaManager));
 
         getCommand("rangers").setExecutor(rangersCommand);
         getCommand("quit").setExecutor(new QuitCommand(this));

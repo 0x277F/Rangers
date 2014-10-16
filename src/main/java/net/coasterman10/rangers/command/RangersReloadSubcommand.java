@@ -1,27 +1,30 @@
 package net.coasterman10.rangers.command;
 
+import net.coasterman10.rangers.Rangers;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
-public class RangersArenaSubcommand extends SubcommandExecutor implements Subcommand {
-    public RangersArenaSubcommand() {
-        super("arena");
+public class RangersReloadSubcommand implements Subcommand {
+    private final Rangers plugin;
+
+    public RangersReloadSubcommand(Rangers plugin) {
+        this.plugin = plugin;
     }
 
     @Override
     public String getName() {
-        return "arena";
+        return "reload";
     }
 
     @Override
     public String getDescription() {
-        return "Configure game arenas";
+        return "Reloads configuration";
     }
 
     @Override
     public String getArguments() {
-        return ChatColor.GRAY + "(" + ChatColor.GREEN + "<add|remove|list>" + ChatColor.GRAY + "/" + ChatColor.GREEN
-                + "<id> " + ChatColor.BLUE + "[...]" + ChatColor.GRAY + ")";
+        return "";
     }
 
     @Override
@@ -31,6 +34,7 @@ public class RangersArenaSubcommand extends SubcommandExecutor implements Subcom
 
     @Override
     public void execute(CommandSender sender, String label, String[] args, Object[] data) {
-        onCommand(sender, null, label, args);
+        plugin.reloadConfig();
+        sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
     }
 }

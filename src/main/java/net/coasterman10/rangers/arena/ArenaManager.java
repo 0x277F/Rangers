@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.coasterman10.rangers.config.ConfigAccessor;
+import net.coasterman10.rangers.config.ConfigSectionAccessor;
 
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -20,16 +21,37 @@ public class ArenaManager {
         ConfigurationSection arenaConfig = config.get();
         if (arenaConfig == null)
             return;
-        for (String name : arenaConfig.getKeys(false)) {
-            ConfigurationSection section = arenaConfig.getConfigurationSection(name);
-            Arena arena = new Arena(name);
-            arena.load(section);
-            arenas.put(arena.getId(), arena);
+        for (String id : arenaConfig.getKeys(false)) {
+            Arena arena = new Arena(id, new ConfigSectionAccessor(config, id));
+            arena.load();
+            arenas.put(arena.getId().toLowerCase(), arena);
         }
     }
 
-    public Arena getArena(String name) {
-        return arenas.get(name);
+    public boolean addArena(String id) {
+        if (getArena(id) == null) {
+            arenas.put(id, new Arena(id, new ConfigSectionAccessor(config, id)));
+            config.get().createSection(id);
+            config.save();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean removeArena(String id) {
+        if (getArena(id) != null) {
+            arenas.remove(id);
+            config.get().set(id, null);
+            config.save();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public Arena getArena(String id) {
+        return arenas.get(id.toLowerCase());
     }
 
     public Collection<Arena> getArenas() {

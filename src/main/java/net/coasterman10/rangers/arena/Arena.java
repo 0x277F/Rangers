@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.coasterman10.rangers.SpawnVector;
+import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.ConfigUtil;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
@@ -21,6 +22,7 @@ import org.bukkit.util.Vector;
 
 public class Arena {
     private final String id;
+    private final ConfigSectionAccessor config;
     private String name;
     private World world;
     private Location min, max;
@@ -30,29 +32,33 @@ public class Arena {
     private Map<GameTeam, Location> chests = new HashMap<>();
     private boolean used;
 
-    public Arena(String id) {
+    public Arena(String id, ConfigSectionAccessor config) {
         this.id = id;
+        this.config = config;
     }
 
-    public void load(ConfigurationSection config) {
-        name = config.getString("name");
+    public void load() {
+        config.reload();
+        ConfigurationSection conf = config.get();
         
+        name = conf.getString("name");
+
         // Load the world. Necessary to make sense of any further values.
-        String worldName = config.getString("world");
+        String worldName = conf.getString("world");
         if (worldName == null)
             return;
         world = Bukkit.getWorld(worldName);
         if (world == null)
             return;
-        
+
         // Minimum and maximum positions for the arena.
-        Vector minVector = ConfigUtil.getVector(config, "min");
-        Vector maxVector = ConfigUtil.getVector(config, "max");
+        Vector minVector = ConfigUtil.getVector(conf, "min");
+        Vector maxVector = ConfigUtil.getVector(conf, "max");
         if (minVector != null)
             min = minVector.toLocation(world);
         if (maxVector != null)
             max = maxVector.toLocation(world);
-        
+
         // Correct the coordinates if necessary.
         // TODO Offload to cleaner utility method
         if (min.getX() > max.getX()) {
@@ -70,19 +76,19 @@ public class Arena {
             min.setZ(max.getZ());
             max.setZ(z);
         }
-        
+
         // Lobby and spectator spawns.
-        SpawnVector lobbyVector = ConfigUtil.getSpawnVector(config, "lobby");
-        SpawnVector spectatorSpawnVector = ConfigUtil.getSpawnVector(config, "spectator-spawn");
+        SpawnVector lobbyVector = ConfigUtil.getSpawnVector(conf, "lobby");
+        SpawnVector spectatorSpawnVector = ConfigUtil.getSpawnVector(conf, "spectator-spawn");
         if (lobbyVector != null)
             lobby = lobbyVector.toLocation(world);
         if (spectatorSpawnVector != null)
             spectatorSpawn = spectatorSpawnVector.toLocation(world);
-        
+
         // Spawns and chests for each team.
         for (GameTeam team : GameTeam.values()) {
-            SpawnVector spawnVector = ConfigUtil.getSpawnVector(config, "spawns." + team.name().toLowerCase());
-            Vector chestVector = ConfigUtil.getVector(config, "chests." + team.name().toLowerCase());
+            SpawnVector spawnVector = ConfigUtil.getSpawnVector(conf, "spawns." + team.name().toLowerCase());
+            Vector chestVector = ConfigUtil.getVector(conf, "chests." + team.name().toLowerCase());
             if (spawnVector != null)
                 spawns.put(team, spawnVector.toLocation(world));
             if (chestVector != null)
@@ -93,9 +99,13 @@ public class Arena {
     public String getId() {
         return id;
     }
-    
+
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setUsed(boolean used) {
@@ -105,7 +115,7 @@ public class Arena {
     public boolean isUsed() {
         return used;
     }
-    
+
     public Location getLobby() {
         return lobby;
     }
