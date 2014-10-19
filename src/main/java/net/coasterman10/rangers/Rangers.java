@@ -8,8 +8,9 @@ import java.util.logging.Logger;
 
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
-import net.coasterman10.rangers.boss.DebugBossSpawnCommand;
+import net.coasterman10.rangers.boss.SpawnBossSubcommand;
 import net.coasterman10.rangers.command.QuitCommand;
+import net.coasterman10.rangers.command.SubcommandExecutor;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
@@ -52,6 +53,7 @@ public class Rangers extends JavaPlugin {
     private SignManager signManager;
     private MenuManager menuManager;
     private ArenaManager arenaManager;
+    private SubcommandExecutor subexec;
 
     @Override
     public void onEnable() {
@@ -64,6 +66,7 @@ public class Rangers extends JavaPlugin {
         signManager = new SignManager(this);
         menuManager = new MenuManager();
         arenaManager = new ArenaManager(new ConfigSectionAccessor(configYml, "arenas"));
+        subexec = new SubcommandExecutor("rangers");
 
         saveDefaultConfig();
         loadConfig();
@@ -87,7 +90,9 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(menuManager, this);
 
         getCommand("quit").setExecutor(new QuitCommand(this));
-        getCommand("spawnboss").setExecutor(new DebugBossSpawnCommand());
+        getCommand("rangers").setExecutor(subexec);
+
+        subexec.registerSubcommand(new SpawnBossSubcommand());
     }
 
     @Override

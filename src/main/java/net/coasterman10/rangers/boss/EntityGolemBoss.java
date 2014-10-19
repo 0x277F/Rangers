@@ -74,7 +74,7 @@ public class EntityGolemBoss extends EntityIronGolem {
     @Override
     public void aC(){
         super.aC();
-        this.getAttributeInstance(GenericAttributes.e).setValue(5.0D);//5 Attack Damage
+        this.getAttributeInstance(GenericAttributes.e).setValue(15.0D);//15 Attack Damage
         this.getAttributeInstance(GenericAttributes.d).setValue(0.700000000417D);//Speed - Not sure exactly what this will do.
         this.getAttributeInstance(GenericAttributes.b).setValue(10.0D);//Will target players within 10 blocks
         this.getAttributeInstance(GenericAttributes.a).setValue(40.0D);//40 health.
@@ -83,10 +83,9 @@ public class EntityGolemBoss extends EntityIronGolem {
 
     @Override
     public boolean n(Entity entity){//Called whenever this entity damages another entity
-        super.n(entity);
+        boolean flag = super.n(entity);
         if(tick == Integer.MAX_VALUE)//First attack after spawn
             tick = 0;
-        boolean flag = super.n(entity);
         if(random.nextInt(3) == 0){//1 out of 4 chance
             entity.setOnFire(100);// 5 seconds of fire
         }
