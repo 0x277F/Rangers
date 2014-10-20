@@ -1,15 +1,16 @@
-package net.coasterman10.rangers.command;
+package net.coasterman10.rangers.command.arena;
 
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
+import net.coasterman10.rangers.command.Subcommand;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
-public class RangersArenaListCommand implements Subcommand {
+public class ArenaListCommand implements Subcommand {
     private final ArenaManager arenaManager;
 
-    public RangersArenaListCommand(ArenaManager arenaManager) {
+    public ArenaListCommand(ArenaManager arenaManager) {
         this.arenaManager = arenaManager;
     }
 
@@ -34,7 +35,7 @@ public class RangersArenaListCommand implements Subcommand {
     }
 
     @Override
-    public void execute(CommandSender sender, String label, String[] args, Object[] data) {
+    public boolean execute(CommandSender sender, String[] args) {
         sender.sendMessage(ChatColor.GOLD + "Arenas");
         for (Arena a : arenaManager.getArenas()) {
             StringBuilder sb = new StringBuilder(32);
@@ -46,5 +47,6 @@ public class RangersArenaListCommand implements Subcommand {
             sb.append(a.isUsed() ? "Active" : (a.isValid() ? "Unused" : "Invalid"));
             sender.sendMessage(sb.toString());
         }
+        return true;
     }
 }

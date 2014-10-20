@@ -11,5 +11,5 @@ public interface Subcommand {
     
     public boolean canConsoleUse();
     
-    public void execute(CommandSender sender, String label, String[] args, Object[] data);
+    public boolean execute(CommandSender sender, String[] args);
 }

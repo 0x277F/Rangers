@@ -1,14 +1,15 @@
-package net.coasterman10.rangers.command;
+package net.coasterman10.rangers.command.arena;
 
 import net.coasterman10.rangers.arena.ArenaManager;
+import net.coasterman10.rangers.command.Subcommand;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
-public class RangersArenaAddCommand implements Subcommand {
+public class ArenaAddCommand implements Subcommand {
     private final ArenaManager arenaManager;
 
-    public RangersArenaAddCommand(ArenaManager arenaManager) {
+    public ArenaAddCommand(ArenaManager arenaManager) {
         this.arenaManager = arenaManager;
     }
 
@@ -33,14 +34,17 @@ public class RangersArenaAddCommand implements Subcommand {
     }
 
     @Override
-    public void execute(CommandSender sender, String label, String[] args, Object[] data) {
-        if (args.length > 0) {
+    public boolean execute(CommandSender sender, String[] args) {
+        if (args.length == 0) {
+            return false;
+        } else {
             if (arenaManager.addArena(args[0])) {
                 sender.sendMessage(ChatColor.GREEN + "Added arena \"" + args[0] + "\"");
             } else {
                 sender.sendMessage(ChatColor.RED + "Arena with id \"" + arenaManager.getArena(args[0]).getId()
                         + "\" already exists");
             }
+            return true;
         }
     }
 }

@@ -40,7 +40,7 @@ public class Arena {
     public void load() {
         config.reload();
         ConfigurationSection conf = config.get();
-        
+
         name = conf.getString("name");
 
         // Load the world. Necessary to make sense of any further values.
@@ -96,6 +96,28 @@ public class Arena {
         }
     }
 
+    public void save() {
+        ConfigurationSection conf = config.get();
+
+        conf.set("name", name);
+        conf.set("world", world != null ? world.getName() : null);
+
+        ConfigUtil.setVector(conf, "min", min != null ? min.toVector() : null);
+        ConfigUtil.setVector(conf, "max", max != null ? max.toVector() : null);
+
+        ConfigUtil.setVector(conf, "lobby", lobby != null ? new SpawnVector(lobby) : null);
+        ConfigUtil.setVector(conf, "spectator-spawn", spectatorSpawn != null ? new SpawnVector(spectatorSpawn) : null);
+
+        for (GameTeam team : GameTeam.values()) {
+            SpawnVector spawn = spawns.get(team) != null ? new SpawnVector(spawns.get(team)) : null;
+            Vector chest = chests.get(team) != null ? chests.get(team).toVector() : null;
+            ConfigUtil.setVector(conf, "spawns." + team.name(), spawn);
+            ConfigUtil.setVector(conf, "chests." + team.name(), chest);
+        }
+
+        config.save();
+    }
+
     public String getId() {
         return id;
     }
@@ -108,16 +130,40 @@ public class Arena {
         this.name = name;
     }
 
-    public void setUsed(boolean used) {
-        this.used = used;
-    }
-
     public boolean isUsed() {
         return used;
     }
 
+    public void setUsed(boolean used) {
+        this.used = used;
+    }
+
     public Location getLobby() {
         return lobby;
+    }
+
+    public void setMin(Location min) {
+        this.min = min;
+    }
+
+    public void setMax(Location max) {
+        this.max = max;
+    }
+
+    public void setSpawn(GameTeam team, Location spawn) {
+        spawns.put(team, spawn);
+    }
+
+    public void setChest(GameTeam team, Location chest) {
+        chests.put(team, chest);
+    }
+
+    public void setLobby(Location lobby) {
+        this.lobby = lobby;
+    }
+
+    public void setSpectatorSpawn(Location spectatorSpawn) {
+        this.spectatorSpawn = spectatorSpawn;
     }
 
     public void sendToLobby(GamePlayer player) {

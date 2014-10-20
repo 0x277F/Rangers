@@ -1,14 +1,15 @@
-package net.coasterman10.rangers.command;
+package net.coasterman10.rangers.command.rangers;
 
 import net.coasterman10.rangers.Rangers;
+import net.coasterman10.rangers.command.Subcommand;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
-public class RangersReloadSubcommand implements Subcommand {
+public class RangersReloadCommand implements Subcommand {
     private final Rangers plugin;
 
-    public RangersReloadSubcommand(Rangers plugin) {
+    public RangersReloadCommand(Rangers plugin) {
         this.plugin = plugin;
     }
 
@@ -33,8 +34,9 @@ public class RangersReloadSubcommand implements Subcommand {
     }
 
     @Override
-    public void execute(CommandSender sender, String label, String[] args, Object[] data) {
+    public boolean execute(CommandSender sender, String[] args) {
         plugin.reloadConfig();
         sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
+        return true;
     }
 }
