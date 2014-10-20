@@ -40,6 +40,8 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.metadata.MetadataValue;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
 import org.kitteh.tag.AsyncPlayerReceiveNameTagEvent;
 
@@ -131,6 +133,8 @@ public class PlayerListener implements Listener {
                 if (damager instanceof Player) {
                     msg.append(ChatColor.DARK_RED).append(" was slain by ");
                     GamePlayer attacker = PlayerManager.getPlayer((Player) damager);
+                    if(attacker.getTeam() == GameTeam.BANDITS)
+                        attacker.getHandle().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 40, 2));
                     msg.append(attacker.getTeam().getChatColor()).append(((Player) damager).getName());
                     if (attacker.isBanditLeader())
                         msg.append("(Bandit Leader)");
@@ -311,8 +315,8 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onTag(AsyncPlayerReceiveNameTagEvent e){
-        if(PlayerManager.isPlayerInGame(e.getPlayer()) && PlayerManager.isPlayerInGame(e.getNamedPlayer())){
-            e.setTag("§§§§");//I saw this on the bukkit forums, but am unable to test it.
+        if(PlayerManager.isPlayerInGame(e.getPlayer()) && PlayerManager.isPlayerInGame(e.getNamedPlayer()) && !e.getPlayer().canSee(e.getNamedPlayer()) && !e.getPlayer().getNearbyEntities(10, 10, 10).contains(e.getNamedPlayer())){
+            e.setTag("§§§§");
         }
     }
 

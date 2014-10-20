@@ -266,20 +266,27 @@ public class Game {
                 g.seconds = g.settings.timeLimit;
                 g.scoreboard.setScore(GameTeam.RANGERS, 0);
                 g.scoreboard.setScore(GameTeam.BANDITS, 0);
+                
                 for (GamePlayer p : g.players) {
+                    SpectateAPI.removeSpectator(p.getHandle());
                     PlayerUtil.resetPlayer(p.getHandle());
                     g.arena.sendToGame(p);
                 }
+                
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
                     Kit.RANGER.apply(p);
                     PlayerUtil.enableDoubleJump(p.getHandle());
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SPEED, 0);
                 }
+                
+                // If rangers and bandits are unbalanced, do not give bandits slowness
+                boolean slowness = g.teams.get(GameTeam.RANGERS).size() == g.teams.get(GameTeam.BANDITS).size();
                 for (GamePlayer p : g.teams.get(GameTeam.BANDITS)) {
                     Kit.BANDIT.apply(p);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
-                    PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW, 0);
+                    if (slowness)
+                        PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW, 0);
                 }
 
                 g.arena.clearGround();
