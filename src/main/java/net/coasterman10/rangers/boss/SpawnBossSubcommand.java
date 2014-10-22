@@ -30,7 +30,7 @@ public class SpawnBossSubcommand implements Subcommand {
     }
 
     @Override
-    public void execute(CommandSender commandSender, String[] args) {
+    public boolean execute(CommandSender commandSender, String[] args) {
         if(commandSender instanceof Player && commandSender.hasPermission("permissions.manage")){//Only PEX admins can spawn them
             try {
                 EntityTypes.spawnEntity(EntityTypes.GOLEM_BOSS, ((Player) commandSender).getLocation());
@@ -38,6 +38,6 @@ public class SpawnBossSubcommand implements Subcommand {
                 commandSender.sendMessage(ChatColor.RED + e.getMessage());
             }
         }
-
+        return true;
     }
 }

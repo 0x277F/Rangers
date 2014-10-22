@@ -11,6 +11,17 @@ import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.boss.SpawnBossSubcommand;
 import net.coasterman10.rangers.command.QuitCommand;
 import net.coasterman10.rangers.command.SubcommandExecutor;
+import net.coasterman10.rangers.command.arena.ArenaAddCommand;
+import net.coasterman10.rangers.command.arena.ArenaListCommand;
+import net.coasterman10.rangers.command.arena.ArenaRemoveCommand;
+import net.coasterman10.rangers.command.arena.ArenaSetChestCommand;
+import net.coasterman10.rangers.command.arena.ArenaSetMaxCommand;
+import net.coasterman10.rangers.command.arena.ArenaSetMinCommand;
+import net.coasterman10.rangers.command.arena.ArenaSetNameCommand;
+import net.coasterman10.rangers.command.arena.ArenaSetSpawnCommand;
+import net.coasterman10.rangers.command.arena.ArenaSignCommand;
+import net.coasterman10.rangers.command.rangers.RangersReloadCommand;
+import net.coasterman10.rangers.command.rangers.RangersSettingCommand;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
@@ -50,10 +61,11 @@ public class Rangers extends JavaPlugin {
     private WorldListener worldListener;
     private PlayerListener playerListener;
     private AbilityListener abilityListener;
-    private SignManager signManager;
-    private MenuManager menuManager;
-    private ArenaManager arenaManager;
-    private SubcommandExecutor subexec;
+    public SignManager signManager;
+    public MenuManager menuManager;
+    public ArenaManager arenaManager;
+
+    public GameSettings settings;
 
     @Override
     public void onEnable() {
@@ -66,7 +78,8 @@ public class Rangers extends JavaPlugin {
         signManager = new SignManager(this);
         menuManager = new MenuManager();
         arenaManager = new ArenaManager(new ConfigSectionAccessor(configYml, "arenas"));
-        subexec = new SubcommandExecutor("rangers");
+
+        settings = new GameSettings(configYml);
 
         saveDefaultConfig();
         loadConfig();
@@ -89,10 +102,25 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(signManager, this);
         pm.registerEvents(menuManager, this);
 
-        getCommand("quit").setExecutor(new QuitCommand(this));
-        getCommand("rangers").setExecutor(subexec);
+        SubcommandExecutor rangersCommand = new SubcommandExecutor("rangers");
+        rangersCommand.registerSubcommand(new RangersSettingCommand(settings));
+        rangersCommand.registerSubcommand(new RangersReloadCommand(this));
+        rangersCommand.registerSubcommand(new SpawnBossSubcommand());
 
-        subexec.registerSubcommand(new SpawnBossSubcommand());
+        SubcommandExecutor arenaCommand = new SubcommandExecutor("arena");
+        arenaCommand.registerSubcommand(new ArenaAddCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaRemoveCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaListCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaSetNameCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaSetMinCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaSetMaxCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaSetSpawnCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaSetChestCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaSignCommand(this, arenaManager));
+
+        getCommand("rangers").setExecutor(rangersCommand);
+        getCommand("arena").setExecutor(arenaCommand);
+        getCommand("quit").setExecutor(new QuitCommand(this));
     }
 
     @Override
@@ -137,7 +165,6 @@ public class Rangers extends JavaPlugin {
         arenaManager.loadArenas();
 
         // Game Settings - this is the alternative to global variables
-        GameSettings settings = new GameSettings(this);
         settings.load();
 
         // Iterate over the map lists in the config file with the sign locations
@@ -179,7 +206,7 @@ public class Rangers extends JavaPlugin {
         playerListener.setAllowedDrops(allowedDrops);
     }
 
-    private static Vector parseVector(Map<?, ?> map) {
+    public static Vector parseVector(Map<?, ?> map) {
         Object x = map.get("x");
         Object y = map.get("y");
         Object z = map.get("z");

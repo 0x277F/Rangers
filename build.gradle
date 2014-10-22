@@ -1,5 +1,3 @@
-sourceCompatability = 1.7
-
 def mcVersion = "1.7.9"
 def bukkitVersion = "$mcVersion-R0.2"
 def spigotVersion = "1543"
