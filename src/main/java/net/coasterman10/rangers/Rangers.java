@@ -12,6 +12,7 @@ import net.coasterman10.rangers.boss.SpawnBossSubcommand;
 import net.coasterman10.rangers.command.QuitCommand;
 import net.coasterman10.rangers.command.SubcommandExecutor;
 import net.coasterman10.rangers.command.arena.ArenaAddCommand;
+import net.coasterman10.rangers.command.arena.ArenaJoinCommand;
 import net.coasterman10.rangers.command.arena.ArenaListCommand;
 import net.coasterman10.rangers.command.arena.ArenaRemoveCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetChestCommand;
@@ -117,6 +118,7 @@ public class Rangers extends JavaPlugin {
         arenaCommand.registerSubcommand(new ArenaSetSpawnCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetChestCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSignCommand(this, arenaManager));
+        arenaCommand.registerSubcommand(new ArenaJoinCommand(this));
 
         getCommand("rangers").setExecutor(rangersCommand);
         getCommand("arena").setExecutor(arenaCommand);

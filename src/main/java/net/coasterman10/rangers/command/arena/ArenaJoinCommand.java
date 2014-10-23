@@ -52,7 +52,7 @@ public class ArenaJoinCommand implements Subcommand {
         }
         else if(sender instanceof Player){
             Player p;
-            if(args.length == 0)
+            if(args.length == 1)
                 p = (Player) sender;
             else
                 p = Bukkit.getPlayer(args[1]);
@@ -66,7 +66,7 @@ public class ArenaJoinCommand implements Subcommand {
                 return true;
             }
             PlayerInteractEvent event = new PlayerInteractEvent(p, Action.RIGHT_CLICK_BLOCK, new ItemStack(Material.AIR), l.getBlock(), BlockFace.SELF);
-            plugin.getServer().getPluginManager().callEvent(event);//Should trigger the player interact event inside SignManager
+            plugin.signManager.onPlayerInteract(event);
         }
         return true;
     }
