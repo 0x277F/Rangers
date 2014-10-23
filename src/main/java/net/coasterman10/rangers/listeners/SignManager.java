@@ -38,6 +38,10 @@ public class SignManager implements Listener {
         }.runTaskTimer(plugin, 0L, 10L);
     }
 
+    public Map<Location, GameJoinSign> getJoinSigns(){
+        return joinSigns;
+    }
+
     public void addJoinSign(Game g, Location loc) {
         if (!(loc.getBlock().getState() instanceof Sign))
             placeSign(loc);
