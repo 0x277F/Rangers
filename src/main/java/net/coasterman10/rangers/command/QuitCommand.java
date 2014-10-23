@@ -21,7 +21,8 @@ public class QuitCommand implements CommandExecutor {
             return false;
         if (sender instanceof Player && args.length == 0) {
             plugin.sendToLobby((Player) sender);
-        } else {
+        }
+        if(args.length == 1 && sender.hasPermission("rangers.quit.others")){
             plugin.sendToLobby(Bukkit.getPlayer(args[0]));
         }
         return true;

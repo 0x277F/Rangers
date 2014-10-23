@@ -31,13 +31,14 @@ public class SpawnBossSubcommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender commandSender, String[] args) {
-        if(commandSender instanceof Player && commandSender.hasPermission("permissions.manage")){//Only PEX admins can spawn them
+        if(commandSender instanceof Player && commandSender.hasPermission("rangers.debug.boss")){
             try {
                 EntityTypes.spawnEntity(EntityTypes.GOLEM_BOSS, ((Player) commandSender).getLocation());
             } catch (Exception e){
                 commandSender.sendMessage(ChatColor.RED + e.getMessage());
             }
-        }
+        } else
+            commandSender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
         return true;
     }
 }

@@ -35,6 +35,11 @@ public class RangersReloadCommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
+        if(!sender.hasPermission("rangers.reload")){
+            sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
+            return true;
+        }
+
         plugin.reloadConfig();
         sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
         return true;

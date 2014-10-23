@@ -40,6 +40,10 @@ public class ArenaSetSpawnCommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
+        if(!sender.hasPermission("rangers.arena.build")){
+            sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
+            return true;
+        }
         if (args.length < 2) {
             return false;
         } else {

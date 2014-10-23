@@ -51,10 +51,10 @@ public class ArenaJoinCommand implements Subcommand {
             return true;
         }
         else if(sender instanceof Player){
-            Player p;
-            if(args.length == 1)
+            Player p = null;
+            if(args.length == 1 && sender.hasPermission("rangers.join.self"))
                 p = (Player) sender;
-            else
+            else if(args.length == 2 && sender.hasPermission("rangers.join.others"))
                 p = Bukkit.getPlayer(args[1]);
             Location l = null;
             for(Location location : plugin.signManager.getJoinSigns().keySet()){
@@ -64,6 +64,9 @@ public class ArenaJoinCommand implements Subcommand {
             if(l == null){
                 sender.sendMessage(ChatColor.RED+"The requested arena cannot be found!");
                 return true;
+            }
+            if(p == null){
+                sender.sendMessage(ChatColor.RED + "The requested player cannot be found!");
             }
             PlayerInteractEvent event = new PlayerInteractEvent(p, Action.RIGHT_CLICK_BLOCK, new ItemStack(Material.AIR), l.getBlock(), BlockFace.SELF);
             plugin.signManager.onPlayerInteract(event);

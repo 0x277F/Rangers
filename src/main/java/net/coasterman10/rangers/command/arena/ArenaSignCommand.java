@@ -48,6 +48,10 @@ public class ArenaSignCommand implements Subcommand {
     @Override
     @SuppressWarnings("unchecked")
     public boolean execute(CommandSender sender, String[] args) {
+        if(!sender.hasPermission("rangers.arena.build")){
+            sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
+            return true;
+        }
         if (args.length < 1 || args.length > 3/*change to max args*/)
             return false;
         if (!manager.getArenas().contains(manager.getArena(args[0]))) {
