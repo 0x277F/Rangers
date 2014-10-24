@@ -10,49 +10,30 @@ import net.coasterman10.rangers.ArenaSign;
 import net.coasterman10.rangers.ArenaStatusSign;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.arena.Arena;
+import net.coasterman10.rangers.arena.ArenaManager;
+import net.coasterman10.rangers.config.ConfigAccessor;
+import net.coasterman10.rangers.config.ConfigUtil;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class SignManager implements Listener {
+    private final ArenaManager arenaManager;
+    private final ConfigAccessor config;
     private Collection<ArenaSign> signs = new LinkedList<>();
     private Map<Location, ArenaJoinSign> joinSigns = new HashMap<>();
 
-    public SignManager(Plugin plugin) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (ArenaSign s : signs) {
-                    s.update();
-                }
-            }
-        }.runTaskTimer(plugin, 0L, 10L);
-    }
-
-    public void addJoinSign(Arena a, Location loc) {
-        if (!(loc.getBlock().getState() instanceof Sign))
-            placeSign(loc);
-        ArenaJoinSign s = new ArenaJoinSign(loc);
-        s.setArena(a);
-        signs.add(s);
-        joinSigns.put(loc, s);
-    }
-
-    public void addStatusSign(Arena a, Location loc) {
-        if (!(loc.getBlock().getState() instanceof Sign))
-            placeSign(loc);
-        ArenaStatusSign s = new ArenaStatusSign(loc);
-        s.setArena(a);
-        signs.add(s);
+    public SignManager(ArenaManager arenaManager, ConfigAccessor config) {
+        this.arenaManager = arenaManager;
+        this.config = config;
     }
 
     @EventHandler
@@ -64,6 +45,66 @@ public class SignManager implements Listener {
                     s.getGame().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
                 }
             }
+        }
+    }
+
+    public void loadSigns() {
+        config.reload();
+        ConfigurationSection conf = config.get();
+
+        for (String arena : conf.getKeys(false)) {
+            Arena a = arenaManager.getArena(arena);
+            if (a == null)
+                continue;
+            ConfigurationSection signConf = conf.getConfigurationSection(arena);
+            if (signConf == null)
+                continue;
+            Location join = ConfigUtil.getLocation(signConf, "join");
+            if (join != null) {
+                addJoinSign(a, join, false);
+            }
+            Location status = ConfigUtil.getLocation(signConf, "status");
+            if (status != null) {
+                addStatusSign(a, status, false);
+            }
+        }
+    }
+
+    public void update() {
+        for (ArenaSign s : signs)
+            s.update();
+    }
+
+    public void addJoinSign(Arena a, Location loc) {
+        addJoinSign(a, loc, true);
+    }
+
+    public void addStatusSign(Arena a, Location loc) {
+        addStatusSign(a, loc, true);
+    }
+
+    private void addJoinSign(Arena a, Location loc, boolean save) {
+        if (!(loc.getBlock().getState() instanceof Sign))
+            placeSign(loc);
+        ArenaJoinSign s = new ArenaJoinSign(loc);
+        s.setArena(a);
+        signs.add(s);
+        joinSigns.put(loc, s);
+        if (save) {
+            ConfigurationSection conf = config.get().createSection(a.getId());
+            ConfigUtil.setLocation(conf, "join", loc);
+        }
+    }
+
+    private void addStatusSign(Arena a, Location loc, boolean save) {
+        if (!(loc.getBlock().getState() instanceof Sign))
+            placeSign(loc);
+        ArenaStatusSign s = new ArenaStatusSign(loc);
+        s.setArena(a);
+        signs.add(s);
+        if (save) {
+            ConfigurationSection conf = config.get().createSection(a.getId());
+            ConfigUtil.setLocation(conf, "status", loc);
         }
     }
 

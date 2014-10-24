@@ -71,12 +71,12 @@ public class Rangers extends JavaPlugin {
         log = getLogger();
         ConfigAccessor configYml = new PluginConfigAccessor(this);
 
+        arenaManager = new ArenaManager(new ConfigSectionAccessor(configYml, "arenas"));
         worldListener = new WorldListener();
         playerListener = new PlayerListener(this);
         abilityListener = new AbilityListener(this);
-        signManager = new SignManager(this);
+        signManager = new SignManager(arenaManager, new ConfigSectionAccessor(configYml, "signs"));
         menuManager = new MenuManager();
-        arenaManager = new ArenaManager(new ConfigSectionAccessor(configYml, "arenas"));
 
         settings = new GameSettings(configYml);
 
@@ -161,35 +161,18 @@ public class Rangers extends JavaPlugin {
             lobbySpawn.setPitch((float) getConfig().getDouble("spawn.pitch"));
 
         arenaManager.loadArenas();
-        
+
+        // Load the games for each arena
         for (Arena a : arenaManager.getArenas()) {
-            a.setGame(new Game(this, settings));
+            Game g = new Game(this, settings);
+            g.setArena(a);
         }
 
         // Game Settings - this is the alternative to global variables
         settings.load();
 
-        // Iterate over the map lists in the config file with the sign locations
-        List<Map<?, ?>> mapList = getConfig().getMapList("signs");
-        for (Map<?, ?> map : mapList) {
-            Object mapObj = map.get("arena");
-            Object joinObj = map.get("join");
-            Object statusObj = map.get("status");
-
-            if (mapObj instanceof String && joinObj instanceof Map && statusObj instanceof Map) {
-                Arena a = arenaManager.getArena((String) mapObj);
-                Vector joinSign = parseVector((Map<?, ?>) joinObj);
-                if (joinSign != null) {
-                    Location joinSignLoc = joinSign.toLocation(lobbyWorld);
-                    signManager.addJoinSign(a, joinSignLoc);
-                }
-                Vector statusSign = parseVector((Map<?, ?>) statusObj);
-                if (statusSign != null) {
-                    Location statusSignLoc = statusSign.toLocation(lobbyWorld);
-                    signManager.addStatusSign(a, statusSignLoc);
-                }
-            }
-        }
+        // Load the signs to join the arenas
+        signManager.loadSigns();
 
         // Load the allowed drops list
         Collection<Material> allowedDrops = new HashSet<>();
