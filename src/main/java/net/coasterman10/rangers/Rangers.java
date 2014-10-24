@@ -3,7 +3,6 @@ package net.coasterman10.rangers;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import net.coasterman10.rangers.arena.Arena;
@@ -18,6 +17,7 @@ import net.coasterman10.rangers.command.arena.ArenaSetChestCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetMaxCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetMinCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetNameCommand;
+import net.coasterman10.rangers.command.arena.ArenaSetSignCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetSpawnCommand;
 import net.coasterman10.rangers.command.rangers.RangersReloadCommand;
 import net.coasterman10.rangers.command.rangers.RangersSettingCommand;
@@ -46,7 +46,7 @@ import org.bukkit.WorldCreator;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.Vector;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class Rangers extends JavaPlugin {
     private static Logger log;
@@ -114,11 +114,19 @@ public class Rangers extends JavaPlugin {
         arenaCommand.registerSubcommand(new ArenaSetMaxCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetSpawnCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetChestCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaSetSignCommand(arenaManager, signManager));
 
         getCommand("rangers").setExecutor(rangersCommand);
         getCommand("arena").setExecutor(arenaCommand);
         getCommand("quit").setExecutor(new QuitCommand(this));
         getCommand("spawnboss").setExecutor(new DebugBossSpawnCommand());
+        
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                signManager.update();
+            }
+        }.runTaskTimer(this, 0L, 10L);
     }
 
     @Override
@@ -183,17 +191,5 @@ public class Rangers extends JavaPlugin {
             allowedDrops.add(m);
         }
         playerListener.setAllowedDrops(allowedDrops);
-    }
-
-    private static Vector parseVector(Map<?, ?> map) {
-        Object x = map.get("x");
-        Object y = map.get("y");
-        Object z = map.get("z");
-
-        if (x instanceof Number && y instanceof Number && z instanceof Number) {
-            return new Vector(((Number) x).doubleValue(), ((Number) y).doubleValue(), ((Number) z).doubleValue());
-        } else {
-            return null;
-        }
     }
 }

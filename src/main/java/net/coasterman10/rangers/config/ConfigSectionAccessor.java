@@ -5,12 +5,12 @@ import org.bukkit.configuration.ConfigurationSection;
 public class ConfigSectionAccessor implements ConfigAccessor {
     private final ConfigAccessor parent;
     private final String path;
-    
+
     public ConfigSectionAccessor(ConfigAccessor parent, String path) {
         this.parent = parent;
         this.path = path;
     }
-    
+
     @Override
     public void reload() {
         parent.reload();
@@ -23,6 +23,11 @@ public class ConfigSectionAccessor implements ConfigAccessor {
 
     @Override
     public ConfigurationSection get() {
-        return parent.get().getConfigurationSection(path);
+        ConfigurationSection conf = parent.get().getConfigurationSection(path);
+        if (conf == null) {
+            return parent.get().createSection(path);
+        } else {
+            return conf;
+        }
     }
 }

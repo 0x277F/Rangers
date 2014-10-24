@@ -46,6 +46,6 @@ public abstract class ArenaSign {
     }
     
     public boolean hasGame() {
-        return arena != null && arena.hasGame();
+        return arena != null && arena.isActive();
     }
 }

@@ -2,7 +2,7 @@ package net.coasterman10.rangers.listeners;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.Map;
 
 import net.coasterman10.rangers.ArenaJoinSign;
@@ -28,7 +28,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 public class SignManager implements Listener {
     private final ArenaManager arenaManager;
     private final ConfigAccessor config;
-    private Collection<ArenaSign> signs = new LinkedList<>();
+    private Collection<ArenaSign> signs = new HashSet<>();
     private Map<Location, ArenaJoinSign> joinSigns = new HashMap<>();
 
     public SignManager(ArenaManager arenaManager, ConfigAccessor config) {
@@ -88,10 +88,14 @@ public class SignManager implements Listener {
             placeSign(loc);
         ArenaJoinSign s = new ArenaJoinSign(loc);
         s.setArena(a);
+        a.setActive(true);
         signs.add(s);
         joinSigns.put(loc, s);
         if (save) {
-            ConfigurationSection conf = config.get().createSection(a.getId());
+            ConfigurationSection conf = config.get().getConfigurationSection(a.getId());
+            if (conf == null) {
+                conf = config.get().createSection(a.getId());
+            }
             ConfigUtil.setLocation(conf, "join", loc);
         }
     }
@@ -103,7 +107,10 @@ public class SignManager implements Listener {
         s.setArena(a);
         signs.add(s);
         if (save) {
-            ConfigurationSection conf = config.get().createSection(a.getId());
+            ConfigurationSection conf = config.get().getConfigurationSection(a.getId());
+            if (conf == null) {
+                conf = config.get().createSection(a.getId());
+            }
             ConfigUtil.setLocation(conf, "status", loc);
         }
     }

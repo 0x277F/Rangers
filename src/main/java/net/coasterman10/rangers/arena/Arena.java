@@ -33,7 +33,8 @@ public class Arena {
     private Map<GameTeam, Location> chests = new HashMap<>();
     
     private Game game;
-
+    private boolean active;
+    
     public Arena(String id, ConfigSectionAccessor config) {
         this.id = id;
         this.config = config;
@@ -140,8 +141,12 @@ public class Arena {
         this.name = name;
     }
 
-    public boolean hasGame() {
-        return game != null;
+    public boolean isActive() {
+        return active;
+    }
+    
+    public void setActive(boolean active) {
+        this.active = active && game != null;
     }
 
     public Location getLobby() {
@@ -150,6 +155,7 @@ public class Arena {
 
     public void setMin(Location min) {
         this.min = min;
+        this.world = min.getWorld(); // TODO Check that all locations are in this world
     }
 
     public void setMax(Location max) {

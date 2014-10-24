@@ -62,10 +62,12 @@ public class ArenaSetSignCommand implements Subcommand {
                 Location sign = ((Player) sender).getTargetBlock(null, 50).getLocation();
                 if (sign != null) {
                     switch (type) {
-                    case 1:
+                    case 0:
                         signManager.addJoinSign(a, sign);
-                    case 2:
+                        break;
+                    case 1:
                         signManager.addStatusSign(a, sign);
+                        break;
                     }
                     sender.sendMessage(ChatColor.GREEN + "Set " + (type == 0 ? "join" : "status")
                             + " sign for arena \"" + ChatColor.YELLOW + a.getId() + ChatColor.GREEN + "\" to "
