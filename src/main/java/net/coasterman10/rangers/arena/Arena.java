@@ -6,6 +6,7 @@ import java.util.Map;
 import net.coasterman10.rangers.SpawnVector;
 import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.ConfigUtil;
+import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
 
@@ -30,7 +31,8 @@ public class Arena {
     private Location spectatorSpawn;
     private Map<GameTeam, Location> spawns = new HashMap<>();
     private Map<GameTeam, Location> chests = new HashMap<>();
-    private boolean used;
+    
+    private Game game;
 
     public Arena(String id, ConfigSectionAccessor config) {
         this.id = id;
@@ -117,6 +119,14 @@ public class Arena {
 
         config.save();
     }
+    
+    public Game getGame() {
+        return game;
+    }
+    
+    public void setGame(Game game) {
+        this.game = game;
+    }
 
     public String getId() {
         return id;
@@ -130,12 +140,8 @@ public class Arena {
         this.name = name;
     }
 
-    public boolean isUsed() {
-        return used;
-    }
-
-    public void setUsed(boolean used) {
-        this.used = used;
+    public boolean hasGame() {
+        return game != null;
     }
 
     public Location getLobby() {

@@ -3,12 +3,13 @@ package net.coasterman10.rangers;
 import java.util.EnumMap;
 import java.util.Map;
 
+import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.Game.State;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 
-public class GameStatusSign extends GameSign {
+public class ArenaStatusSign extends ArenaSign {
     private static final Map<State, String> STATUS_TEXT = new EnumMap<>(State.class);
 
     static {
@@ -19,12 +20,13 @@ public class GameStatusSign extends GameSign {
         STATUS_TEXT.put(State.ENDING, "Ending");
     }
 
-    public GameStatusSign(Location location) {
+    public ArenaStatusSign(Location location) {
         super(location);
     }
 
     public void update() {
-        if (game != null) {
+        if (hasGame()) {
+            Game game = getGame();
             setLine(0,
                     (game.getPlayerCount() == game.getSettings().maxPlayers ? ChatColor.RED.toString() : "")
                             + game.getPlayerCount() + " / " + game.getSettings().maxPlayers);

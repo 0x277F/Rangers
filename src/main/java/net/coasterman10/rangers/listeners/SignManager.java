@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-import net.coasterman10.rangers.GameJoinSign;
-import net.coasterman10.rangers.GameSign;
-import net.coasterman10.rangers.GameStatusSign;
+import net.coasterman10.rangers.ArenaJoinSign;
+import net.coasterman10.rangers.ArenaSign;
+import net.coasterman10.rangers.ArenaStatusSign;
 import net.coasterman10.rangers.PlayerManager;
-import net.coasterman10.rangers.game.Game;
+import net.coasterman10.rangers.arena.Arena;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -24,34 +24,34 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class SignManager implements Listener {
-    private Collection<GameSign> signs = new LinkedList<>();
-    private Map<Location, GameJoinSign> joinSigns = new HashMap<>();
+    private Collection<ArenaSign> signs = new LinkedList<>();
+    private Map<Location, ArenaJoinSign> joinSigns = new HashMap<>();
 
     public SignManager(Plugin plugin) {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (GameSign s : signs) {
+                for (ArenaSign s : signs) {
                     s.update();
                 }
             }
         }.runTaskTimer(plugin, 0L, 10L);
     }
 
-    public void addJoinSign(Game g, Location loc) {
+    public void addJoinSign(Arena a, Location loc) {
         if (!(loc.getBlock().getState() instanceof Sign))
             placeSign(loc);
-        GameJoinSign s = new GameJoinSign(loc);
-        s.setGame(g);
+        ArenaJoinSign s = new ArenaJoinSign(loc);
+        s.setArena(a);
         signs.add(s);
         joinSigns.put(loc, s);
     }
-    
-    public void addStatusSign(Game g, Location loc) {
+
+    public void addStatusSign(Arena a, Location loc) {
         if (!(loc.getBlock().getState() instanceof Sign))
             placeSign(loc);
-        GameStatusSign s = new GameStatusSign(loc);
-        s.setGame(g);
+        ArenaStatusSign s = new ArenaStatusSign(loc);
+        s.setArena(a);
         signs.add(s);
     }
 
@@ -59,9 +59,9 @@ public class SignManager implements Listener {
     public void onPlayerInteract(PlayerInteractEvent e) {
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             if (joinSigns.containsKey(e.getClickedBlock().getLocation())) {
-                Game g = joinSigns.get(e.getClickedBlock().getLocation()).getGame();
-                if (g != null) {
-                    g.addPlayer(PlayerManager.getPlayer(e.getPlayer()));
+                ArenaJoinSign s = joinSigns.get(e.getClickedBlock().getLocation());
+                if (s.hasGame()) {
+                    s.getGame().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
                 }
             }
         }

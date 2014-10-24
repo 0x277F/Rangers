@@ -62,7 +62,7 @@ public class Game {
     public void setArena(Arena arena) {
         if (arena.isValid()) {
             this.arena = arena;
-            arena.setUsed(true);
+            arena.setGame(this);
             state = State.LOBBY;
         }
     }

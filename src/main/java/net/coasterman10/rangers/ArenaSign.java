@@ -1,5 +1,6 @@
 package net.coasterman10.rangers;
 
+import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.game.Game;
 
 import org.bukkit.Location;
@@ -7,11 +8,11 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 
-public abstract class GameSign {
+public abstract class ArenaSign {
     protected final Location location;
-    protected Game game;
+    protected Arena arena;
 
-    public GameSign(Location location) {
+    public ArenaSign(Location location) {
         this.location = location;
     }
 
@@ -19,14 +20,18 @@ public abstract class GameSign {
         return location;
     }
 
-    public void setGame(Game game) {
-        this.game = game;
+    public void setArena(Arena arena) {
+        this.arena = arena;
+    }
+
+    public Arena getArena() {
+        return arena;
     }
 
     public Game getGame() {
-        return game;
+        return arena.getGame();
     }
-    
+
     public abstract void update();
 
     protected void setLine(int index, String line) {
@@ -38,5 +43,9 @@ public abstract class GameSign {
             ((Sign) state).setLine(index, line);
             state.update();
         }
+    }
+    
+    public boolean hasGame() {
+        return arena != null && arena.hasGame();
     }
 }

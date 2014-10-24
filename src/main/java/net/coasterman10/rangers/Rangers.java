@@ -161,6 +161,10 @@ public class Rangers extends JavaPlugin {
             lobbySpawn.setPitch((float) getConfig().getDouble("spawn.pitch"));
 
         arenaManager.loadArenas();
+        
+        for (Arena a : arenaManager.getArenas()) {
+            a.setGame(new Game(this, settings));
+        }
 
         // Game Settings - this is the alternative to global variables
         settings.load();
@@ -173,23 +177,17 @@ public class Rangers extends JavaPlugin {
             Object statusObj = map.get("status");
 
             if (mapObj instanceof String && joinObj instanceof Map && statusObj instanceof Map) {
+                Arena a = arenaManager.getArena((String) mapObj);
                 Vector joinSign = parseVector((Map<?, ?>) joinObj);
-                if (joinSign == null)
-                    continue;
-
-                Game g = new Game(this, settings);
-                Location joinSignLoc = joinSign.toLocation(lobbyWorld);
-                signManager.addJoinSign(g, joinSignLoc);
-
+                if (joinSign != null) {
+                    Location joinSignLoc = joinSign.toLocation(lobbyWorld);
+                    signManager.addJoinSign(a, joinSignLoc);
+                }
                 Vector statusSign = parseVector((Map<?, ?>) statusObj);
                 if (statusSign != null) {
                     Location statusSignLoc = statusSign.toLocation(lobbyWorld);
-                    signManager.addStatusSign(g, statusSignLoc);
+                    signManager.addStatusSign(a, statusSignLoc);
                 }
-
-                Arena a = arenaManager.getArena((String) mapObj);
-                if (a != null)
-                    g.setArena(a);
             }
         }
 

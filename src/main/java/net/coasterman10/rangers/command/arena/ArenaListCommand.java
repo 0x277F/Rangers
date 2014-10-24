@@ -43,8 +43,8 @@ public class ArenaListCommand implements Subcommand {
             sb.append(ChatColor.GOLD).append(" - ");
             sb.append(ChatColor.GREEN).append("\"").append(a.getName()).append("\"");
             sb.append(ChatColor.GOLD).append(" - ");
-            sb.append(a.isUsed() ? ChatColor.GREEN : (a.isValid() ? ChatColor.YELLOW : ChatColor.RED));
-            sb.append(a.isUsed() ? "Active" : (a.isValid() ? "Unused" : "Invalid"));
+            sb.append(a.hasGame() ? ChatColor.GREEN : (a.isValid() ? ChatColor.YELLOW : ChatColor.RED));
+            sb.append(a.hasGame() ? "Active" : (a.isValid() ? "Unused" : "Invalid"));
             sender.sendMessage(sb.toString());
         }
         return true;
