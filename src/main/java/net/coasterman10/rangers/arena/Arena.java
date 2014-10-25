@@ -139,6 +139,10 @@ public class Arena {
     public void setName(String name) {
         this.name = name;
     }
+    
+    public boolean hasGame() {
+        return game != null;
+    }
 
     public boolean isActive() {
         return active;

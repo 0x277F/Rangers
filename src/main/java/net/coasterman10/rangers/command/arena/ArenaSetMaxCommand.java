@@ -61,7 +61,7 @@ public class ArenaSetMaxCommand implements Subcommand {
                     target = player.getLocation();
                 }
                 a.setMax(target);
-                sender.sendMessage(ChatColor.GREEN + "Set minimum bound of arena \"" + ChatColor.YELLOW + a.getId()
+                sender.sendMessage(ChatColor.GREEN + "Set maximum bound of arena \"" + ChatColor.YELLOW + a.getId()
                         + ChatColor.GREEN + "\" to " + ChatColor.AQUA + "(" + target.getBlockX() + ","
                         + target.getBlockY() + "," + target.getBlockZ() + ")");
                 a.save();

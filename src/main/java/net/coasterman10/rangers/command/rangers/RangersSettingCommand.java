@@ -38,7 +38,7 @@ public class RangersSettingCommand implements Subcommand {
 
     @Override
     public String getArguments() {
-        return ChatColor.GREEN + "<setting>" + ChatColor.BLUE + " [value]";
+        return ChatColor.GREEN + "<setting|list>" + ChatColor.BLUE + " [value]";
     }
     
     @Override
