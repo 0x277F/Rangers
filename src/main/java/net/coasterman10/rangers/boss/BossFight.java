@@ -2,6 +2,7 @@ package net.coasterman10.rangers.boss;
 
 import me.confuser.barapi.BarAPI;
 import net.minecraft.server.v1_7_R3.World;
+
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 

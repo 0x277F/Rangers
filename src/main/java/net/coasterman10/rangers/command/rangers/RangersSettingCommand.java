@@ -48,6 +48,10 @@ public class RangersSettingCommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
+        if(!sender.hasPermission("rangers.settings")){
+            sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
+            return true;
+        }
         if (args.length == 0) {
             return false;
         } else if (args[0].equalsIgnoreCase("list")) {

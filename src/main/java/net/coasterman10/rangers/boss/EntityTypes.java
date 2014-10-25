@@ -1,11 +1,12 @@
 package net.coasterman10.rangers.boss;
 
+import java.util.Map;
+
 import net.minecraft.server.v1_7_R3.Entity;
 import net.minecraft.server.v1_7_R3.World;
+
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_7_R3.CraftWorld;
-
-import java.util.Map;
 
 public enum EntityTypes //Taken from the Spigot forums
 {
