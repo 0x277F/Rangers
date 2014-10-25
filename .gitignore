@@ -5,3 +5,4 @@ target
 .gitignore
 /build
 .gradle
+.idea

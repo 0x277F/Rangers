@@ -31,7 +31,6 @@ public class Arena {
     private Location spectatorSpawn;
     private Map<GameTeam, Location> spawns = new HashMap<>();
     private Map<GameTeam, Location> chests = new HashMap<>();
-    
     private Game game;
     private boolean active;
     
@@ -146,7 +145,7 @@ public class Arena {
     }
     
     public void setActive(boolean active) {
-        this.active = active && game != null;
+        this.active = active;
     }
 
     public Location getLobby() {

@@ -36,6 +36,10 @@ public class ArenaListCommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
+        if(!sender.hasPermission("rangers.arena.build")){
+            sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
+            return true;
+        }
         sender.sendMessage(ChatColor.GOLD + "Arenas");
         for (Arena a : arenaManager.getArenas()) {
             StringBuilder sb = new StringBuilder(32);

@@ -7,10 +7,11 @@ import java.util.logging.Logger;
 
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
-import net.coasterman10.rangers.boss.DebugBossSpawnCommand;
+import net.coasterman10.rangers.boss.SpawnBossSubcommand;
 import net.coasterman10.rangers.command.QuitCommand;
 import net.coasterman10.rangers.command.SubcommandExecutor;
 import net.coasterman10.rangers.command.arena.ArenaAddCommand;
+import net.coasterman10.rangers.command.arena.ArenaJoinCommand;
 import net.coasterman10.rangers.command.arena.ArenaListCommand;
 import net.coasterman10.rangers.command.arena.ArenaRemoveCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetChestCommand;
@@ -80,6 +81,8 @@ public class Rangers extends JavaPlugin {
 
         settings = new GameSettings(configYml);
 
+        settings = new GameSettings(configYml);
+
         saveDefaultConfig();
         loadConfig();
 
@@ -104,6 +107,7 @@ public class Rangers extends JavaPlugin {
         SubcommandExecutor rangersCommand = new SubcommandExecutor("rangers");
         rangersCommand.registerSubcommand(new RangersSettingCommand(settings));
         rangersCommand.registerSubcommand(new RangersReloadCommand(this));
+        rangersCommand.registerSubcommand(new SpawnBossSubcommand());
 
         SubcommandExecutor arenaCommand = new SubcommandExecutor("arena");
         arenaCommand.registerSubcommand(new ArenaAddCommand(arenaManager));
@@ -115,11 +119,11 @@ public class Rangers extends JavaPlugin {
         arenaCommand.registerSubcommand(new ArenaSetSpawnCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetChestCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetSignCommand(arenaManager, signManager));
+        arenaCommand.registerSubcommand(new ArenaJoinCommand(arenaManager));
 
         getCommand("rangers").setExecutor(rangersCommand);
         getCommand("arena").setExecutor(arenaCommand);
         getCommand("quit").setExecutor(new QuitCommand(this));
-        getCommand("spawnboss").setExecutor(new DebugBossSpawnCommand());
         
         new BukkitRunnable() {
             @Override
