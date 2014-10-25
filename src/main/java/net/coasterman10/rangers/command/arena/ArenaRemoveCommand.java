@@ -27,6 +27,11 @@ public class ArenaRemoveCommand implements Subcommand {
     public String getArguments() {
         return ChatColor.GREEN + "<id>";
     }
+    
+    @Override
+    public String getPermission() {
+        return "rangers.arena.build";
+    }
 
     @Override
     public boolean canConsoleUse() {
@@ -35,10 +40,6 @@ public class ArenaRemoveCommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        if(!sender.hasPermission("rangers.arena.build")){
-            sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
-            return true;
-        }
         if (args.length == 0) {
             return false;
         } else {

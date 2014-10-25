@@ -31,6 +31,11 @@ public class ArenaJoinCommand implements Subcommand {
     public String getArguments() {
         return "<id> [player]";
     }
+    
+    @Override
+    public String getPermission() {
+        return null;
+    }
 
     @Override
     public boolean canConsoleUse() {
