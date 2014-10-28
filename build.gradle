@@ -26,7 +26,7 @@ dependencies {
     compile "me.confuser:BarAPI:3.0"
     compile "net.coasterman10:SpectateAPI:1.0"
     compile "org.kitteh:tagapi:3.0.6-SNAPSHOT"
-    compile files("lib/spigot"+spigotVersion+".jar") //This jarfile is not tracked by git because of the DMCA takedown of bukkit-based repos.
+    compile files("lib/spigot"+spigotVersion+".jar")
 }
 
 task getVersion << {

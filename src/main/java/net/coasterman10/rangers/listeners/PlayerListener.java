@@ -8,6 +8,7 @@ import java.util.List;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.Rangers;
+import net.coasterman10.rangers.boss.EntityGolemBoss;
 import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
@@ -283,14 +284,14 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()) {
+        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp() || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()) {
+        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp() || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
     }
@@ -308,6 +309,12 @@ public class PlayerListener implements Listener {
     public void onEntityDamage(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player) {
             Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
+            if(e instanceof EntityDamageByEntityEvent){
+                if(((net.minecraft.server.v1_7_R3.Entity)((EntityDamageByEntityEvent)e).getDamager()).getClass() == EntityGolemBoss.class){
+                    e.setCancelled(false);
+                    return;
+                }
+            }
             if (g == null || !g.allowPvp())
                 e.setCancelled(true);
         }
