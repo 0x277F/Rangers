@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.PlayerUtil;
@@ -208,6 +209,15 @@ public class PlayerListener implements Listener {
                         msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
                         msg.append("Throwing Knife");
                     }
+                } else if(e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.VOID
+                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE
+                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
+                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.LAVA
+                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FALL){
+                    Random r = new Random();
+                    GamePlayer t = PlayerManager.getPlayer(e.getEntity());
+                    GamePlayer g = t.getGame().getPlayers(t.getTeam().opponent()).toArray(new GamePlayer[]{})[r.nextInt(t.getGame().getPlayers(t.getTeam().opponent()).size())];
+                    g.getHandle().getInventory().addItem(getHead(t.getHandle()));
                 } else {
                     msg.append(ChatColor.DARK_RED + " was killed");
                 }

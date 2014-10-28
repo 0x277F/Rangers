@@ -379,4 +379,8 @@ public class Game {
     public int getSeconds() {
         return seconds;
     }
+
+    public Collection<GamePlayer> getPlayers(GameTeam team){
+        return teams.get(team);
+    }
 }
