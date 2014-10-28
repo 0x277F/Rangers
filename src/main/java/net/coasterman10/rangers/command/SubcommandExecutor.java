@@ -10,9 +10,10 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+/**
+ * A CommandExecutor implementation that uses the first argument to denote another command in a hierarchical manner.
+ */
 public class SubcommandExecutor implements CommandExecutor {
-    public static final String ANY_STRING = "ANY_STRING";
-
     private final String name;
 
     private Map<String, Subcommand> subcommands = new LinkedHashMap<>();
@@ -21,15 +22,14 @@ public class SubcommandExecutor implements CommandExecutor {
         this.name = name;
     }
 
+    /**
+     * Registers a subcommand. If another subcommand with the same name has already been registered, it will be
+     * replaced.
+     * 
+     * @param subcommand The subcommand to register.
+     */
     public void registerSubcommand(Subcommand subcommand) {
-        if (subcommand.getName().isEmpty())
-            subcommands.put(ANY_STRING.toLowerCase(), subcommand);
-        else
-            subcommands.put(subcommand.getName().toLowerCase(), subcommand);
-    }
-
-    protected boolean isSubcommandRegistered(String name) {
-        return subcommands.containsKey(name.toLowerCase());
+        subcommands.put(subcommand.getName().toLowerCase(), subcommand);
     }
 
     @Override
@@ -40,11 +40,23 @@ public class SubcommandExecutor implements CommandExecutor {
             String subcommandLabel = args[0].toLowerCase();
             if (subcommands.containsKey(subcommandLabel)) {
                 Subcommand subcommand = subcommands.get(subcommandLabel);
+
+                // If the subcommand cannot be used by the console, check that the sender is a player. It is guaranteed
+                // not to execute if the sender is console but the subcommand does not allow console to run it.
                 if (subcommand.canConsoleUse() || sender instanceof Player) {
-                    if (!subcommand.execute(sender, Arrays.copyOfRange(args, 1, args.length))) {
-                        sender.sendMessage(ChatColor.GOLD + subcommand.getDescription());
-                        sender.sendMessage(ChatColor.GOLD + "/" + name + " " + ChatColor.YELLOW + subcommand.getName()
-                                + ChatColor.GOLD + " " + subcommand.getArguments());
+                    // The first argument is the label, so shift off the first argument to the left.
+                    String[] subcommandArgs = Arrays.copyOfRange(args, 1, args.length);
+
+                    // Check that the user has permissions to execute the subcommand.
+                    if (subcommand.getPermission() == null || sender.hasPermission(subcommand.getPermission())) {
+                        // Execute the subcommand and display usage if the user did not enter the correct arguments.
+                        if (!subcommand.execute(sender, subcommandArgs)) {
+                            sender.sendMessage(ChatColor.GOLD + subcommand.getDescription());
+                            sender.sendMessage(ChatColor.GOLD + "/" + name + " " + ChatColor.YELLOW
+                                    + subcommand.getName() + ChatColor.GOLD + " " + subcommand.getArguments());
+                        }
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "You do not have permission to execute that command.");
                     }
                 } else {
                     sender.sendMessage("Only players can use that command");
