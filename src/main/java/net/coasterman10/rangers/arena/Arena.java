@@ -113,8 +113,8 @@ public class Arena {
         for (GameTeam team : GameTeam.values()) {
             SpawnVector spawn = spawns.get(team) != null ? new SpawnVector(spawns.get(team)) : null;
             Vector chest = chests.get(team) != null ? chests.get(team).toVector() : null;
-            ConfigUtil.setVector(conf, "spawns." + team.name(), spawn);
-            ConfigUtil.setVector(conf, "chests." + team.name(), chest);
+            ConfigUtil.setVector(conf, "spawns." + team.name().toLowerCase(), spawn);
+            ConfigUtil.setVector(conf, "chests." + team.name().toLowerCase(), chest);
         }
 
         config.save();
@@ -138,6 +138,10 @@ public class Arena {
 
     public void setName(String name) {
         this.name = name;
+    }
+    
+    public boolean hasGame() {
+        return game != null;
     }
 
     public boolean isActive() {

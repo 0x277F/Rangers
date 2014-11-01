@@ -4,10 +4,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.Rangers;
+import net.coasterman10.rangers.boss.EntityGolemBoss;
 import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
@@ -207,6 +209,15 @@ public class PlayerListener implements Listener {
                         msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
                         msg.append("Throwing Knife");
                     }
+                } else if(e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.VOID
+                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE
+                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
+                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.LAVA
+                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FALL){
+                    Random r = new Random();
+                    GamePlayer t = PlayerManager.getPlayer(e.getEntity());
+                    GamePlayer g = t.getGame().getPlayers(t.getTeam().opponent()).toArray(new GamePlayer[]{})[r.nextInt(t.getGame().getPlayers(t.getTeam().opponent()).size())];
+                    g.getHandle().getInventory().addItem(getHead(t.getHandle()));
                 } else {
                     msg.append(ChatColor.DARK_RED + " was killed");
                 }
@@ -283,14 +294,14 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()) {
+        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp() || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()) {
+        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp() || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
     }
@@ -308,6 +319,12 @@ public class PlayerListener implements Listener {
     public void onEntityDamage(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player) {
             Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
+            if(e instanceof EntityDamageByEntityEvent){
+                if(((net.minecraft.server.v1_7_R3.Entity)((EntityDamageByEntityEvent)e).getDamager()).getClass() == EntityGolemBoss.class){
+                    e.setCancelled(false);
+                    return;
+                }
+            }
             if (g == null || !g.allowPvp())
                 e.setCancelled(true);
         }

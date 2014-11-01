@@ -28,6 +28,11 @@ public class ArenaListCommand implements Subcommand {
     public String getArguments() {
         return "";
     }
+    
+    @Override
+    public String getPermission() {
+        return "rangers.arena.build";
+    }
 
     @Override
     public boolean canConsoleUse() {
@@ -36,10 +41,6 @@ public class ArenaListCommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        if(!sender.hasPermission("rangers.arena.build")){
-            sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
-            return true;
-        }
         sender.sendMessage(ChatColor.GOLD + "Arenas");
         for (Arena a : arenaManager.getArenas()) {
             StringBuilder sb = new StringBuilder(32);
@@ -47,8 +48,8 @@ public class ArenaListCommand implements Subcommand {
             sb.append(ChatColor.GOLD).append(" - ");
             sb.append(ChatColor.GREEN).append("\"").append(a.getName()).append("\"");
             sb.append(ChatColor.GOLD).append(" - ");
-            sb.append(a.isActive() ? ChatColor.GREEN : (a.isValid() ? ChatColor.YELLOW : ChatColor.RED));
-            sb.append(a.isActive() ? "Active" : (a.isValid() ? "Unused" : "Invalid"));
+            sb.append(a.hasGame() ? ChatColor.GREEN : (a.isValid() ? ChatColor.YELLOW : ChatColor.RED));
+            sb.append(a.hasGame() ? "Active" : (a.isValid() ? "Inactive" : "Invalid"));
             sender.sendMessage(sb.toString());
         }
         return true;

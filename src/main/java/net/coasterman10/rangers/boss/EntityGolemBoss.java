@@ -40,7 +40,7 @@ public class EntityGolemBoss extends EntityIronGolem {
 
     public EntityGolemBoss(World world) {
         super(world);
-        try {//Clear original pathfinder goals
+        try {// Clear original pathfinder goals
             Field bField = PathfinderGoalSelector.class.getDeclaredField("b");
             bField.setAccessible(true);
             Field cField = PathfinderGoalSelector.class.getDeclaredField("c");
@@ -63,84 +63,90 @@ public class EntityGolemBoss extends EntityIronGolem {
         this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, true));
         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget(this, EntityPlayer.class, 0, false));
         this.setCustomName("Kalkara");
-        ((LivingEntity)this).addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,Integer.MAX_VALUE, 1, false));
+        ((LivingEntity) this).addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 1,
+                false));
         random = new Random();
     }
 
-    public EntityGolemBoss(World world, BossFight fight){
+    public EntityGolemBoss(World world, BossFight fight) {
         this(world);
         this.match = fight;
     }
 
     @Override
-    public void aC(){
+    public void aC() {
         super.aC();
-        this.getAttributeInstance(GenericAttributes.e).setValue(15.0D);//15 Attack Damage
-        this.getAttributeInstance(GenericAttributes.d).setValue(0.700000000417D);//Speed - Not sure exactly what this will do.
-        this.getAttributeInstance(GenericAttributes.b).setValue(10.0D);//Will target players within 10 blocks
-        this.getAttributeInstance(GenericAttributes.a).setValue(40.0D);//40 health.
-        this.getAttributeInstance(GenericAttributes.c).setValue(100.0D);//Knockback resistance. Not sure if this works.
+        this.getAttributeInstance(GenericAttributes.e).setValue(15.0D);// 15 Attack Damage
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.700000000417D);// Speed - Not sure exactly what this
+                                                                                 // will do.
+        this.getAttributeInstance(GenericAttributes.b).setValue(10.0D);// Will target players within 10 blocks
+        this.getAttributeInstance(GenericAttributes.a).setValue(40.0D);// 40 health.
+        this.getAttributeInstance(GenericAttributes.c).setValue(100.0D);// Knockback resistance. Not sure if this works.
     }
 
     @Override
-    public boolean n(Entity entity){//Called whenever this entity damages another entity
+    public boolean n(Entity entity) {// Called whenever this entity damages another entity
         boolean flag = super.n(entity);
-        if(tick == Integer.MAX_VALUE)//First attack after spawn
+        if (tick == Integer.MAX_VALUE)// First attack after spawn
             tick = 0;
-        if(random.nextInt(3) == 0){//1 out of 4 chance
+        if (random.nextInt(3) == 0) {// 1 out of 4 chance
             entity.setOnFire(100);// 5 seconds of fire
         }
         return flag;
     }
+
     @Override
-    public void e(){//This is the onLivingUpdate() method
+    public void e() {// This is the onLivingUpdate() method
         super.e();
         tick++;
 
-        if(tick == 400){//Twenty Seconds
+        if (tick == 400) {// Twenty Seconds
             this.launch();
         }
-        if(tick == 415){
+        if (tick == 415) {
             this.smash();
         }
-        if(tick == 515){
+        if (tick == 515) {
             this.fireBreath();
             tick = 0;
         }
         BarAPI.setHealth(this.match.player, this.getHealth());
     }
-    public void launch(){
-        org.bukkit.entity.Entity e = (org.bukkit.entity.Entity)this;
+
+    public void launch() {
+        org.bukkit.entity.Entity e = (org.bukkit.entity.Entity) this;
         Vector vec = e.getLocation().getDirection();
         vec.add(new Vector(0.0D, 5.0D, 0.0D));
-        vec.multiply(2);//Speed
+        vec.multiply(2);// Speed
         e.setVelocity(vec);
         e.setFallDistance(-100.0F);
     }
-    @SuppressWarnings("deprecation")
-    public void smash(){
-        org.bukkit.entity.Entity e = (org.bukkit.entity.Entity)this;
+
+    public void smash() {
+        org.bukkit.entity.Entity e = (org.bukkit.entity.Entity) this;
         Location l = e.getLocation();
         double y = l.getY();
-        for(double x = l.getX()-10; x<=l.getX()+10; x++){
-            for(double z = l.getZ()-10; z<=l.getZ()+10; z++){
-                e.getWorld().playEffect(new Location(e.getWorld(), x, y, z), Effect.STEP_SOUND, e.getWorld().getBlockAt(new Location(e.getWorld(), x, y, z)).getType());
+        for (double x = l.getX() - 10; x <= l.getX() + 10; x++) {
+            for (double z = l.getZ() - 10; z <= l.getZ() + 10; z++) {
+                e.getWorld().playEffect(new Location(e.getWorld(), x, y, z), Effect.STEP_SOUND,
+                        e.getWorld().getBlockAt(new Location(e.getWorld(), x, y, z)).getType());
             }
         }
-        for(org.bukkit.entity.Entity entity : e.getNearbyEntities(10, 10, 10)){
-            if(entity instanceof Damageable && entity != this){
-                ((Damageable)entity).damage(15, e);
+        for (org.bukkit.entity.Entity entity : e.getNearbyEntities(10, 10, 10)) {
+            if (entity instanceof Damageable && entity != this) {
+                ((Damageable) entity).damage(15, e);
             }
         }
     }
-    public void fireBreath(){
-        Collection<Location> blocks = new HashSet();
-        org.bukkit.entity.Entity e = (org.bukkit.entity.Entity)this;
-        //TODO calculate the blocks that need particles
-        for(Location l : blocks){
-            ((org.bukkit.World)this.world).playEffect(l, Effect.MOBSPAWNER_FLAMES, 1, 1);
-            for(org.bukkit.entity.Entity be : ((org.bukkit.World) this.world).getEntities()){
-                if(be == this.getGoalTarget()){
+
+    public void fireBreath() {
+        Collection<Location> blocks = new HashSet<>();
+        org.bukkit.entity.Entity e = (org.bukkit.entity.Entity) this;
+        // TODO calculate the blocks that need particles
+        for (Location l : blocks) {
+            ((org.bukkit.World) this.world).playEffect(l, Effect.MOBSPAWNER_FLAMES, 1, 1);
+            for (org.bukkit.entity.Entity be : ((org.bukkit.World) this.world).getEntities()) {
+                if (be == this.getGoalTarget()) {
                     be.setFireTicks(1000);
                 }
             }

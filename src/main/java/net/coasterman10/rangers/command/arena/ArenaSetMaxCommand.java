@@ -31,6 +31,11 @@ public class ArenaSetMaxCommand implements Subcommand {
     public String getArguments() {
         return ChatColor.GREEN + "<id>";
     }
+    
+    @Override
+    public String getPermission() {
+        return "rangers.arena.build";
+    }
 
     @Override
     public boolean canConsoleUse() {
@@ -39,10 +44,6 @@ public class ArenaSetMaxCommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        if(!sender.hasPermission("rangers.arena.build")){
-            sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
-            return true;
-        }
         if (args.length == 0) {
             return false;
         } else {
@@ -60,7 +61,7 @@ public class ArenaSetMaxCommand implements Subcommand {
                     target = player.getLocation();
                 }
                 a.setMax(target);
-                sender.sendMessage(ChatColor.GREEN + "Set minimum bound of arena \"" + ChatColor.YELLOW + a.getId()
+                sender.sendMessage(ChatColor.GREEN + "Set maximum bound of arena \"" + ChatColor.YELLOW + a.getId()
                         + ChatColor.GREEN + "\" to " + ChatColor.AQUA + "(" + target.getBlockX() + ","
                         + target.getBlockY() + "," + target.getBlockZ() + ")");
                 a.save();

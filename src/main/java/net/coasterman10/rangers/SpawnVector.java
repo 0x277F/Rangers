@@ -4,6 +4,10 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 
+/**
+ * Represents a Vector in addition to a yaw and pitch for entity position. Useful when a Location is desired but the
+ * world may not have been specified, or is irrelevant or arbitrary.
+ */
 public class SpawnVector extends Vector {
     private float yaw;
     private float pitch;
@@ -43,7 +47,7 @@ public class SpawnVector extends Vector {
     public float getPitch() {
         return pitch;
     }
-    
+
     public void round() {
         x = round(x, 0.5);
         y = round(y, 0.5);
@@ -62,6 +66,12 @@ public class SpawnVector extends Vector {
         return (SpawnVector) super.subtract(vec);
     }
 
+    /**
+     * Adds this SpawnVector to a location and returns the location.
+     * 
+     * @param loc The location to which to add this SpawnVector
+     * @return The same location
+     */
     public Location addTo(Location loc) {
         loc = loc.clone();
         loc.add(this);

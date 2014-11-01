@@ -1,0 +1,38 @@
+def mcVersion = "1.7.9"
+def bukkitVersion = "$mcVersion-R0.2"
+def spigotVersion = "1543"
+def rangersVersion = "0.0.1-SNAPSHOT"
+
+version = "$mcVersion-$rangersVersion" as Object
+
+apply plugin: 'java'
+apply plugin: 'maven'
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+        url 'http://repo.bukkit.org/content/groups/public'
+    }
+    maven {
+        url 'http://ci.frostcast.net/plugin/repository/everything'
+    }
+    maven {
+        url 'http://repo.kitteh.org/content/repositories/public'
+    }
+}
+dependencies {
+    compile "org.bukkit:bukkit:$bukkitVersion"
+    compile "jnbt:jnbt:1.1"
+    compile "me.confuser:BarAPI:3.0"
+    compile "net.coasterman10:SpectateAPI:1.0"
+    compile "org.kitteh:tagapi:3.0.6-SNAPSHOT"
+    compile files("lib/spigot"+spigotVersion+".jar")
+}
+
+task getVersion << {
+    println("Minecraft version $mcVersion")
+    println("Bukkit version $bukkitVersion")
+    println("Spigot Server Version $spigotVersion")
+    println("Rangers version $rangersVersion")
+    return version
+}
