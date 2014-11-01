@@ -7,6 +7,7 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import me.confuser.barapi.BarAPI;
 import net.coasterman10.rangers.PlayerUtil;
@@ -28,6 +29,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class Game {
+    private static final Random rand = new Random();
     private static int nextId;
 
     private final int id;
@@ -380,7 +382,8 @@ public class Game {
         return seconds;
     }
 
-    public Collection<GamePlayer> getPlayers(GameTeam team){
-        return teams.get(team);
+    public GamePlayer getRandomPlayer(GameTeam team){
+        List<GamePlayer> players = new ArrayList<>(teams.get(team));
+        return players.get(rand.nextInt(players.size()));
     }
 }

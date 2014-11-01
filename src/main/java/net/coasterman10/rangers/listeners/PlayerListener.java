@@ -120,133 +120,133 @@ public class PlayerListener implements Listener {
     public void onDeath(PlayerDeathEvent e) {
         GamePlayer player = PlayerManager.getPlayer(e.getEntity());
 
+        if (player.getGame() == null) {
+            e.getDrops().clear(); // There should be no drops at all outside of the game
+            e.setDeathMessage(null);
+            return;
+        }
+
         // Huge mess of code to generate death message. Don't ask.
-        if (player.getGame() != null) {
-            StringBuilder msg = new StringBuilder(64);
-            ChatColor teamColor = (player.getTeam() != null ? player.getTeam().getChatColor() : ChatColor.WHITE);
-            msg.append(teamColor).append(e.getEntity().getName());
-            if (player.isBanditLeader())
-                msg.append("(Bandit Leader)");
-            else
-                msg.append("(").append(player.getTeam().getName()).append(")");
-            EntityDamageEvent cause = e.getEntity().getLastDamageCause();
-            if (cause instanceof EntityDamageByEntityEvent) {
-                Entity damager = ((EntityDamageByEntityEvent) cause).getDamager();
-                if (damager instanceof Player) {
-                    msg.append(ChatColor.DARK_RED).append(" was slain by ");
-                    GamePlayer attacker = PlayerManager.getPlayer((Player) damager);
-                    if(attacker.getTeam() == GameTeam.BANDITS)
-                        attacker.getHandle().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 40, 2));
-                    msg.append(attacker.getTeam().getChatColor()).append(((Player) damager).getName());
+        StringBuilder msg = new StringBuilder(64);
+        ChatColor teamColor = (player.getTeam() != null ? player.getTeam().getChatColor() : ChatColor.WHITE);
+        msg.append(teamColor).append(e.getEntity().getName());
+        if (player.isBanditLeader())
+            msg.append("(Bandit Leader)");
+        else
+            msg.append("(").append(player.getTeam().getName()).append(")");
+        EntityDamageEvent cause = e.getEntity().getLastDamageCause();
+        if (cause instanceof EntityDamageByEntityEvent) {
+            Entity damager = ((EntityDamageByEntityEvent) cause).getDamager();
+            if (damager instanceof Player) {
+                msg.append(ChatColor.DARK_RED).append(" was slain by ");
+                GamePlayer attacker = PlayerManager.getPlayer((Player) damager);
+                if (attacker.getTeam() == GameTeam.BANDITS)
+                    attacker.getHandle().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 40, 2));
+                msg.append(attacker.getTeam().getChatColor()).append(((Player) damager).getName());
+                if (attacker.isBanditLeader())
+                    msg.append("(Bandit Leader)");
+                else
+                    msg.append("(").append(attacker.getTeam().getName()).append(")");
+                ItemStack item = ((Player) damager).getItemInHand();
+                if (item != null) {
+                    msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
+                    String itemName = item.getItemMeta().getDisplayName();
+                    if (itemName != null) {
+                        msg.append(itemName);
+                    } else {
+                        String typeName = item.getType().name();
+                        msg.append(typeName.substring(0, 1).toUpperCase()).append(typeName.substring(1).toLowerCase());
+                    }
+                } else {
+                    msg.append(ChatColor.DARK_RED).append(" using their ");
+                    msg.append(ChatColor.YELLOW).append("BARE HANDS!");
+                }
+            } else if (damager instanceof Arrow) {
+                ProjectileSource shooter = ((Arrow) damager).getShooter();
+                if (shooter instanceof Player) {
+                    msg.append(ChatColor.DARK_RED).append(" was shot by ");
+                    GamePlayer attacker = PlayerManager.getPlayer((Player) shooter);
+                    msg.append(attacker.getTeam().getChatColor()).append(((Player) shooter).getName());
                     if (attacker.isBanditLeader())
                         msg.append("(Bandit Leader)");
                     else
                         msg.append("(").append(attacker.getTeam().getName()).append(")");
-                    ItemStack item = ((Player) damager).getItemInHand();
-                    if (item != null) {
-                        msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
-                        String itemName = item.getItemMeta().getDisplayName();
-                        if (itemName != null) {
-                            msg.append(itemName);
-                        } else {
-                            String typeName = item.getType().name();
-                            msg.append(typeName.substring(0, 1).toUpperCase()).append(
-                                    typeName.substring(1).toLowerCase());
+                    boolean foundBow = false;
+                    for (ItemStack item : ((Player) shooter).getInventory()) {
+                        if (item == null)
+                            continue;
+                        if (item.getType() == Material.BOW) {
+                            msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
+                            String itemName = item.getItemMeta().getDisplayName();
+                            if (itemName != null) {
+                                msg.append(itemName);
+                            } else {
+                                String typeName = item.getType().name();
+                                msg.append(typeName.substring(0, 1).toUpperCase()).append(
+                                        typeName.substring(1).toLowerCase());
+                            }
+                            foundBow = true;
+                            break;
                         }
-                    } else {
+                    }
+                    if (!foundBow) {
                         msg.append(ChatColor.DARK_RED).append(" using their ");
                         msg.append(ChatColor.YELLOW).append("BARE HANDS!");
                     }
-                } else if (damager instanceof Arrow) {
-                    ProjectileSource shooter = ((Arrow) damager).getShooter();
-                    if (shooter instanceof Player) {
-                        msg.append(ChatColor.DARK_RED).append(" was shot by ");
-                        GamePlayer attacker = PlayerManager.getPlayer((Player) shooter);
-                        msg.append(attacker.getTeam().getChatColor()).append(((Player) shooter).getName());
-                        if (attacker.isBanditLeader())
-                            msg.append("(Bandit Leader)");
-                        else
-                            msg.append("(").append(attacker.getTeam().getName()).append(")");
-                        boolean foundBow = false;
-                        for (ItemStack item : ((Player) shooter).getInventory()) {
-                            if (item == null)
-                                continue;
-                            if (item.getType() == Material.BOW) {
-                                msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
-                                String itemName = item.getItemMeta().getDisplayName();
-                                if (itemName != null) {
-                                    msg.append(itemName);
-                                } else {
-                                    String typeName = item.getType().name();
-                                    msg.append(typeName.substring(0, 1).toUpperCase()).append(
-                                            typeName.substring(1).toLowerCase());
-                                }
-                                foundBow = true;
-                                break;
-                            }
-                        }
-                        if (!foundBow) {
-                            msg.append(ChatColor.DARK_RED).append(" using their ");
-                            msg.append(ChatColor.YELLOW).append("BARE HANDS!");
+                }
+            } else if (damager instanceof Item) {
+                ItemStack item = ((Item) damager).getItemStack();
+                if (item.getType() == Material.TRIPWIRE_HOOK) {
+                    msg.append(ChatColor.DARK_RED).append(" was killed by ");
+                    String shooter = null;
+                    List<MetadataValue> metadata = damager.getMetadata("shooter");
+                    for (MetadataValue value : metadata) {
+                        if (value.getOwningPlugin().equals(plugin)) {
+                            shooter = value.asString();
+                            break;
                         }
                     }
-                } else if (damager instanceof Item) {
-                    ItemStack item = ((Item) damager).getItemStack();
-                    if (item.getType() == Material.TRIPWIRE_HOOK) {
-                        msg.append(ChatColor.DARK_RED).append(" was killed by ");
-                        String shooter = null;
-                        List<MetadataValue> metadata = damager.getMetadata("shooter");
-                        for (MetadataValue value : metadata) {
-                            if (value.getOwningPlugin().equals(plugin)) {
-                                shooter = value.asString();
-                                break;
-                            }
-                        }
-                        // Since it's fairly messy to deal with them offline I'm just hardcoding in that they
-                        // are a Ranger (since only Rangers get the throwing knife anyway)
-                        msg.append(GameTeam.RANGERS.getChatColor()).append(shooter);
-                        msg.append("(").append(GameTeam.RANGERS.getName()).append(")");
-                        msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
-                        msg.append("Throwing Knife");
-                    }
-                } else if(e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.VOID
-                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE
-                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
-                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.LAVA
-                        || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FALL){
-                    Random r = new Random();
-                    GamePlayer t = PlayerManager.getPlayer(e.getEntity());
-                    GamePlayer g = t.getGame().getPlayers(t.getTeam().opponent()).toArray(new GamePlayer[]{})[r.nextInt(t.getGame().getPlayers(t.getTeam().opponent()).size())];
-                    g.getHandle().getInventory().addItem(getHead(t.getHandle()));
-                } else {
-                    msg.append(ChatColor.DARK_RED + " was killed");
+                    // Since it's fairly messy to deal with them offline I'm just hardcoding in that they
+                    // are a Ranger (since only Rangers get the throwing knife anyway)
+                    msg.append(GameTeam.RANGERS.getChatColor()).append(shooter);
+                    msg.append("(").append(GameTeam.RANGERS.getName()).append(")");
+                    msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
+                    msg.append("Throwing Knife");
                 }
             } else {
-                // TODO: Fill in alternate death reasons
-                msg.append(ChatColor.DARK_RED + " died");
+                msg.append(ChatColor.DARK_RED + " was killed");
             }
-            e.setDeathMessage(msg.toString());
-
-            // Only drop heads and allowed items (food, possibly other items in future)
-            for (Iterator<ItemStack> it = e.getDrops().iterator(); it.hasNext();) {
-                Material type = it.next().getType();
-                if (!allowedDrops.contains(type) && type != Material.SKULL_ITEM) {
-                    it.remove();
-                }
-            }
-
-            // Give the victim's head to the killer or drop the victim's head if null
-            if (e.getEntity().getKiller() != null)
-                e.getEntity().getKiller().getInventory().addItem(getHead(e.getEntity()));
-            else
-                e.getDrops().add(getHead(e.getEntity()));
-
-            // Put them in spectator mode
-            SpectateAPI.addSpectator(e.getEntity());
         } else {
-            e.getDrops().clear(); // There should be no drops at all outside of the game
-            e.setDeathMessage(null);
+            // TODO: Fill in alternate death reasons
+            msg.append(ChatColor.DARK_RED + " died");
         }
+        e.setDeathMessage(msg.toString());
+
+        // Only drop heads and allowed items (food, possibly other items in future)
+        for (Iterator<ItemStack> it = e.getDrops().iterator(); it.hasNext();) {
+            Material type = it.next().getType();
+            if (!allowedDrops.contains(type) && type != Material.SKULL_ITEM) {
+                it.remove();
+            }
+        }
+
+        // Give the victim's head to the killer or drop the victim's head if null
+        if (e.getEntity().getKiller() != null) {
+            e.getEntity().getKiller().getInventory().addItem(getHead(e.getEntity()));
+        } else if (e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.VOID
+                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE
+                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
+                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.LAVA
+                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FALL) {
+            GamePlayer opponent = player.getGame().getRandomPlayer(player.getTeam().opponent());
+            opponent.getHandle().getInventory().addItem(getHead(e.getEntity()));
+        } else {
+            // By default, drop the head
+            e.getDrops().add(getHead(e.getEntity()));
+        }
+
+        // Put them in spectator mode
+        SpectateAPI.addSpectator(e.getEntity());
     }
 
     @EventHandler
@@ -294,14 +294,16 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp() || !e.getPlayer().hasPermission("rangers.arena.build")) {
+        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()
+                || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp() || !e.getPlayer().hasPermission("rangers.arena.build")) {
+        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()
+                || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
     }
@@ -314,13 +316,13 @@ public class PlayerListener implements Listener {
                 e.setCancelled(true);
         }
     }
-    
+
     @EventHandler
     public void onEntityDamage(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player) {
             Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
-            if(e instanceof EntityDamageByEntityEvent){
-                if(((net.minecraft.server.v1_7_R3.Entity)((EntityDamageByEntityEvent)e).getDamager()).getClass() == EntityGolemBoss.class){
+            if (e instanceof EntityDamageByEntityEvent) {
+                if (((net.minecraft.server.v1_7_R3.Entity) ((EntityDamageByEntityEvent) e).getDamager()).getClass() == EntityGolemBoss.class) {
                     e.setCancelled(false);
                     return;
                 }
@@ -331,8 +333,10 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onTag(AsyncPlayerReceiveNameTagEvent e){
-        if(PlayerManager.isPlayerInGame(e.getPlayer()) && PlayerManager.isPlayerInGame(e.getNamedPlayer()) && !e.getPlayer().canSee(e.getNamedPlayer()) && !e.getPlayer().getNearbyEntities(10, 10, 10).contains(e.getNamedPlayer())){
+    public void onTag(AsyncPlayerReceiveNameTagEvent e) {
+        if (PlayerManager.isPlayerInGame(e.getPlayer()) && PlayerManager.isPlayerInGame(e.getNamedPlayer())
+                && !e.getPlayer().canSee(e.getNamedPlayer())
+                && !e.getPlayer().getNearbyEntities(10, 10, 10).contains(e.getNamedPlayer())) {
             e.setTag("§§§§");
         }
     }
