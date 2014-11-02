@@ -250,8 +250,8 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
-        PlayerUtil.disableDoubleJump(e.getPlayer());
         GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
+        player.setCanDoubleJump(false);
         Game g = player.getGame();
         if (g == null)
             e.setRespawnLocation(plugin.getLobbySpawn());

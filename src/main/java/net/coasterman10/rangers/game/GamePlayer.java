@@ -5,15 +5,22 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Effect;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class GamePlayer {
+    private static final int DOUBLE_JUMP_PERIOD = 5;
+    private static final int DOUBLE_JUMP_TICKS = 160;
+
     public final UUID id;
     private Game game;
     private GameTeam team;
     private boolean banditLeader;
     private boolean vanished;
+    private boolean doubleJump;
 
     // Upgrades the player can get:
     // ranger.ability - none, vanish
@@ -51,7 +58,7 @@ public class GamePlayer {
     public Game getGame() {
         return game;
     }
-    
+
     public boolean isInGame() {
         return game != null;
     }
@@ -68,11 +75,11 @@ public class GamePlayer {
         String s = upgrades.get(name);
         return s != null ? s : "default";
     }
-    
+
     public void setUpgradeSelection(String name, String value) {
         upgrades.put(name, value);
     }
-    
+
     public boolean isVanished() {
         return vanished;
     }
@@ -92,16 +99,76 @@ public class GamePlayer {
             p.showPlayer(getHandle());
         vanished = false;
     }
-    
+
+    public void setCanDoubleJump(boolean doubleJump) {
+        this.doubleJump = doubleJump;
+        if (doubleJump) {
+            enableDoubleJump();
+        } else {
+
+        }
+    }
+
+    public void doubleJump(Plugin plugin) {
+        Player p = getHandle();
+        if (p == null)
+            return;
+        p.setFlying(false);
+        p.setExp(0);
+
+        p.setVelocity(p.getLocation().getDirection().multiply(1.3).setY(1.0));
+        p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
+        p.getWorld().playSound(p.getLocation(), Sound.ZOMBIE_INFECT, 1.0F, 2.0F);
+
+        new BukkitRunnable() {
+            int time = DOUBLE_JUMP_TICKS;
+
+            @Override
+            public void run() {
+                // Immediately cancel if double jump has been disabled
+                if (!doubleJump) {
+                    cancel();
+                    return;
+                }
+                
+                Player p = getHandle();
+                if (p != null) {
+                    if (time == 0) {
+                        enableDoubleJump();
+                        cancel();
+                    } else {
+                        // Animate the bar refilling
+                        p.setExp((float) (DOUBLE_JUMP_TICKS - time) / (float) DOUBLE_JUMP_TICKS);
+                        time -= DOUBLE_JUMP_PERIOD;
+                    }
+                } else {
+                    // Not much point in this if they are offline
+                    cancel();
+                }
+            }
+        }.runTaskTimer(plugin, 0L, (long) DOUBLE_JUMP_PERIOD);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof GamePlayer))
             return false;
         return ((GamePlayer) o).id.equals(id);
     }
-    
+
     @Override
     public int hashCode() {
         return id.hashCode();
+    }
+
+    private void enableDoubleJump() {
+        Player p = getHandle();
+        if (p == null)
+            return;
+        // Maximum value of float minus one to make bar appear full
+        p.setExp(doubleJump ? Float.intBitsToFloat(Float.floatToIntBits(1F) - 1) : 0);
+        p.setAllowFlight(true);
+        p.playSound(p.getEyeLocation(), Sound.WITHER_SHOOT, 0.75F, 1.0F);
+        p.sendMessage(ChatColor.GREEN + "Double Jump ability recharged");
     }
 }

@@ -8,12 +8,10 @@ import java.util.Set;
 import java.util.UUID;
 
 import net.coasterman10.rangers.PlayerManager;
-import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Effect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -86,40 +84,8 @@ public class AbilityListener implements Listener {
             Player p = e.getPlayer();
             GamePlayer player = PlayerManager.getPlayer(p);
             if (player.getGame() != null && player.getGame().isRunning() && player.getHandle().getExp() > 0.99F) {
-                // Double jump
-                e.setCancelled(true);
-                PlayerUtil.disableDoubleJump(e.getPlayer());
-                p.setFlying(false);
-                p.setVelocity(p.getLocation().getDirection().multiply(1.3).setY(1.0));
-                p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
-                p.getWorld().playSound(p.getLocation(), Sound.ZOMBIE_INFECT, 1.0F, 2.0F);
-                doubleJumpers.add(p.getUniqueId());
-
-                final UUID id = p.getUniqueId();
-
-                final int PERIOD = 5;
-                final int TICKS = 160;
-                new BukkitRunnable() {
-                    int time = TICKS;
-
-                    @Override
-                    public void run() {
-                        Player p = Bukkit.getPlayer(id);
-                        if (p != null) {
-                            if (time == 0) {
-                                PlayerUtil.enableDoubleJump(p);
-                                cancel();
-                            } else {
-                                // Animate the bar refilling
-                                p.setExp((float) (TICKS - time) / (float) TICKS);
-                                time -= PERIOD;
-                            }
-                        } else {
-                            // Not much point in this if they are offline
-                            cancel();
-                        }
-                    }
-                }.runTaskTimer(plugin, 0L, (long) PERIOD);
+                player.doubleJump(plugin);
+                doubleJumpers.add(player.id);
             }
         }
     }

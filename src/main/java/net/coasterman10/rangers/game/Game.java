@@ -115,7 +115,7 @@ public class Game {
         if (player.getHandle() != null) {
             BarAPI.removeBar(player.getHandle());
             player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-            PlayerUtil.disableDoubleJump(player.getHandle());
+            player.setCanDoubleJump(false);
             SpectateAPI.removeSpectator(player.getHandle());
         }
     }
@@ -218,7 +218,7 @@ public class Game {
                     g.arena.sendToLobby(p);
                     p.setTeam(null);
                     PlayerUtil.resetPlayer(p.getHandle());
-                    PlayerUtil.disableDoubleJump(p.getHandle());
+                    p.setCanDoubleJump(false);
                 }
                 g.scoreboard.reset();
                 g.banditLeader = null;
@@ -277,7 +277,7 @@ public class Game {
                 
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
                     Kit.RANGER.apply(p);
-                    PlayerUtil.enableDoubleJump(p.getHandle());
+                    p.setCanDoubleJump(true);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SPEED, 0);
                 }
