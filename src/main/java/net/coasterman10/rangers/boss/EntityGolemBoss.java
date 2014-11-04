@@ -24,6 +24,7 @@ import net.minecraft.server.v1_7_R3.World;
 
 import org.bukkit.Effect;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.v1_7_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_7_R3.util.UnsafeList;
 import org.bukkit.entity.Damageable;
 import org.bukkit.entity.LivingEntity;
@@ -38,8 +39,8 @@ public class EntityGolemBoss extends EntityIronGolem {
 
     public BossFight match;
 
-    public EntityGolemBoss(World world) {
-        super(world);
+    public EntityGolemBoss(CraftWorld world) {
+        super(world.getHandle());
         try {// Clear original pathfinder goals
             Field bField = PathfinderGoalSelector.class.getDeclaredField("b");
             bField.setAccessible(true);
@@ -68,7 +69,7 @@ public class EntityGolemBoss extends EntityIronGolem {
         random = new Random();
     }
 
-    public EntityGolemBoss(World world, BossFight fight) {
+    public EntityGolemBoss(CraftWorld world, BossFight fight) {
         this(world);
         this.match = fight;
     }
