@@ -25,7 +25,7 @@ public enum EntityTypes //Taken from the Spigot forums
     }
     public static void spawnEntity(EntityTypes type, Location loc){
         try {
-            Entity e = type.clazz.getDeclaredConstructor(World.class).newInstance(loc.getWorld());
+            Entity e = type.clazz.getDeclaredConstructor(CraftWorld.class).newInstance(loc.getWorld());
             EntityTypes.spawnEntity(e, loc);
         } catch(ReflectiveOperationException e){
             e.printStackTrace();
