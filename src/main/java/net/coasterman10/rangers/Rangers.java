@@ -18,10 +18,11 @@ import net.coasterman10.rangers.command.arena.ArenaSetChestCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetMaxCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetMinCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetNameCommand;
-import net.coasterman10.rangers.command.arena.ArenaSetSignCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetSpawnCommand;
 import net.coasterman10.rangers.command.rangers.RangersReloadCommand;
 import net.coasterman10.rangers.command.rangers.RangersSettingCommand;
+import net.coasterman10.rangers.command.sign.SignAddCommand;
+import net.coasterman10.rangers.command.sign.SignRemoveCommand;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
@@ -118,13 +119,17 @@ public class Rangers extends JavaPlugin {
         arenaCommand.registerSubcommand(new ArenaSetMaxCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetSpawnCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetChestCommand(arenaManager));
-        arenaCommand.registerSubcommand(new ArenaSetSignCommand(arenaManager, signManager));
         arenaCommand.registerSubcommand(new ArenaJoinCommand(arenaManager));
+
+        SubcommandExecutor signCommand = new SubcommandExecutor("sign");
+        signCommand.registerSubcommand(new SignAddCommand(signManager, arenaManager));
+        signCommand.registerSubcommand(new SignRemoveCommand(signManager));
 
         getCommand("rangers").setExecutor(rangersCommand);
         getCommand("arena").setExecutor(arenaCommand);
+        getCommand("sign").setExecutor(signCommand);
         getCommand("quit").setExecutor(new QuitCommand(this));
-        
+
         new BukkitRunnable() {
             @Override
             public void run() {

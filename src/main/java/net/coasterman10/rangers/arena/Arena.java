@@ -32,7 +32,6 @@ public class Arena {
     private Map<GameTeam, Location> spawns = new HashMap<>();
     private Map<GameTeam, Location> chests = new HashMap<>();
     private Game game;
-    private boolean active;
 
     public Arena(String id, ConfigSectionAccessor config) {
         this.id = id;
@@ -143,14 +142,6 @@ public class Arena {
 
     public boolean hasGame() {
         return game != null;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
     }
 
     public Location getLobby() {

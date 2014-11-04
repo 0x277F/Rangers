@@ -234,10 +234,11 @@ public class PlayerListener implements Listener {
         } else if (e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.VOID
                 || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE
                 || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
-                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.LAVA
-                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FALL) {
+                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.LAVA) {
+            // Give the head to an enemy player if the head would be unrecoverable
             GamePlayer opponent = player.getGame().getRandomPlayer(player.getTeam().opponent());
-            opponent.getHandle().getInventory().addItem(getHead(e.getEntity()));
+            if (opponent != null)
+                opponent.getHandle().getInventory().addItem(getHead(e.getEntity()));
         } else {
             // By default, drop the head
             e.getDrops().add(getHead(e.getEntity()));

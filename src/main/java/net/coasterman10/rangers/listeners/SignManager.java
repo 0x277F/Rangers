@@ -1,8 +1,6 @@
 package net.coasterman10.rangers.listeners;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 import net.coasterman10.rangers.ArenaJoinSign;
@@ -28,8 +26,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 public class SignManager implements Listener {
     private final ArenaManager arenaManager;
     private final ConfigAccessor config;
-    private Collection<ArenaSign> signs = new HashSet<>();
-    private Map<Location, ArenaJoinSign> joinSigns = new HashMap<>();
+    private Map<Location, ArenaSign> signs = new HashMap<>();
 
     public SignManager(ArenaManager arenaManager, ConfigAccessor config) {
         this.arenaManager = arenaManager;
@@ -39,9 +36,9 @@ public class SignManager implements Listener {
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (joinSigns.containsKey(e.getClickedBlock().getLocation())) {
-                ArenaJoinSign s = joinSigns.get(e.getClickedBlock().getLocation());
-                if (s.hasGame()) {
+            if (signs.containsKey(e.getClickedBlock().getLocation())) {
+                ArenaSign s = signs.get(e.getClickedBlock().getLocation());
+                if (s instanceof ArenaJoinSign && s.hasGame()) {
                     s.getGame().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
                 }
             }
@@ -71,7 +68,7 @@ public class SignManager implements Listener {
     }
 
     public void update() {
-        for (ArenaSign s : signs)
+        for (ArenaSign s : signs.values())
             s.update();
     }
 
@@ -88,15 +85,14 @@ public class SignManager implements Listener {
             placeSign(loc);
         ArenaJoinSign s = new ArenaJoinSign(loc);
         s.setArena(a);
-        a.setActive(true);
-        signs.add(s);
-        joinSigns.put(loc, s);
+        signs.put(loc, s);
         if (save) {
             ConfigurationSection conf = config.get().getConfigurationSection(a.getId());
             if (conf == null) {
                 conf = config.get().createSection(a.getId());
             }
             ConfigUtil.setLocation(conf, "join", loc);
+            config.save();
         }
     }
 
@@ -105,14 +101,34 @@ public class SignManager implements Listener {
             placeSign(loc);
         ArenaStatusSign s = new ArenaStatusSign(loc);
         s.setArena(a);
-        signs.add(s);
+        signs.put(loc, s);
         if (save) {
             ConfigurationSection conf = config.get().getConfigurationSection(a.getId());
             if (conf == null) {
                 conf = config.get().createSection(a.getId());
             }
             ConfigUtil.setLocation(conf, "status", loc);
+            config.save();
         }
+    }
+
+    public boolean removeSign(Location loc) {
+        ArenaSign sign = signs.get(loc);
+        if (sign == null)
+            return false;
+        signs.remove(loc);
+        ConfigurationSection conf = config.get().getConfigurationSection(sign.getArena().getId());
+        if (conf != null) {
+            conf.set("status", null);
+            config.save();
+        }
+        BlockState state = loc.getBlock().getState();
+        if (state instanceof Sign) {
+            for (int i = 0; i < 4; i++)
+                ((Sign) state).setLine(i, "");
+            state.update(true);
+        }
+        return true;
     }
 
     private static void placeSign(Location loc) {
