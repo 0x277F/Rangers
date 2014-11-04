@@ -33,7 +33,7 @@ public class Arena {
     private Map<GameTeam, Location> chests = new HashMap<>();
     private Game game;
     private boolean active;
-    
+
     public Arena(String id, ConfigSectionAccessor config) {
         this.id = id;
         this.config = config;
@@ -107,23 +107,24 @@ public class Arena {
         ConfigUtil.setVector(conf, "min", min != null ? min.toVector() : null);
         ConfigUtil.setVector(conf, "max", max != null ? max.toVector() : null);
 
-        ConfigUtil.setVector(conf, "lobby", lobby != null ? new SpawnVector(lobby) : null);
-        ConfigUtil.setVector(conf, "spectator-spawn", spectatorSpawn != null ? new SpawnVector(spectatorSpawn) : null);
+        ConfigUtil.setSpawnVector(conf, "lobby", lobby != null ? new SpawnVector(lobby) : null);
+        ConfigUtil.setSpawnVector(conf, "spectator-spawn", spectatorSpawn != null ? new SpawnVector(spectatorSpawn)
+                : null);
 
         for (GameTeam team : GameTeam.values()) {
             SpawnVector spawn = spawns.get(team) != null ? new SpawnVector(spawns.get(team)) : null;
             Vector chest = chests.get(team) != null ? chests.get(team).toVector() : null;
-            ConfigUtil.setVector(conf, "spawns." + team.name().toLowerCase(), spawn);
+            ConfigUtil.setSpawnVector(conf, "spawns." + team.name().toLowerCase(), spawn);
             ConfigUtil.setVector(conf, "chests." + team.name().toLowerCase(), chest);
         }
 
         config.save();
     }
-    
+
     public Game getGame() {
         return game;
     }
-    
+
     public void setGame(Game game) {
         this.game = game;
     }
@@ -139,7 +140,7 @@ public class Arena {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public boolean hasGame() {
         return game != null;
     }
@@ -147,7 +148,7 @@ public class Arena {
     public boolean isActive() {
         return active;
     }
-    
+
     public void setActive(boolean active) {
         this.active = active;
     }

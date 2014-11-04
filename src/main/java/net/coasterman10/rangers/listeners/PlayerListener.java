@@ -8,7 +8,6 @@ import java.util.List;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.Rangers;
-import net.coasterman10.rangers.boss.EntityGolemBoss;
 import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
@@ -119,7 +118,7 @@ public class PlayerListener implements Listener {
     public void onDeath(PlayerDeathEvent e) {
         GamePlayer player = PlayerManager.getPlayer(e.getEntity());
 
-        if (player.getGame() == null) {
+        if (player.getGame() == null || player.getTeam() == null) {
             e.getDrops().clear(); // There should be no drops at all outside of the game
             e.setDeathMessage(null);
             return;
@@ -243,9 +242,6 @@ public class PlayerListener implements Listener {
             // By default, drop the head
             e.getDrops().add(getHead(e.getEntity()));
         }
-
-        // Put them in spectator mode
-        SpectateAPI.addSpectator(e.getEntity());
     }
 
     @EventHandler
@@ -320,12 +316,6 @@ public class PlayerListener implements Listener {
     public void onEntityDamage(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player) {
             Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
-            if (e instanceof EntityDamageByEntityEvent) {
-                if (((net.minecraft.server.v1_7_R3.Entity) ((EntityDamageByEntityEvent) e).getDamager()).getClass() == EntityGolemBoss.class) {
-                    e.setCancelled(false);
-                    return;
-                }
-            }
             if (g == null || !g.allowPvp())
                 e.setCancelled(true);
         }

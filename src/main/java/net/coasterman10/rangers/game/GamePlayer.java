@@ -1,6 +1,8 @@
 package net.coasterman10.rangers.game;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -21,6 +23,7 @@ public class GamePlayer {
     private boolean banditLeader;
     private boolean vanished;
     private boolean doubleJump;
+    private Set<UUID> hiddenBeforeVanish = new HashSet<>();
 
     // Upgrades the player can get:
     // ranger.ability - none, vanish
@@ -85,6 +88,9 @@ public class GamePlayer {
     }
 
     public void vanish() {
+        for (Player p : Bukkit.getOnlinePlayers())
+            if (!p.canSee(getHandle()))
+                hiddenBeforeVanish.add(p.getUniqueId());
         getHandle().sendMessage(ChatColor.RED + "Vanished");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
@@ -96,7 +102,9 @@ public class GamePlayer {
         getHandle().sendMessage(ChatColor.RED + "UnVanished");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
-            p.showPlayer(getHandle());
+            if (!hiddenBeforeVanish.contains(p.getUniqueId()))
+                p.showPlayer(getHandle());
+        hiddenBeforeVanish.clear();
         vanished = false;
     }
 
@@ -105,7 +113,12 @@ public class GamePlayer {
         if (doubleJump) {
             enableDoubleJump();
         } else {
-
+            Player p = getHandle();
+            if (p != null) {
+                p.setExp(0);
+                p.setFlying(false);
+                p.setAllowFlight(false);
+            }
         }
     }
 
@@ -114,6 +127,7 @@ public class GamePlayer {
         if (p == null)
             return;
         p.setFlying(false);
+        p.setAllowFlight(false);
         p.setExp(0);
 
         p.setVelocity(p.getLocation().getDirection().multiply(1.3).setY(1.0));
@@ -130,7 +144,7 @@ public class GamePlayer {
                     cancel();
                     return;
                 }
-                
+
                 Player p = getHandle();
                 if (p != null) {
                     if (time == 0) {
@@ -168,6 +182,7 @@ public class GamePlayer {
         // Maximum value of float minus one to make bar appear full
         p.setExp(doubleJump ? Float.intBitsToFloat(Float.floatToIntBits(1F) - 1) : 0);
         p.setAllowFlight(true);
+        p.setFlying(false); // Prevents them from being in the flying state on accident
         p.playSound(p.getEyeLocation(), Sound.WITHER_SHOOT, 0.75F, 1.0F);
         p.sendMessage(ChatColor.GREEN + "Double Jump ability recharged");
     }

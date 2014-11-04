@@ -39,6 +39,7 @@ public class SpawnBossSubcommand implements Subcommand {
             EntityTypes.spawnEntity(EntityTypes.GOLEM_BOSS, ((Player) commandSender).getLocation());
         } catch (Exception e) {
             commandSender.sendMessage(ChatColor.RED + e.getMessage());
+            e.printStackTrace();
         }
         return true;
     }

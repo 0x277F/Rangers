@@ -57,7 +57,7 @@ public class AbilityListener implements Listener {
                 ItemMeta meta = item.getItemMeta();
                 if (meta.hasDisplayName() && meta.getDisplayName().contains("Mace")) {
                     // 30% nausea I
-                    if (new Random().nextDouble() < 0.3) {
+                    if (new Random().nextDouble() < 0.5) {
                         ((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION,
                                 100, 0));
                     }

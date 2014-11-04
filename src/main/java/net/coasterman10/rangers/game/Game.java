@@ -94,8 +94,6 @@ public class Game {
             broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
             scoreboard.setForPlayer(handle);
         } else {
-            handle.sendMessage(ChatColor.DARK_AQUA
-                    + "The game is already in progress. You can spectate until it restarts.");
             arena.sendToGame(player);
             players.add(player);
             player.setGame(this);
