@@ -64,13 +64,13 @@ public class AbilityListener implements Listener {
                 }
             }
         }
-        
+
         if (e.getEntity() instanceof Player) {
             GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
             if (player.isVanished())
                 player.unvanish();
         }
-        
+
         if (e.getDamager() instanceof Player) {
             GamePlayer player = PlayerManager.getPlayer((Player) e.getDamager());
             if (player.isVanished())
@@ -95,14 +95,14 @@ public class AbilityListener implements Listener {
         if (e.getCause() == DamageCause.FALL && doubleJumpers.contains(e.getEntity().getUniqueId())) {
             e.setCancelled(true);
         }
-        
+
         if (e.getEntity() instanceof Player) {
             GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
             if (player.isVanished())
                 player.unvanish();
         }
     }
-    
+
     @EventHandler
     public void onFireBow(EntityShootBowEvent e) {
         if (e.getEntity() instanceof Player) {
@@ -130,15 +130,25 @@ public class AbilityListener implements Listener {
 
                     // Hit detection - because I do not feel like using NMS to create my own entity
                     new BukkitRunnable() {
+                        private static final int maxTicks = 200; // Max 10 seconds
+                        private static final int maxTicksOnGround = 5; // Max 0.25 seconds on ground
+                        int ticks = 0;
                         int ticksOnGround = 0;
 
                         @Override
                         public void run() {
+                            ticks++;
+                            if (ticks == maxTicks) {
+                                knife.remove();
+                                cancel();
+                                return;
+                            }
+                            
                             // A knife on the ground has certainly missed
                             if (knife.isOnGround()) {
                                 // Slight tolerance to hitbox being on ground
                                 ticksOnGround++;
-                                if (ticksOnGround == 5) {
+                                if (ticksOnGround == maxTicksOnGround) {
                                     knife.remove();
                                     cancel();
                                     return;
@@ -155,8 +165,8 @@ public class AbilityListener implements Listener {
                                     continue;
 
                                 // Prevent friendly fire
-                                if (PlayerManager.getPlayer(player).getTeam()
-                                        .equals(PlayerManager.getPlayer(p).getTeam()))
+                                GameTeam t = PlayerManager.getPlayer(player).getTeam();
+                                if (t != null && t.equals(PlayerManager.getPlayer(p).getTeam()))
                                     continue;
 
                                 Location pLoc = p.getLocation();
@@ -170,7 +180,7 @@ public class AbilityListener implements Listener {
                                     double distX = pLoc.getX() - kLoc.getX();
                                     double distZ = pLoc.getZ() - kLoc.getZ();
                                     double distXZsquare = distX * distX + distZ * distZ;
-                                    if (distXZsquare < 0.4) {
+                                    if (distXZsquare < 0.6) {
                                         p.damage(6.0, knife);
                                         knife.remove();
                                         cancel();
@@ -274,7 +284,7 @@ public class AbilityListener implements Listener {
             }
         }
     }
-    
+
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
         // Bandits get regeneration II for 2 seconds when they kill a player
