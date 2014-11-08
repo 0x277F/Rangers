@@ -162,7 +162,13 @@ public class GamePlayer {
             }
         }.runTaskTimer(plugin, 0L, (long) DOUBLE_JUMP_PERIOD);
     }
-
+    
+    public boolean canDoubleJump() {
+        if (getHandle() == null)
+            return false;
+        return doubleJump && getHandle().getExp() == Float.intBitsToFloat(Float.floatToIntBits(1F) - 1);
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof GamePlayer))

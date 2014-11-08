@@ -236,7 +236,7 @@ public class PlayerListener implements Listener {
                 || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
                 || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.LAVA) {
             // Give the head to an enemy player if the head would be unrecoverable
-            GamePlayer opponent = player.getGame().getRandomPlayer(player.getTeam().opponent());
+            GamePlayer opponent = player.getGame().getRandomAlivePlayer(player.getTeam().opponent());
             if (opponent != null)
                 opponent.getHandle().getInventory().addItem(getHead(e.getEntity()));
         } else {
@@ -335,6 +335,8 @@ public class PlayerListener implements Listener {
         ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         meta.setOwner(player.getName());
+        GamePlayer gp = PlayerManager.getPlayer(player);
+        meta.setDisplayName("Head of " + (gp != null ? gp.getTeam().getChatColor() : "") + player.getName());
         head.setItemMeta(meta);
         return head;
     }

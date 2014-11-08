@@ -57,7 +57,7 @@ public class AbilityListener implements Listener {
                 ItemMeta meta = item.getItemMeta();
                 if (meta.hasDisplayName() && meta.getDisplayName().contains("Mace")) {
                     // 30% nausea I
-                    if (new Random().nextDouble() < 0.5) {
+                    if (new Random().nextDouble() < 0.6) {
                         ((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION,
                                 100, 0));
                     }
@@ -83,7 +83,7 @@ public class AbilityListener implements Listener {
         if (e.isFlying() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
             Player p = e.getPlayer();
             GamePlayer player = PlayerManager.getPlayer(p);
-            if (player.getGame() != null && player.getGame().isRunning() && player.getHandle().getExp() > 0.99F) {
+            if (player.getGame() != null && player.canDoubleJump()) {
                 player.doubleJump(plugin);
                 doubleJumpers.add(player.id);
             }

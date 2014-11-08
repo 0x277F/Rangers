@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -40,6 +41,7 @@ public class Game {
 
     private Collection<GamePlayer> players = new HashSet<>();
     private Map<GameTeam, Collection<GamePlayer>> teams = new EnumMap<>(GameTeam.class);
+    private Collection<GamePlayer> playersAlive = new HashSet<>();
     private Collection<GamePlayer> headsRedeemed = new HashSet<>();
     private GamePlayer banditLeader;
 
@@ -81,11 +83,12 @@ public class Game {
             return;
         }
 
+        if (players.size() == settings.maxPlayers) {
+            handle.sendMessage(ChatColor.RED + "This game is full!");
+            return;
+        }
+
         if (state == State.LOBBY || (state == State.STARTING && seconds > settings.teamSelectTime)) {
-            if (players.size() == settings.maxPlayers) {
-                handle.sendMessage(ChatColor.RED + "This game is full!");
-                return;
-            }
             players.add(player);
             player.setGame(this);
             player.setTeam(null);
@@ -94,7 +97,7 @@ public class Game {
             broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
             scoreboard.setForPlayer(handle);
         } else {
-            arena.sendToGame(player);
+            arena.sendToLobby(player);
             players.add(player);
             player.setGame(this);
             PlayerUtil.resetPlayer(handle);
@@ -266,20 +269,23 @@ public class Game {
                 g.seconds = g.settings.timeLimit;
                 g.scoreboard.setScore(GameTeam.RANGERS, 0);
                 g.scoreboard.setScore(GameTeam.BANDITS, 0);
-                
+
+                g.playersAlive.clear();
+                g.playersAlive.addAll(g.players);
+
                 for (GamePlayer p : g.players) {
                     SpectateAPI.removeSpectator(p.getHandle());
                     PlayerUtil.resetPlayer(p.getHandle());
                     g.arena.sendToGame(p);
                 }
-                
+
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
                     Kit.RANGER.apply(p);
                     p.setCanDoubleJump(true);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SPEED, 0);
                 }
-                
+
                 // If rangers and bandits are unbalanced, do not give bandits slowness
                 boolean slowness = g.teams.get(GameTeam.RANGERS).size() == g.teams.get(GameTeam.BANDITS).size();
                 for (GamePlayer p : g.teams.get(GameTeam.BANDITS)) {
@@ -380,8 +386,11 @@ public class Game {
         return seconds;
     }
 
-    public GamePlayer getRandomPlayer(GameTeam team){
-        List<GamePlayer> players = new ArrayList<>(teams.get(team));
-        return players.get(rand.nextInt(players.size()));
+    public GamePlayer getRandomAlivePlayer(GameTeam team) {
+        List<GamePlayer> alivePlayers = new ArrayList<>(teams.get(team));
+        for (Iterator<GamePlayer> it = alivePlayers.iterator(); it.hasNext();)
+            if (playersAlive.contains(it.next()))
+                it.remove();
+        return alivePlayers.get(rand.nextInt(alivePlayers.size()));
     }
 }
