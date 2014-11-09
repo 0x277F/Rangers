@@ -210,14 +210,14 @@ public class AbilityListener implements Listener {
                     @Override
                     public void run() {
                         // TODO: Particle effects and better sound
-                        striker.getWorld().playSound(striker.getLocation(), Sound.BLAZE_HIT, 1F, 1.5F);
+                        striker.getWorld().playSound(striker.getLocation(), Sound.BLAZE_HIT, 1F, 1.75F);
                         striker.remove();
                         for (Player player : Bukkit.getOnlinePlayers()) {
                             // Skip players not in the world
                             if (!player.getWorld().equals(striker.getWorld()))
                                 continue;
 
-                            if (player.getLocation().distance(striker.getLocation()) < 2.5) {
+                            if (player.getLocation().distance(striker.getLocation()) < 3) {
                                 // Rangers are the only players that can throw these, so only bandits can be damaged
                                 GamePlayer data = PlayerManager.getPlayer(player);
                                 if (data.getTeam() == GameTeam.BANDITS) {

@@ -43,6 +43,7 @@ import org.bukkit.metadata.MetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.kitteh.tag.AsyncPlayerReceiveNameTagEvent;
 
 public class PlayerListener implements Listener {
@@ -67,10 +68,11 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
-        GamePlayer data = PlayerManager.getPlayer(e.getPlayer());
-        if (data.getGame() != null) {
-            data.getGame().removePlayer(data);
-            e.getPlayer().getWorld().dropItemNaturally(e.getPlayer().getEyeLocation(), getHead(e.getPlayer()));
+        GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
+        if (player.getGame() != null) {
+            player.getGame().removePlayer(player);
+            if (player.getGame().isRunning())
+                e.getPlayer().getWorld().dropItemNaturally(e.getPlayer().getEyeLocation(), getHead(e.getPlayer()));
         }
         PlayerManager.removePlayer(e.getPlayer());
     }
@@ -117,7 +119,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
         GamePlayer player = PlayerManager.getPlayer(e.getEntity());
-
+        
         if (player.getGame() == null || player.getTeam() == null) {
             e.getDrops().clear(); // There should be no drops at all outside of the game
             e.setDeathMessage(null);
@@ -148,7 +150,7 @@ public class PlayerListener implements Listener {
                 ItemStack item = ((Player) damager).getItemInHand();
                 if (item != null) {
                     msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
-                    String itemName = item.getItemMeta().getDisplayName();
+                    String itemName = item.getItemMeta().hasDisplayName() ? item.getItemMeta().getDisplayName() : null;
                     if (itemName != null) {
                         msg.append(itemName);
                     } else {
@@ -247,8 +249,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
-        GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-        player.setCanDoubleJump(false);
+        final GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
         Game g = player.getGame();
         if (g == null)
             e.setRespawnLocation(plugin.getLobbySpawn());
@@ -256,6 +257,14 @@ public class PlayerListener implements Listener {
             e.setRespawnLocation(g.getArena().getLobby());
         else
             e.setRespawnLocation(g.getArena().getLobby());
+        
+        // Do this in a later tick because Bukkit sucks
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                player.setCanDoubleJump(false);
+            }
+        }.runTask(plugin);
     }
 
     @EventHandler
@@ -307,8 +316,8 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
         if (e.getEntity() instanceof Player && e.getDamager() instanceof Player) {
-            Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
-            if (g == null || !g.allowPvp())
+            GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
+            if (player.getGame() == null || !player.getGame().allowPvp() || !player.isAlive())
                 e.setCancelled(true);
         }
     }

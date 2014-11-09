@@ -12,6 +12,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
 public class GamePlayer {
     private static final int DOUBLE_JUMP_PERIOD = 5;
@@ -24,6 +25,7 @@ public class GamePlayer {
     private boolean vanished;
     private boolean doubleJump;
     private Set<UUID> hiddenBeforeVanish = new HashSet<>();
+    private boolean ingame;
 
     // Upgrades the player can get:
     // ranger.ability - none, vanish
@@ -107,6 +109,14 @@ public class GamePlayer {
         hiddenBeforeVanish.clear();
         vanished = false;
     }
+    
+    public void setAlive(boolean alive) {
+        this.ingame = alive;
+    }
+    
+    public boolean isAlive() {
+        return ingame;
+    }
 
     public void setCanDoubleJump(boolean doubleJump) {
         this.doubleJump = doubleJump;
@@ -115,6 +125,7 @@ public class GamePlayer {
         } else {
             Player p = getHandle();
             if (p != null) {
+                p.setLevel(0);
                 p.setExp(0);
                 p.setFlying(false);
                 p.setAllowFlight(false);
@@ -130,7 +141,7 @@ public class GamePlayer {
         p.setAllowFlight(false);
         p.setExp(0);
 
-        p.setVelocity(p.getLocation().getDirection().multiply(1.3).setY(1.0));
+        p.setVelocity(p.getLocation().getDirection().multiply(1.3).add(new Vector(0.0, 0.5, 0.0)));
         p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
         p.getWorld().playSound(p.getLocation(), Sound.ZOMBIE_INFECT, 1.0F, 2.0F);
 

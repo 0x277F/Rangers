@@ -181,8 +181,7 @@ public class Rangers extends JavaPlugin {
 
         // Load the games for each arena
         for (Arena a : arenaManager.getArenas()) {
-            Game g = new Game(this, settings);
-            g.setArena(a);
+            new Game(this, settings, a);
         }
 
         // Game Settings - this is the alternative to global variables

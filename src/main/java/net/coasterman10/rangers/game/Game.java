@@ -41,34 +41,27 @@ public class Game {
 
     private Collection<GamePlayer> players = new HashSet<>();
     private Map<GameTeam, Collection<GamePlayer>> teams = new EnumMap<>(GameTeam.class);
-    private Collection<GamePlayer> playersAlive = new HashSet<>();
     private Collection<GamePlayer> headsRedeemed = new HashSet<>();
     private GamePlayer banditLeader;
 
     private State state;
     private int seconds;
 
-    public Game(Rangers plugin, GameSettings settings) {
+    public Game(Rangers plugin, GameSettings settings, Arena arena) {
         id = nextId++;
 
         this.settings = settings;
+        this.arena = arena;
+        arena.setGame(this);
 
         teams.put(GameTeam.RANGERS, new HashSet<GamePlayer>());
         teams.put(GameTeam.BANDITS, new HashSet<GamePlayer>());
 
         scoreboard = new GameScoreboard();
 
-        state = State.INACTIVE;
+        state = State.LOBBY;
 
         new UpdateTask().runTaskTimer(plugin, 0L, 20L);
-    }
-
-    public void setArena(Arena arena) {
-        if (arena.isValid()) {
-            this.arena = arena;
-            arena.setGame(this);
-            state = State.LOBBY;
-        }
     }
 
     public int getId() {
@@ -77,11 +70,6 @@ public class Game {
 
     public void addPlayer(GamePlayer player) {
         Player handle = player.getHandle();
-
-        if (state == State.INACTIVE) {
-            handle.sendMessage(ChatColor.RED + "That game is not set up correctly, please notify an administrator.");
-            return;
-        }
 
         if (players.size() == settings.maxPlayers) {
             handle.sendMessage(ChatColor.RED + "This game is full!");
@@ -198,15 +186,6 @@ public class Game {
     }
 
     public static enum State {
-        INACTIVE {
-            @Override
-            public void start(final Game g) {
-            }
-
-            @Override
-            public void onSecond(final Game g) {
-            }
-        },
         LOBBY {
             @Override
             public void start(final Game g) {
@@ -220,6 +199,7 @@ public class Game {
                     p.setTeam(null);
                     PlayerUtil.resetPlayer(p.getHandle());
                     p.setCanDoubleJump(false);
+                    p.setAlive(false);
                 }
                 g.scoreboard.reset();
                 g.banditLeader = null;
@@ -270,13 +250,11 @@ public class Game {
                 g.scoreboard.setScore(GameTeam.RANGERS, 0);
                 g.scoreboard.setScore(GameTeam.BANDITS, 0);
 
-                g.playersAlive.clear();
-                g.playersAlive.addAll(g.players);
-
                 for (GamePlayer p : g.players) {
                     SpectateAPI.removeSpectator(p.getHandle());
                     PlayerUtil.resetPlayer(p.getHandle());
                     g.arena.sendToGame(p);
+                    p.setAlive(true);
                 }
 
                 for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
@@ -345,8 +323,9 @@ public class Game {
                 if (g.seconds == 0) {
                     g.setState(LOBBY);
                 } else {
+                    float percent = (float) g.seconds / (float) g.settings.restartDelay * 100F;
                     for (GamePlayer p : g.players) {
-                        BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "Restarting in " + g.seconds);
+                        BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "Restarting in " + g.seconds, percent);
                     }
                     g.seconds--;
                 }
@@ -389,7 +368,7 @@ public class Game {
     public GamePlayer getRandomAlivePlayer(GameTeam team) {
         List<GamePlayer> alivePlayers = new ArrayList<>(teams.get(team));
         for (Iterator<GamePlayer> it = alivePlayers.iterator(); it.hasNext();)
-            if (playersAlive.contains(it.next()))
+            if (it.next().isAlive())
                 it.remove();
         return alivePlayers.get(rand.nextInt(alivePlayers.size()));
     }
