@@ -40,6 +40,7 @@ import net.coasterman10.rangers.menu.RangerAbilityMenu;
 import net.coasterman10.rangers.menu.RangerBowMenu;
 import net.coasterman10.rangers.menu.RangerSecondaryMenu;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -140,7 +141,9 @@ public class Rangers extends JavaPlugin {
 
     @Override
     public void onDisable() {
-
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            sendToLobby(p);
+        }
     }
 
     public Location getLobbySpawn() {
@@ -149,9 +152,10 @@ public class Rangers extends JavaPlugin {
 
     public void sendToLobby(Player p) {
         GamePlayer data = PlayerManager.getPlayer(p);
-        if (data.getGame() != null) {
-            data.getGame().removePlayer(data);
+        if (data.getGame() == null) {
+            return;
         }
+        data.getGame().removePlayer(data);
         p.setHealth(20D);
         p.setFoodLevel(20);
         p.setSaturation(20F);

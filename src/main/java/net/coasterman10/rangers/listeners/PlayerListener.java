@@ -71,8 +71,6 @@ public class PlayerListener implements Listener {
         GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
         if (player.getGame() != null) {
             player.getGame().removePlayer(player);
-            if (player.getGame().isRunning())
-                e.getPlayer().getWorld().dropItemNaturally(e.getPlayer().getEyeLocation(), getHead(e.getPlayer()));
         }
         PlayerManager.removePlayer(e.getPlayer());
     }
