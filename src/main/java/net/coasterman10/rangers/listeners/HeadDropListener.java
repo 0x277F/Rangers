@@ -17,25 +17,38 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
 public class HeadDropListener implements Listener {
     private Map<UUID, Location> safeLocations = new HashMap<>();
-    
+
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onMove(PlayerMoveEvent e) {
         Location loc = e.getTo();
         int x = loc.getBlockX();
         int z = loc.getBlockZ();
         for (int y = loc.getBlockY(); y >= 0; y--) {
+            Material type = loc.getWorld().getBlockAt(x, y, z).getType();
+            if (type == Material.LAVA || type == Material.FIRE)
+                break;
             if (loc.getWorld().getBlockAt(x, y, z).getType().isSolid()) {
                 safeLocations.put(e.getPlayer().getUniqueId(), loc);
                 break;
             }
         }
     }
-    
+
+    @EventHandler
+    public void onLeave(PlayerQuitEvent e) {
+        GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
+        if (player.getGame() != null && player.isAlive()) {
+            Location drop = safeLocations.get(player.id);
+            drop.getWorld().dropItem(drop, getHead(e.getPlayer()));
+        }
+    }
+
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
         GamePlayer player = PlayerManager.getPlayer(e.getEntity());
@@ -44,7 +57,7 @@ public class HeadDropListener implements Listener {
             drop.getWorld().dropItem(drop, getHead(e.getEntity()));
         }
     }
-    
+
     private static ItemStack getHead(Player player) {
         ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
         SkullMeta meta = (SkullMeta) head.getItemMeta();

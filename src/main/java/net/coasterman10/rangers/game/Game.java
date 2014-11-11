@@ -41,7 +41,7 @@ public class Game {
 
     private Collection<GamePlayer> players = new HashSet<>();
     private Map<GameTeam, Collection<GamePlayer>> teams = new EnumMap<>(GameTeam.class);
-    private Collection<GamePlayer> headsRedeemed = new HashSet<>();
+    private Map<GameTeam, Collection<String>> headsToRedeem = new EnumMap<>(GameTeam.class);
     private GamePlayer banditLeader;
 
     private State state;
@@ -53,9 +53,6 @@ public class Game {
         this.settings = settings;
         this.arena = arena;
         arena.setGame(this);
-
-        teams.put(GameTeam.RANGERS, new HashSet<GamePlayer>());
-        teams.put(GameTeam.BANDITS, new HashSet<GamePlayer>());
 
         scoreboard = new GameScoreboard();
 
@@ -116,16 +113,18 @@ public class Game {
     }
 
     private void selectTeams() {
-        GameTeam team = GameTeam.RANGERS;
+        for (GameTeam team : GameTeam.values())
+            teams.put(team, new HashSet<GamePlayer>());
+        GameTeam nextTeam = GameTeam.RANGERS;
         List<GamePlayer> playerList = new ArrayList<>(players);
         Collections.shuffle(playerList);
         for (GamePlayer p : playerList) {
-            p.setTeam(team);
-            scoreboard.setTeam(p.getHandle(), team);
-            teams.get(team).add(p);
+            p.setTeam(nextTeam);
+            scoreboard.setTeam(p.getHandle(), nextTeam);
+            teams.get(nextTeam).add(p);
             p.getHandle().sendMessage(
-                    ChatColor.AQUA + "You have been selected to join the " + ChatColor.YELLOW + team.name());
-            if (team == GameTeam.BANDITS && banditLeader == null) {
+                    ChatColor.AQUA + "You have been selected to join the " + ChatColor.YELLOW + nextTeam.name());
+            if (nextTeam == GameTeam.BANDITS && banditLeader == null) {
                 banditLeader = p;
                 scoreboard.setBanditLeader(p.getHandle());
                 broadcast(ChatColor.YELLOW + p.getHandle().getName() + ChatColor.AQUA + " is the " + ChatColor.RED
@@ -134,7 +133,7 @@ public class Game {
             } else {
                 p.setBanditLeader(false);
             }
-            team = team.opponent();
+            nextTeam = nextTeam.opponent();
         }
 
         scoreboard.setBanditLeader(banditLeader.getHandle());
@@ -152,11 +151,8 @@ public class Game {
                     if (meta.hasOwner()) {
                         String name = meta.getOwner();
 
-                        for (GamePlayer player : teams.get(t.opponent())) {
-                            if (name.equals(player.getHandle().getName())) {
-                                scoreboard.incrementScore(t.opponent());
-                                headsRedeemed.add(player);
-                            }
+                        if (headsToRedeem.get(t.opponent()).remove(name)) {
+                            scoreboard.incrementScore(t.opponent());
                         }
 
                         for (GamePlayer player : teams.get(t)) {
@@ -203,7 +199,6 @@ public class Game {
                 }
                 g.scoreboard.reset();
                 g.banditLeader = null;
-                g.headsRedeemed.clear();
             }
 
             @Override
@@ -262,6 +257,7 @@ public class Game {
                     p.setCanDoubleJump(true);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SPEED, 0);
+                    g.headsToRedeem.get(GameTeam.RANGERS).add(p.getHandle().getName());
                 }
 
                 // If rangers and bandits are unbalanced, do not give bandits slowness
@@ -272,6 +268,8 @@ public class Game {
                     if (slowness)
                         PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW, 0);
                 }
+
+                g.headsToRedeem.get(GameTeam.BANDITS).add(g.banditLeader.getHandle().getName());
 
                 g.arena.clearGround();
             }
@@ -296,13 +294,13 @@ public class Game {
                     g.checkChest(GameTeam.BANDITS);
 
                     // Check victory conditions
-                    if (g.headsRedeemed.containsAll(g.teams.get(GameTeam.RANGERS))) {
+                    if (g.headsToRedeem.get(GameTeam.RANGERS).isEmpty()) {
                         g.setState(ENDING);
                         g.broadcast(ChatColor.RED + "The rangers have been defeated!");
                         g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
                     }
 
-                    if (g.headsRedeemed.contains(g.banditLeader)) {
+                    if (g.headsToRedeem.get(GameTeam.BANDITS).isEmpty()) {
                         g.setState(State.ENDING);
                         g.broadcast(ChatColor.RED + "The bandit leader has been killed!");
                         g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
