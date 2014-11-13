@@ -16,7 +16,6 @@ import net.coasterman10.spectate.SpectateAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.SkullType;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Arrow;
@@ -228,22 +227,6 @@ public class PlayerListener implements Listener {
                 it.remove();
             }
         }
-
-        // Give the victim's head to the killer or drop the victim's head if null
-        if (e.getEntity().getKiller() != null) {
-            e.getEntity().getKiller().getInventory().addItem(getHead(e.getEntity()));
-        } else if (e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.VOID
-                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE
-                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
-                || e.getEntity().getLastDamageCause().getCause() == EntityDamageEvent.DamageCause.LAVA) {
-            // Give the head to an enemy player if the head would be unrecoverable
-            GamePlayer opponent = player.getGame().getRandomAlivePlayer(player.getTeam().opponent());
-            if (opponent != null)
-                opponent.getHandle().getInventory().addItem(getHead(e.getEntity()));
-        } else {
-            // By default, drop the head
-            e.getDrops().add(getHead(e.getEntity()));
-        }
     }
 
     @EventHandler
@@ -337,15 +320,5 @@ public class PlayerListener implements Listener {
                 && !e.getPlayer().getNearbyEntities(10, 10, 10).contains(e.getNamedPlayer())) {
             e.setTag("§§§§");
         }
-    }
-
-    private static ItemStack getHead(Player player) {
-        ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
-        SkullMeta meta = (SkullMeta) head.getItemMeta();
-        meta.setOwner(player.getName());
-        GamePlayer gp = PlayerManager.getPlayer(player);
-        meta.setDisplayName("Head of " + (gp != null ? gp.getTeam().getChatColor() : "") + player.getName());
-        head.setItemMeta(meta);
-        return head;
     }
 }
