@@ -12,6 +12,7 @@ import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -60,6 +61,10 @@ public class AbilityListener implements Listener {
                     if (new Random().nextDouble() < 0.6) {
                         ((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION,
                                 100, 0));
+                        if (e.getEntity() instanceof Player) {
+                            ((Player) e.getEntity()).sendMessage(ChatColor.DARK_PURPLE
+                                    + "Whoa, that mace hit me pretty hard...");
+                        }
                     }
                 }
             }
@@ -143,7 +148,7 @@ public class AbilityListener implements Listener {
                                 cancel();
                                 return;
                             }
-                            
+
                             // A knife on the ground has certainly missed
                             if (knife.isOnGround()) {
                                 // Slight tolerance to hitbox being on ground

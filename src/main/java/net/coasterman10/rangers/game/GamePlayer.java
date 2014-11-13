@@ -1,8 +1,6 @@
 package net.coasterman10.rangers.game;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -24,7 +22,6 @@ public class GamePlayer {
     private boolean banditLeader;
     private boolean vanished;
     private boolean doubleJump;
-    private Set<UUID> hiddenBeforeVanish = new HashSet<>();
     private boolean ingame;
 
     // Upgrades the player can get:
@@ -90,9 +87,6 @@ public class GamePlayer {
     }
 
     public void vanish() {
-        for (Player p : Bukkit.getOnlinePlayers())
-            if (!p.canSee(getHandle()))
-                hiddenBeforeVanish.add(p.getUniqueId());
         getHandle().sendMessage(ChatColor.RED + "Vanished");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
@@ -101,19 +95,17 @@ public class GamePlayer {
     }
 
     public void unvanish() {
-        getHandle().sendMessage(ChatColor.RED + "UnVanished");
+        getHandle().sendMessage(ChatColor.RED + "Unvanished");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
-            if (!hiddenBeforeVanish.contains(p.getUniqueId()))
-                p.showPlayer(getHandle());
-        hiddenBeforeVanish.clear();
+            p.showPlayer(getHandle());
         vanished = false;
     }
-    
+
     public void setAlive(boolean alive) {
         this.ingame = alive;
     }
-    
+
     public boolean isAlive() {
         return ingame;
     }
@@ -173,13 +165,13 @@ public class GamePlayer {
             }
         }.runTaskTimer(plugin, 0L, (long) DOUBLE_JUMP_PERIOD);
     }
-    
+
     public boolean canDoubleJump() {
         if (getHandle() == null)
             return false;
         return doubleJump && getHandle().getExp() == Float.intBitsToFloat(Float.floatToIntBits(1F) - 1);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof GamePlayer))
