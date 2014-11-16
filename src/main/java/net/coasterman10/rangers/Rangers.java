@@ -3,7 +3,6 @@ package net.coasterman10.rangers;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.logging.Logger;
 
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
@@ -30,6 +29,7 @@ import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameSettings;
 import net.coasterman10.rangers.listeners.AbilityListener;
+import net.coasterman10.rangers.listeners.HeadDropListener;
 import net.coasterman10.rangers.listeners.MenuManager;
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.SignManager;
@@ -52,10 +52,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class Rangers extends JavaPlugin {
-    private static Logger log;
-
-    public static Logger logger() {
-        return log;
+    private static Rangers instance;
+    
+    public static Rangers instance() {
+        return instance;
     }
 
     private Location lobbySpawn;
@@ -71,7 +71,7 @@ public class Rangers extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        log = getLogger();
+        instance = this;
         ConfigAccessor configYml = new PluginConfigAccessor(this);
 
         arenaManager = new ArenaManager(new ConfigSectionAccessor(configYml, "arenas"));
@@ -105,6 +105,7 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(abilityListener, this);
         pm.registerEvents(signManager, this);
         pm.registerEvents(menuManager, this);
+        pm.registerEvents(new HeadDropListener(), this);
 
         SubcommandExecutor rangersCommand = new SubcommandExecutor("rangers");
         rangersCommand.registerSubcommand(new RangersSettingCommand(settings));
@@ -141,6 +142,7 @@ public class Rangers extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        instance = null;
         for (Player p : Bukkit.getOnlinePlayers()) {
             sendToLobby(p);
         }

@@ -41,7 +41,7 @@ public class FileConfigAccessor implements ConfigAccessor {
         try {
             config.save(file);
         } catch (IOException e) {
-            Rangers.logger().warning("Could not save configuration to " + file);
+            Rangers.instance().getLogger().warning("Could not save configuration to " + file);
         }
     }
 

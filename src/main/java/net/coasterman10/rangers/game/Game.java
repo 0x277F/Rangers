@@ -113,8 +113,10 @@ public class Game {
     }
 
     private void selectTeams() {
-        for (GameTeam team : GameTeam.values())
+        for (GameTeam team : GameTeam.values()) {
             teams.put(team, new HashSet<GamePlayer>());
+            headsToRedeem.put(team, new HashSet<String>());
+        }
         GameTeam nextTeam = GameTeam.RANGERS;
         List<GamePlayer> playerList = new ArrayList<>(players);
         Collections.shuffle(playerList);
@@ -124,19 +126,9 @@ public class Game {
             teams.get(nextTeam).add(p);
             p.getHandle().sendMessage(
                     ChatColor.AQUA + "You have been selected to join the " + ChatColor.YELLOW + nextTeam.name());
-            if (nextTeam == GameTeam.BANDITS && banditLeader == null) {
-                banditLeader = p;
-                scoreboard.setBanditLeader(p.getHandle());
-                broadcast(ChatColor.YELLOW + p.getHandle().getName() + ChatColor.AQUA + " is the " + ChatColor.RED
-                        + "Bandit Leader");
-                p.setBanditLeader(true);
-            } else {
-                p.setBanditLeader(false);
-            }
+            p.setBanditLeader(false);
             nextTeam = nextTeam.opponent();
         }
-
-        scoreboard.setBanditLeader(banditLeader.getHandle());
     }
 
     private void checkChest(GameTeam t) {
@@ -263,6 +255,13 @@ public class Game {
                 // If rangers and bandits are unbalanced, do not give bandits slowness
                 boolean slowness = g.teams.get(GameTeam.RANGERS).size() == g.teams.get(GameTeam.BANDITS).size();
                 for (GamePlayer p : g.teams.get(GameTeam.BANDITS)) {
+                    if (g.banditLeader == null) {
+                        g.banditLeader = p;
+                        g.scoreboard.setBanditLeader(p.getHandle());
+                        g.broadcast(ChatColor.YELLOW + p.getHandle().getName() + ChatColor.AQUA + " is the "
+                                + ChatColor.RED + "Bandit Leader");
+                        p.setBanditLeader(true);
+                    }
                     Kit.BANDIT.apply(p);
                     PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
                     if (slowness)

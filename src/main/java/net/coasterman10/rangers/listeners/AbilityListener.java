@@ -89,7 +89,7 @@ public class AbilityListener implements Listener {
             Player p = e.getPlayer();
             GamePlayer player = PlayerManager.getPlayer(p);
             if (player.getGame() != null && player.canDoubleJump()) {
-                player.doubleJump(plugin);
+                player.doubleJump();
                 doubleJumpers.add(player.id);
             }
         }

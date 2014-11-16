@@ -3,16 +3,21 @@ package net.coasterman10.rangers.game;
 import java.util.HashMap;
 import java.util.UUID;
 
+import net.coasterman10.rangers.Rangers;
+import net.coasterman10.rangers.util.TaskCollection;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 public class GamePlayer {
+    private static final int VANISH_TIME = 45;
+    private static final int VANISH_COOLDOWN = 60;
+
     private static final int DOUBLE_JUMP_PERIOD = 5;
     private static final int DOUBLE_JUMP_TICKS = 160;
 
@@ -20,9 +25,12 @@ public class GamePlayer {
     private Game game;
     private GameTeam team;
     private boolean banditLeader;
-    private boolean vanished;
     private boolean doubleJump;
     private boolean ingame;
+
+    private boolean vanished;
+    private long lastVanish;
+    private TaskCollection vanishTasks = new TaskCollection();
 
     // Upgrades the player can get:
     // ranger.ability - none, vanish
@@ -39,6 +47,11 @@ public class GamePlayer {
         upgrades.put("ranger.secondary", "throwingknife");
         upgrades.put("bandit.secondary", "bow");
         upgrades.put("bandit.bow", "none");
+    }
+    
+    public void quit() {
+        // Perform any cleanup when the player leaves
+        vanishTasks.cancelAll();
     }
 
     public Player getHandle() {
@@ -87,19 +100,44 @@ public class GamePlayer {
     }
 
     public void vanish() {
-        getHandle().sendMessage(ChatColor.RED + "Vanished");
+        if (System.currentTimeMillis() - lastVanish < 1000 * VANISH_COOLDOWN)
+            getHandle().sendMessage(ChatColor.RED + "I can't hide again so quickly!");
+
+        getHandle().sendMessage(ChatColor.DARK_AQUA + "Vanished");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
             p.hidePlayer(getHandle());
         vanished = true;
+
+        // Send some warning messages and cut the player off at 45 seconds
+        vanishTasks.addTask(new BukkitRunnable() {
+            @Override
+            public void run() {
+                getHandle().sendMessage(ChatColor.GOLD + "I don't think I can hide for much longer...");
+            }
+        }.runTaskLater(Rangers.instance(), (VANISH_TIME - 15) * 20L));
+        vanishTasks.addTask(new BukkitRunnable() {
+            @Override
+            public void run() {
+                getHandle().sendMessage(ChatColor.RED + "I can only hide for a few more seconds!");
+            }
+        }.runTaskLater(Rangers.instance(), (VANISH_TIME - 5) * 20L));
+        vanishTasks.addTask(new BukkitRunnable() {
+            @Override
+            public void run() {
+                unvanish();
+            }
+        }.runTaskLater(Rangers.instance(), VANISH_TIME * 20L));
     }
 
     public void unvanish() {
-        getHandle().sendMessage(ChatColor.RED + "Unvanished");
+        getHandle().sendMessage(ChatColor.DARK_AQUA + "Unvanished");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
             p.showPlayer(getHandle());
         vanished = false;
+        lastVanish = System.currentTimeMillis();
+        vanishTasks.cancelAll();
     }
 
     public void setAlive(boolean alive) {
@@ -125,7 +163,7 @@ public class GamePlayer {
         }
     }
 
-    public void doubleJump(Plugin plugin) {
+    public void doubleJump() {
         Player p = getHandle();
         if (p == null)
             return;
@@ -133,7 +171,7 @@ public class GamePlayer {
         p.setAllowFlight(false);
         p.setExp(0);
 
-        p.setVelocity(p.getLocation().getDirection().multiply(1.3).add(new Vector(0.0, 0.5, 0.0)));
+        p.setVelocity(p.getLocation().getDirection().multiply(1.3).add(new Vector(0.0, 1, 0.0)));
         p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
         p.getWorld().playSound(p.getLocation(), Sound.ZOMBIE_INFECT, 1.0F, 2.0F);
 
@@ -163,7 +201,7 @@ public class GamePlayer {
                     cancel();
                 }
             }
-        }.runTaskTimer(plugin, 0L, (long) DOUBLE_JUMP_PERIOD);
+        }.runTaskTimer(Rangers.instance(), 0L, (long) DOUBLE_JUMP_PERIOD);
     }
 
     public boolean canDoubleJump() {
