@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import me.confuser.barapi.BarAPI;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.boss.SpawnBossSubcommand;
@@ -41,7 +42,6 @@ import net.coasterman10.rangers.menu.RangerBowMenu;
 import net.coasterman10.rangers.menu.RangerSecondaryMenu;
 
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -53,7 +53,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class Rangers extends JavaPlugin {
     private static Rangers instance;
-    
+
     public static Rangers instance() {
         return instance;
     }
@@ -153,20 +153,13 @@ public class Rangers extends JavaPlugin {
     }
 
     public void sendToLobby(Player p) {
-        GamePlayer data = PlayerManager.getPlayer(p);
-        if (data.getGame() == null) {
-            return;
+        GamePlayer player = PlayerManager.getPlayer(p);
+        if (player.isInGame()) {
+            player.quit();
+            PlayerUtil.resetPlayer(p);
+            p.teleport(lobbySpawn);
         }
-        data.getGame().removePlayer(data);
-        p.setHealth(20D);
-        p.setFoodLevel(20);
-        p.setSaturation(20F);
-        p.getInventory().clear();
-        p.getInventory().setArmorContents(null);
-        p.setExp(0F);
-        if (p.getGameMode() != GameMode.CREATIVE)
-            p.setAllowFlight(false);
-        p.teleport(lobbySpawn);
+        BarAPI.setMessage(p, settings.idleBarMessage, 100F);
     }
 
     private void loadConfig() {

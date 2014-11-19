@@ -4,6 +4,7 @@ countdown-duration: 15
 team-select-time: 10
 time-limit: 300
 restart-delay: 5
+idle-bar-message: "&a&lRangers &9&lALPHA &7| &b70.114.228.168"
 
 allowed-drops:
 - 297

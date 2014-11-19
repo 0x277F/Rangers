@@ -24,7 +24,6 @@ public class GamePlayer {
     public final UUID id;
     private Game game;
     private GameTeam team;
-    private boolean banditLeader;
     private boolean doubleJump;
     private boolean ingame;
 
@@ -52,10 +51,16 @@ public class GamePlayer {
     public void quit() {
         // Perform any cleanup when the player leaves
         vanishTasks.cancelAll();
+        if (isInGame())
+            game.removePlayer(this);
     }
 
     public Player getHandle() {
         return Bukkit.getPlayer(id);
+    }
+    
+    public String getName() {
+        return getHandle().getName();
     }
 
     public void setTeam(GameTeam team) {
@@ -78,12 +83,8 @@ public class GamePlayer {
         return game != null;
     }
 
-    public void setBanditLeader(boolean banditLeader) {
-        this.banditLeader = banditLeader;
-    }
-
     public boolean isBanditLeader() {
-        return banditLeader;
+        return isInGame() && equals(game.getBanditLeader());
     }
 
     public String getUpgradeSelection(String name) {

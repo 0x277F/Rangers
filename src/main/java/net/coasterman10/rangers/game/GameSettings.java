@@ -2,6 +2,7 @@ package net.coasterman10.rangers.game;
 
 import net.coasterman10.rangers.config.ConfigAccessor;
 
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 
 public class GameSettings {
@@ -13,6 +14,7 @@ public class GameSettings {
     public int teamSelectTime;
     public int restartDelay;
     public int timeLimit;
+    public String idleBarMessage;
 
     public GameSettings(ConfigAccessor config) {
         this.config = config;
@@ -29,5 +31,7 @@ public class GameSettings {
         teamSelectTime = conf.getInt("team-select-time", 10);
         restartDelay = conf.getInt("restart-delay", 10);
         timeLimit = conf.getInt("time-limit", 300);
+        idleBarMessage = ChatColor.translateAlternateColorCodes('&',
+                conf.getString("idle-bar-message", "&a&lRangers &9&lALPHA &7| &b70.114.228.168"));
     }
 }

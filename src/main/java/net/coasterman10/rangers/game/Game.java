@@ -33,7 +33,7 @@ public class Game {
     private static final Random rand = new Random();
     private static int nextId;
 
-    private final int id;
+    public final int id;
     private final GameSettings settings;
     private Arena arena;
 
@@ -54,6 +54,11 @@ public class Game {
         this.arena = arena;
         arena.setGame(this);
 
+        for (GameTeam team : GameTeam.values()) {
+            teams.put(team, new HashSet<GamePlayer>());
+            headsToRedeem.put(team, new HashSet<String>());
+        }
+
         scoreboard = new GameScoreboard();
 
         state = State.LOBBY;
@@ -61,62 +66,68 @@ public class Game {
         new UpdateTask().runTaskTimer(plugin, 0L, 20L);
     }
 
-    public int getId() {
-        return id;
-    }
-
     public void addPlayer(GamePlayer player) {
         Player handle = player.getHandle();
-
         if (players.size() == settings.maxPlayers) {
             handle.sendMessage(ChatColor.RED + "This game is full!");
             return;
         }
+        players.add(player);
+        player.setGame(this);
+        player.setTeam(null);
+        PlayerUtil.resetPlayer(handle);
+        arena.sendToLobby(player);
+        broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
+        scoreboard.setForPlayer(handle);
 
-        if (state == State.LOBBY || (state == State.STARTING && seconds > settings.teamSelectTime)) {
-            players.add(player);
-            player.setGame(this);
-            player.setTeam(null);
-            PlayerUtil.resetPlayer(handle);
-            arena.sendToLobby(player);
-            broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
-            scoreboard.setForPlayer(handle);
-        } else {
-            arena.sendToLobby(player);
-            players.add(player);
-            player.setGame(this);
-            PlayerUtil.resetPlayer(handle);
+        if (players.size() >= settings.minPlayers) {
+            setState(State.STARTING);
         }
     }
 
     public void removePlayer(GamePlayer player) {
-        broadcast(ChatColor.YELLOW + player.getHandle().getName() + ChatColor.AQUA + " left the game");
         if (!players.contains(player))
             return;
-        players.remove(player);
+        broadcast(ChatColor.YELLOW + player.getHandle().getName() + ChatColor.AQUA + " left the game");
         player.setGame(null);
         player.setTeam(null);
+        players.remove(player);
         for (Collection<GamePlayer> team : teams.values())
             team.remove(player);
         if (player.getHandle() != null) {
-            BarAPI.removeBar(player.getHandle());
             player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
             player.setCanDoubleJump(false);
+            BarAPI.removeBar(player.getHandle());
             SpectateAPI.removeSpectator(player.getHandle());
         }
+
+        if (players.size() < settings.minPlayers)
+            setState(State.LOBBY);
     }
 
     private void broadcast(String msg) {
-        for (GamePlayer player : players) {
+        for (GamePlayer player : players)
             player.getHandle().sendMessage(msg);
+    }
+
+    private void reset() {
+        for (Collection<GamePlayer> team : teams.values()) {
+            team.clear();
         }
+        for (GamePlayer p : players) {
+            BarAPI.setMessage(p.getHandle(), settings.idleBarMessage, 100F);
+            if (p.isAlive())
+                arena.sendToLobby(p);
+            PlayerUtil.resetPlayer(p.getHandle());
+            p.setCanDoubleJump(false);
+            p.setTeam(null);
+            p.setAlive(false);
+        }
+        scoreboard.reset();
+        banditLeader = null;
     }
 
     private void selectTeams() {
-        for (GameTeam team : GameTeam.values()) {
-            teams.put(team, new HashSet<GamePlayer>());
-            headsToRedeem.put(team, new HashSet<String>());
-        }
         GameTeam nextTeam = GameTeam.RANGERS;
         List<GamePlayer> playerList = new ArrayList<>(players);
         Collections.shuffle(playerList);
@@ -126,9 +137,48 @@ public class Game {
             teams.get(nextTeam).add(p);
             p.getHandle().sendMessage(
                     ChatColor.AQUA + "You have been selected to join the " + ChatColor.YELLOW + nextTeam.name());
-            p.setBanditLeader(false);
             nextTeam = nextTeam.opponent();
         }
+    }
+
+    public void start() {
+        seconds = settings.timeLimit;
+        scoreboard.setScore(GameTeam.RANGERS, 0);
+        scoreboard.setScore(GameTeam.BANDITS, 0);
+
+        arena.clearGround();
+
+        for (GamePlayer p : players) {
+            SpectateAPI.removeSpectator(p.getHandle());
+            PlayerUtil.resetPlayer(p.getHandle());
+            arena.sendToGame(p);
+            p.setAlive(true);
+        }
+
+        for (GamePlayer p : teams.get(GameTeam.RANGERS)) {
+            Kit.RANGER.apply(p);
+            p.setCanDoubleJump(true);
+            PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
+            PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SPEED, 0);
+            headsToRedeem.get(GameTeam.RANGERS).add(p.getHandle().getName());
+        }
+
+        // If rangers and bandits are unbalanced, do not give bandits slowness
+        boolean slowness = teams.get(GameTeam.RANGERS).size() == teams.get(GameTeam.BANDITS).size();
+        for (GamePlayer p : teams.get(GameTeam.BANDITS)) {
+            Kit.BANDIT.apply(p);
+            PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
+            if (slowness)
+                PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW, 0);
+            if (banditLeader == null) {
+                banditLeader = p;
+                scoreboard.setBanditLeader(p.getHandle());
+                broadcast(ChatColor.YELLOW + p.getName() + ChatColor.AQUA + " is the " + ChatColor.RED
+                        + "Bandit Leader");
+            }
+        }
+
+        headsToRedeem.get(GameTeam.BANDITS).add(banditLeader.getName());
     }
 
     private void checkChest(GameTeam t) {
@@ -136,27 +186,55 @@ public class Game {
         if (loc.getBlock().getState() instanceof Chest) {
             Chest state = (Chest) loc.getBlock().getState();
             for (ItemStack item : state.getBlockInventory()) {
-                if (item == null)
-                    continue;
-                if (item.getType() == Material.SKULL_ITEM) {
+                if (item != null && item.getType() == Material.SKULL_ITEM) {
                     SkullMeta meta = (SkullMeta) item.getItemMeta();
                     if (meta.hasOwner()) {
-                        String name = meta.getOwner();
-
-                        if (headsToRedeem.get(t.opponent()).remove(name)) {
+                        if (headsToRedeem.get(t.opponent()).remove(meta.getOwner())) {
                             scoreboard.incrementScore(t.opponent());
                         }
-
                         for (GamePlayer player : teams.get(t)) {
-                            if (name.equals(player.getHandle().getName())) {
+                            if (meta.getOwner().equals(player.getHandle().getName())) {
                                 loc.getWorld().dropItem(loc.getBlock().getRelative(BlockFace.UP).getLocation(), item);
                             }
                         }
                     }
                 }
-
-                state.getBlockInventory().remove(item);
             }
+            state.getBlockInventory().clear();
+        }
+    }
+
+    private void onSecond() {
+        if (seconds == 0) {
+            broadcast(ChatColor.RED + "Time has expired!");
+            broadcast(ChatColor.GOLD + "" + ChatColor.BOLD + "The game is a draw.");
+            setState(State.ENDING);
+        } else {
+            for (GamePlayer player : players) {
+                int m = seconds / 60; // Minutes
+                int s = seconds % 60; // Seconds
+                float percent = (float) seconds / (float) settings.timeLimit * 100F;
+                BarAPI.setMessage(player.getHandle(), (seconds < 30 ? ChatColor.RED : ChatColor.GREEN).toString() + m
+                        + ":" + (s < 10 ? "0" + s : s) + " remaining", percent);
+            }
+
+            checkChest(GameTeam.RANGERS);
+            checkChest(GameTeam.BANDITS);
+
+            // Check victory conditions
+            if (headsToRedeem.get(GameTeam.RANGERS).isEmpty()) {
+                setState(State.ENDING);
+                broadcast(ChatColor.RED + "The rangers have been defeated!");
+                broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
+            }
+
+            if (headsToRedeem.get(GameTeam.BANDITS).isEmpty()) {
+                setState(State.ENDING);
+                broadcast(ChatColor.RED + "The bandit leader has been killed!");
+                broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
+            }
+
+            seconds--;
         }
     }
 
@@ -177,32 +255,12 @@ public class Game {
         LOBBY {
             @Override
             public void start(final Game g) {
-                for (Collection<GamePlayer> team : g.teams.values()) {
-                    team.clear();
-                }
-                for (GamePlayer p : g.players) {
-                    BarAPI.removeBar(p.getHandle());
-                    SpectateAPI.removeSpectator(p.getHandle());
-                    g.arena.sendToLobby(p);
-                    p.setTeam(null);
-                    PlayerUtil.resetPlayer(p.getHandle());
-                    p.setCanDoubleJump(false);
-                    p.setAlive(false);
-                }
-                g.scoreboard.reset();
-                g.banditLeader = null;
+                g.reset();
             }
 
             @Override
             public void onSecond(final Game g) {
-                for (GamePlayer p : g.players) {
-                    BarAPI.setMessage(p.getHandle(), ChatColor.GREEN + "" + ChatColor.BOLD + "Rangers "
-                            + ChatColor.BLUE + ChatColor.BOLD + "ALPHA" + ChatColor.GRAY + " | " + ChatColor.AQUA
-                            + "70.114.228.168", 100F);
-                }
-                if (g.players.size() >= g.settings.minPlayers) {
-                    g.setState(State.STARTING);
-                }
+
             }
         },
         STARTING {
@@ -213,9 +271,6 @@ public class Game {
 
             @Override
             public void onSecond(final Game g) {
-                if (g.players.size() < g.settings.minPlayers) {
-                    g.setState(LOBBY);
-                }
                 if (g.seconds == 0) {
                     g.setState(RUNNING);
                 } else {
@@ -233,80 +288,12 @@ public class Game {
         RUNNING {
             @Override
             public void start(Game g) {
-                g.seconds = g.settings.timeLimit;
-                g.scoreboard.setScore(GameTeam.RANGERS, 0);
-                g.scoreboard.setScore(GameTeam.BANDITS, 0);
-
-                for (GamePlayer p : g.players) {
-                    SpectateAPI.removeSpectator(p.getHandle());
-                    PlayerUtil.resetPlayer(p.getHandle());
-                    g.arena.sendToGame(p);
-                    p.setAlive(true);
-                }
-
-                for (GamePlayer p : g.teams.get(GameTeam.RANGERS)) {
-                    Kit.RANGER.apply(p);
-                    p.setCanDoubleJump(true);
-                    PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
-                    PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SPEED, 0);
-                    g.headsToRedeem.get(GameTeam.RANGERS).add(p.getHandle().getName());
-                }
-
-                // If rangers and bandits are unbalanced, do not give bandits slowness
-                boolean slowness = g.teams.get(GameTeam.RANGERS).size() == g.teams.get(GameTeam.BANDITS).size();
-                for (GamePlayer p : g.teams.get(GameTeam.BANDITS)) {
-                    if (g.banditLeader == null) {
-                        g.banditLeader = p;
-                        g.scoreboard.setBanditLeader(p.getHandle());
-                        g.broadcast(ChatColor.YELLOW + p.getHandle().getName() + ChatColor.AQUA + " is the "
-                                + ChatColor.RED + "Bandit Leader");
-                        p.setBanditLeader(true);
-                    }
-                    Kit.BANDIT.apply(p);
-                    PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
-                    if (slowness)
-                        PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW, 0);
-                }
-
-                g.headsToRedeem.get(GameTeam.BANDITS).add(g.banditLeader.getHandle().getName());
-
-                g.arena.clearGround();
+                g.start();
             }
 
             @Override
             public void onSecond(Game g) {
-                if (g.seconds == 0) {
-                    g.setState(ENDING);
-                    g.broadcast(ChatColor.RED + "Time has expired!");
-                    g.broadcast(ChatColor.GOLD + "" + ChatColor.BOLD + "The game is a draw.");
-                } else {
-                    for (GamePlayer player : g.players) {
-                        int minutes = g.seconds / 60;
-                        int seconds = g.seconds % 60;
-                        float percent = (float) g.seconds / (float) g.settings.timeLimit * 100F;
-                        BarAPI.setMessage(player.getHandle(),
-                                (g.seconds < 30 ? ChatColor.RED : ChatColor.GREEN).toString() + minutes + ":"
-                                        + (seconds < 10 ? "0" + seconds : seconds) + " remaining", percent);
-                    }
-
-                    g.checkChest(GameTeam.RANGERS);
-                    g.checkChest(GameTeam.BANDITS);
-
-                    // Check victory conditions
-                    if (g.headsToRedeem.get(GameTeam.RANGERS).isEmpty()) {
-                        g.setState(ENDING);
-                        g.broadcast(ChatColor.RED + "The rangers have been defeated!");
-                        g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE BANDITS WIN!");
-                    }
-
-                    if (g.headsToRedeem.get(GameTeam.BANDITS).isEmpty()) {
-                        g.setState(State.ENDING);
-                        g.broadcast(ChatColor.RED + "The bandit leader has been killed!");
-                        g.broadcast(ChatColor.GREEN + "" + ChatColor.BOLD + "THE RANGERS WIN!");
-                    }
-
-                    g.seconds--;
-                }
+                g.onSecond();
             }
         },
         ENDING {
@@ -318,7 +305,7 @@ public class Game {
             @Override
             public void onSecond(Game g) {
                 if (g.seconds == 0) {
-                    g.setState(LOBBY);
+                    g.reset();
                 } else {
                     float percent = (float) g.seconds / (float) g.settings.restartDelay * 100F;
                     for (GamePlayer p : g.players) {
@@ -352,6 +339,10 @@ public class Game {
 
     public int getPlayerCount() {
         return players.size();
+    }
+
+    public GamePlayer getBanditLeader() {
+        return banditLeader;
     }
 
     public State getState() {
