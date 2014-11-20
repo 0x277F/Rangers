@@ -147,6 +147,8 @@ public class Game {
         scoreboard.setScore(GameTeam.BANDITS, 0);
 
         arena.clearGround();
+        
+        selectTeams();
 
         for (GamePlayer p : players) {
             SpectateAPI.removeSpectator(p.getHandle());
