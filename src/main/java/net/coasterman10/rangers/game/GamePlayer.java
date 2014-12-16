@@ -1,16 +1,29 @@
 package net.coasterman10.rangers.game;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.UUID;
 
 import net.coasterman10.rangers.Rangers;
-import net.coasterman10.rangers.util.TaskCollection;
+import net.coasterman10.rangers.util.TaskSchedule;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.SkullType;
 import org.bukkit.Sound;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -25,11 +38,22 @@ public class GamePlayer {
     private Game game;
     private GameTeam team;
     private boolean doubleJump;
-    private boolean ingame;
+    private boolean alive;
 
     private boolean vanished;
     private long lastVanish;
-    private TaskCollection vanishTasks = new TaskCollection();
+    private TaskSchedule vanishTasks = new TaskSchedule();
+
+    private static Collection<String> upgradeCategories = new HashSet<>();
+
+    static {
+        upgradeCategories.add("ranger.ability");
+        upgradeCategories.add("ranger.secondary");
+        upgradeCategories.add("ranger.bow");
+        upgradeCategories.add("bandit.ability");
+        upgradeCategories.add("bandit.secondary");
+        upgradeCategories.add("bandit.bow");
+    }
 
     // Upgrades the player can get:
     // ranger.ability - none, vanish
@@ -37,28 +61,59 @@ public class GamePlayer {
     // ranger.secondary - throwingknife, strikers
     // bandit.secondary - bow, mace
     // bandit.bow - none, 8arrows
+    // bandit.ability - none, grapple
     private HashMap<String, String> upgrades = new HashMap<>();
 
     public GamePlayer(UUID id) {
         this.id = id;
         upgrades.put("ranger.ability", "none");
-        upgrades.put("ranger.bow", "none");
         upgrades.put("ranger.secondary", "throwingknife");
+        upgrades.put("ranger.bow", "none");
+        upgrades.put("bandit.ability", "none");
         upgrades.put("bandit.secondary", "bow");
         upgrades.put("bandit.bow", "none");
     }
-    
+
+    public void loadData() {
+        File dataFile = new File(new File(Rangers.instance().getDataFolder(), "players"), id.toString() + ".yml");
+        if (dataFile.exists()) {
+            Configuration config = YamlConfiguration.loadConfiguration(dataFile);
+            for (String upgrade : upgradeCategories) {
+                String value = config.getString("upgrades." + upgrade, null);
+                if (value != null) {
+                    upgrades.put(upgrade, value);
+                }
+            }
+        }
+    }
+
+    public void saveData() {
+        FileConfiguration config = new YamlConfiguration();
+        for (String upgrade : upgradeCategories) {
+            config.set("ugrades." + upgrade, upgrades.get(upgrade));
+        }
+        try {
+            config.save(new File(new File(Rangers.instance().getDataFolder(), "players"), id.toString() + ".yml"));
+        } catch (IOException e) {
+            Rangers.instance().getLogger()
+                    .warning("Could not save player data for " + getName() + " (" + id.toString() + ")");
+        }
+    }
+
     public void quit() {
         // Perform any cleanup when the player leaves
         vanishTasks.cancelAll();
         if (isInGame())
             game.removePlayer(this);
+        alive = false;
+        vanished = false;
+        setCanDoubleJump(false);
     }
 
     public Player getHandle() {
         return Bukkit.getPlayer(id);
     }
-    
+
     public String getName() {
         return getHandle().getName();
     }
@@ -104,7 +159,7 @@ public class GamePlayer {
         if (System.currentTimeMillis() - lastVanish < 1000 * VANISH_COOLDOWN)
             getHandle().sendMessage(ChatColor.RED + "I can't hide again so quickly!");
 
-        getHandle().sendMessage(ChatColor.DARK_AQUA + "Vanished");
+        getHandle().sendMessage(ChatColor.AQUA + "Vanished");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
             p.hidePlayer(getHandle());
@@ -132,7 +187,7 @@ public class GamePlayer {
     }
 
     public void unvanish() {
-        getHandle().sendMessage(ChatColor.DARK_AQUA + "Unvanished");
+        getHandle().sendMessage(ChatColor.AQUA + "Unvanished");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
             p.showPlayer(getHandle());
@@ -142,11 +197,11 @@ public class GamePlayer {
     }
 
     public void setAlive(boolean alive) {
-        this.ingame = alive;
+        this.alive = alive;
     }
 
     public boolean isAlive() {
-        return ingame;
+        return alive;
     }
 
     public void setCanDoubleJump(boolean doubleJump) {
@@ -172,7 +227,7 @@ public class GamePlayer {
         p.setAllowFlight(false);
         p.setExp(0);
 
-        p.setVelocity(p.getLocation().getDirection().multiply(1.3).add(new Vector(0.0, 1, 0.0)));
+        p.setVelocity(p.getLocation().getDirection().multiply(0.5).add(new Vector(0.0, 1.25, 0.0)));
         p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
         p.getWorld().playSound(p.getLocation(), Sound.ZOMBIE_INFECT, 1.0F, 2.0F);
 
@@ -233,5 +288,26 @@ public class GamePlayer {
         p.setFlying(false); // Prevents them from being in the flying state on accident
         p.playSound(p.getEyeLocation(), Sound.WITHER_SHOOT, 0.75F, 1.0F);
         p.sendMessage(ChatColor.GREEN + "Double Jump ability recharged");
+    }
+
+    public void dropHead(Location loc) {
+        ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
+        SkullMeta meta = (SkullMeta) head.getItemMeta();
+        meta.setOwner(getName());
+        StringBuilder name = new StringBuilder(32);
+        if (team != null)
+            name.append(team.getChatColor());
+        name.append("Head of ");
+        name.append(getName());
+        if (team != null)
+            if (isBanditLeader())
+                name.append(" (Bandit Leader)");
+            else
+                name.append(" (").append(team.getName()).append(")");
+        meta.setDisplayName(name.toString());
+        head.setItemMeta(meta);
+        Item i = loc.getWorld().dropItem(loc, head);
+        i.setVelocity(new Vector(0, 0, 0));
+        i.teleport(loc);
     }
 }

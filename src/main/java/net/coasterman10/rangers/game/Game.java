@@ -47,7 +47,7 @@ public class Game {
     private State state;
     private int seconds;
 
-    public Game(Rangers plugin, GameSettings settings, Arena arena) {
+    public Game(GameSettings settings, Arena arena) {
         id = nextId++;
 
         this.settings = settings;
@@ -63,7 +63,7 @@ public class Game {
 
         state = State.LOBBY;
 
-        new UpdateTask().runTaskTimer(plugin, 0L, 20L);
+        new UpdateTask().runTaskTimer(Rangers.instance(), 0L, 20L);
     }
 
     public void addPlayer(GamePlayer player) {
@@ -80,7 +80,7 @@ public class Game {
         broadcast(ChatColor.YELLOW + handle.getName() + ChatColor.AQUA + " joined the game");
         scoreboard.setForPlayer(handle);
 
-        if (players.size() >= settings.minPlayers) {
+        if (state == State.LOBBY && players.size() >= settings.minPlayers) {
             setState(State.STARTING);
         }
     }
@@ -99,10 +99,11 @@ public class Game {
             player.setCanDoubleJump(false);
             BarAPI.removeBar(player.getHandle());
             SpectateAPI.removeSpectator(player.getHandle());
+            Rangers.instance().dropHead(player.getHandle());
         }
 
-        if (players.size() < settings.minPlayers)
-            setState(State.LOBBY);
+        if (state == State.STARTING && players.size() < settings.minPlayers)
+            reset();
     }
 
     private void broadcast(String msg) {
@@ -125,6 +126,11 @@ public class Game {
         }
         scoreboard.reset();
         banditLeader = null;
+        setState(State.LOBBY);
+
+        if (state == State.LOBBY && players.size() >= settings.minPlayers) {
+            setState(State.STARTING);
+        }
     }
 
     private void selectTeams() {
@@ -147,8 +153,12 @@ public class Game {
         scoreboard.setScore(GameTeam.BANDITS, 0);
 
         arena.clearGround();
-        
-        selectTeams();
+
+        List<GamePlayer> bandits = new ArrayList<>(teams.get(GameTeam.BANDITS));
+        banditLeader = bandits.get(rand.nextInt(bandits.size()));
+        scoreboard.setBanditLeader(banditLeader.getHandle());
+        broadcast(ChatColor.YELLOW + banditLeader.getName() + ChatColor.AQUA + " is the " + ChatColor.RED
+                + "Bandit Leader");
 
         for (GamePlayer p : players) {
             SpectateAPI.removeSpectator(p.getHandle());
@@ -166,18 +176,13 @@ public class Game {
         }
 
         // If rangers and bandits are unbalanced, do not give bandits slowness
-        boolean slowness = teams.get(GameTeam.RANGERS).size() == teams.get(GameTeam.BANDITS).size();
+        boolean slowness = teams.get(GameTeam.RANGERS).size() == teams.get(GameTeam.BANDITS).size()
+                && teams.get(GameTeam.BANDITS).size() < 2;
         for (GamePlayer p : teams.get(GameTeam.BANDITS)) {
             Kit.BANDIT.apply(p);
             PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
             if (slowness)
                 PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW, 0);
-            if (banditLeader == null) {
-                banditLeader = p;
-                scoreboard.setBanditLeader(p.getHandle());
-                broadcast(ChatColor.YELLOW + p.getName() + ChatColor.AQUA + " is the " + ChatColor.RED
-                        + "Bandit Leader");
-            }
         }
 
         headsToRedeem.get(GameTeam.BANDITS).add(banditLeader.getName());
@@ -257,7 +262,7 @@ public class Game {
         LOBBY {
             @Override
             public void start(final Game g) {
-                g.reset();
+
             }
 
             @Override

@@ -41,6 +41,11 @@ public class BanditKit implements Kit {
             ItemStack arrows = inv.getItem(8);
             arrows.setAmount(arrows.getAmount() + 8);
         }
+        
+        if (player.getUpgradeSelection("bandit.ability").equals("grapple")) {
+            inv.setItem(2, new ItemStackBuilder(Material.FISHING_ROD).setDisplayName("Grapple").build());
+            inv.setItem(3, new ItemStack(Material.BREAD, 4));
+        }
 
         if (player.isBanditLeader()) {
             inv.setBoots(new ItemStack(Material.GOLD_BOOTS));

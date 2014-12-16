@@ -27,6 +27,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.event.player.PlayerFishEvent.State;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -38,6 +40,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 
 public class AbilityListener implements Listener {
     private final Plugin plugin;
@@ -48,6 +51,47 @@ public class AbilityListener implements Listener {
 
     public AbilityListener(Plugin plugin) {
         this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onFish(final PlayerFishEvent e) {
+        final GamePlayer p = PlayerManager.getPlayer(e.getPlayer());
+        if (p.isInGame() && p.getTeam() == GameTeam.BANDITS
+                && p.getUpgradeSelection("bandit.ability").equals("grapple")) {
+            if ((e.getState() == State.FAILED_ATTEMPT && (e.getHook().isOnGround() || !e.getHook().getLocation()
+                    .subtract(0, 0.5, 0).getBlock().isEmpty()))
+                    || e.getState() == State.IN_GROUND) {
+                Vector dist = e.getHook().getLocation().subtract(e.getPlayer().getLocation()).toVector();
+
+                e.getPlayer().getItemInHand().setDurability((short) 0);
+
+                if (dist.getY() < 2)
+                    return;
+
+                double dx = dist.getX();
+                double dy = dist.getY() + 1;
+                double dz = dist.getZ();
+                double dxz = Math.sqrt(dx * dx + dz * dz);
+
+                if (e.getPlayer().getVelocity().getY() < 0)
+                    dy += 2;
+
+                final double vxz = (dxz > 0.5 ? 0.3062 + 0.0796 * dxz - 1.3795 * Math.pow(dxz, -0.5604) - 0.0109 * dy
+                        + 0.9709 * Math.pow(dy, -0.2366) : 0.0);
+                final double vx = vxz * dx / dxz;
+                final double vy = 0.0809 + 0.0162 * dy + 0.3852 * Math.sqrt(dy);
+                final double vz = vxz * dz / dxz;
+
+                e.getPlayer().setVelocity(new Vector(0, vy, 0));
+                e.getPlayer().getWorld().playSound(e.getPlayer().getLocation(), Sound.ZOMBIE_INFECT, 1F, 2F);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        e.getPlayer().setVelocity(e.getPlayer().getVelocity().setX(vx).setZ(vz));
+                    }
+                }.runTaskLater(plugin, 1L);
+            }
+        }
     }
 
     @EventHandler
@@ -136,7 +180,7 @@ public class AbilityListener implements Listener {
                     // Hit detection - because I do not feel like using NMS to create my own entity
                     new BukkitRunnable() {
                         private static final int maxTicks = 200; // Max 10 seconds
-                        private static final int maxTicksOnGround = 5; // Max 0.25 seconds on ground
+                        private static final int maxTicksOnGround = 2; // Max 0.1 seconds on ground
                         int ticks = 0;
                         int ticksOnGround = 0;
 

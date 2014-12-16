@@ -7,7 +7,7 @@ import java.util.Iterator;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitTask;
 
-public class TaskCollection {
+public class TaskSchedule {
     private static final int CLEANUP_THRESHOLD = 10;
     
     private Collection<BukkitTask> tasks = new HashSet<>();

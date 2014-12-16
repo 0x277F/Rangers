@@ -2,7 +2,6 @@ package net.coasterman10.rangers.listeners;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 import net.coasterman10.rangers.PlayerManager;
@@ -30,6 +29,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -117,9 +117,8 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
         GamePlayer player = PlayerManager.getPlayer(e.getEntity());
-        
-        if (player.getGame() == null || player.getTeam() == null) {
-            e.getDrops().clear(); // There should be no drops at all outside of the game
+
+        if (!player.isAlive()) {
             e.setDeathMessage(null);
             return;
         }
@@ -214,32 +213,26 @@ public class PlayerListener implements Listener {
             } else {
                 msg.append(ChatColor.DARK_RED + " was killed");
             }
+        } else if (cause.getCause() == DamageCause.FALL) {
+            msg.append(ChatColor.DARK_RED + " hit the ground too hard");
         } else {
+
             // TODO: Fill in alternate death reasons
             msg.append(ChatColor.DARK_RED + " died");
         }
         e.setDeathMessage(msg.toString());
-
-        // Only drop heads and allowed items (food, possibly other items in future)
-        for (Iterator<ItemStack> it = e.getDrops().iterator(); it.hasNext();) {
-            Material type = it.next().getType();
-            if (!allowedDrops.contains(type) && type != Material.SKULL_ITEM) {
-                it.remove();
-            }
-        }
     }
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
         final GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-        Game g = player.getGame();
-        if (g == null)
+        if (player.isInGame()) {
+            e.setRespawnLocation(player.getGame().getArena().getLobby());
+            player.setAlive(false);
+        } else {
             e.setRespawnLocation(plugin.getLobbySpawn());
-        else if (player.getTeam() != null)
-            e.setRespawnLocation(g.getArena().getLobby());
-        else
-            e.setRespawnLocation(g.getArena().getLobby());
-        
+        }
+
         // Do this in a later tick because Bukkit sucks
         new BukkitRunnable() {
             @Override
@@ -315,7 +308,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onTag(AsyncPlayerReceiveNameTagEvent e) {
-        if (PlayerManager.isPlayerInGame(e.getPlayer()) && PlayerManager.isPlayerInGame(e.getNamedPlayer())
+        if (PlayerManager.isInGame(e.getPlayer()) && PlayerManager.isInGame(e.getNamedPlayer())
                 && !e.getPlayer().canSee(e.getNamedPlayer())
                 && !e.getPlayer().getNearbyEntities(10, 10, 10).contains(e.getNamedPlayer())) {
             e.setTag("§§§§");

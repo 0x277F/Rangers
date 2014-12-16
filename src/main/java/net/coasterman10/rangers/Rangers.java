@@ -30,11 +30,12 @@ import net.coasterman10.rangers.game.Game;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameSettings;
 import net.coasterman10.rangers.listeners.AbilityListener;
-import net.coasterman10.rangers.listeners.HeadDropListener;
 import net.coasterman10.rangers.listeners.MenuManager;
+import net.coasterman10.rangers.listeners.PlayerDeathListener;
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.SignManager;
 import net.coasterman10.rangers.listeners.WorldListener;
+import net.coasterman10.rangers.menu.BanditAbilityMenu;
 import net.coasterman10.rangers.menu.BanditBowMenu;
 import net.coasterman10.rangers.menu.BanditSecondaryMenu;
 import net.coasterman10.rangers.menu.RangerAbilityMenu;
@@ -63,6 +64,7 @@ public class Rangers extends JavaPlugin {
     private WorldListener worldListener;
     private PlayerListener playerListener;
     private AbilityListener abilityListener;
+    private PlayerDeathListener playerDeathListener;
     private SignManager signManager;
     private MenuManager menuManager;
     private ArenaManager arenaManager;
@@ -72,16 +74,16 @@ public class Rangers extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+
         ConfigAccessor configYml = new PluginConfigAccessor(this);
 
         arenaManager = new ArenaManager(new ConfigSectionAccessor(configYml, "arenas"));
         worldListener = new WorldListener();
         playerListener = new PlayerListener(this);
         abilityListener = new AbilityListener(this);
+        playerDeathListener = new PlayerDeathListener();
         signManager = new SignManager(arenaManager, new ConfigSectionAccessor(configYml, "signs"));
         menuManager = new MenuManager();
-
-        settings = new GameSettings(configYml);
 
         settings = new GameSettings(configYml);
 
@@ -94,10 +96,12 @@ public class Rangers extends JavaPlugin {
                 new SignText().setLine(1, "Select Ranger").setLine(2, "Bow Upgrades"));
         menuManager.addSignMenu(new RangerSecondaryMenu(),
                 new SignText().setLine(1, "Select Ranger").setLine(2, "Secondary"));
-        menuManager.addSignMenu(new BanditSecondaryMenu(),
-                new SignText().setLine(1, "Select Bandit").setLine(2, "Secondary"));
+        menuManager.addSignMenu(new BanditAbilityMenu(),
+                new SignText().setLine(1, "Select").setLine(2, "Bandit Ability"));
         menuManager.addSignMenu(new BanditBowMenu(),
                 new SignText().setLine(1, "Select Bandit").setLine(2, "Bow Upgrades"));
+        menuManager.addSignMenu(new BanditSecondaryMenu(),
+                new SignText().setLine(1, "Select Bandit").setLine(2, "Secondary"));
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);
@@ -105,7 +109,7 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(abilityListener, this);
         pm.registerEvents(signManager, this);
         pm.registerEvents(menuManager, this);
-        pm.registerEvents(new HeadDropListener(), this);
+        pm.registerEvents(playerDeathListener, this);
 
         SubcommandExecutor rangersCommand = new SubcommandExecutor("rangers");
         rangersCommand.registerSubcommand(new RangersSettingCommand(settings));
@@ -138,6 +142,10 @@ public class Rangers extends JavaPlugin {
                 signManager.update();
             }
         }.runTaskTimer(this, 0L, 10L);
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            BarAPI.setMessage(p, settings.idleBarMessage, 100F);
+        }
     }
 
     @Override
@@ -156,10 +164,14 @@ public class Rangers extends JavaPlugin {
         GamePlayer player = PlayerManager.getPlayer(p);
         if (player.isInGame()) {
             player.quit();
-            PlayerUtil.resetPlayer(p);
-            p.teleport(lobbySpawn);
         }
+        PlayerUtil.resetPlayer(p);
+        p.teleport(lobbySpawn);
         BarAPI.setMessage(p, settings.idleBarMessage, 100F);
+    }
+
+    public void dropHead(Player player) {
+        playerDeathListener.dropHead(player);
     }
 
     private void loadConfig() {
@@ -180,7 +192,7 @@ public class Rangers extends JavaPlugin {
 
         // Load the games for each arena
         for (Arena a : arenaManager.getArenas()) {
-            new Game(this, settings, a);
+            new Game(settings, a);
         }
 
         // Game Settings - this is the alternative to global variables
@@ -198,5 +210,6 @@ public class Rangers extends JavaPlugin {
             allowedDrops.add(m);
         }
         playerListener.setAllowedDrops(allowedDrops);
+        playerDeathListener.setAllowedDrops(allowedDrops);
     }
 }
