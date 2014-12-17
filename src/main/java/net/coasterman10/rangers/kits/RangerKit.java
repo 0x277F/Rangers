@@ -2,6 +2,7 @@ package net.coasterman10.rangers.kits;
 
 import net.coasterman10.rangers.game.GamePlayer;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -41,6 +42,14 @@ public class RangerKit implements Kit {
 
         if (player.getUpgradeSelection("ranger.secondary").equals("strikers")) {
             inv.setItem(2, new ItemStackBuilder(Material.SLIME_BALL, 3).setDisplayName("Strikers").build());
+        }
+
+        if (player.getUpgradeSelection("ranger.ability").equals("cloak")) {
+            inv.setItem(
+                    3,
+                    new ItemStackBuilder(Material.QUARTZ).setDisplayName(
+                            ChatColor.YELLOW + "Cloak " + ChatColor.GREEN + "READY").build());
+            inv.setItem(4, BASE[3]);
         }
     }
 }

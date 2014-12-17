@@ -31,7 +31,7 @@ public class PlayerUtil {
         for (PotionEffect effect : p.getActivePotionEffects())
             p.removePotionEffect(effect.getType());
         for (Player other : Bukkit.getOnlinePlayers()) {
-            if (!PlayerManager.getPlayer(other).isVanished())
+            if (!PlayerManager.getPlayer(other).isCloaked())
                 p.showPlayer(other);
             other.showPlayer(p);
         }

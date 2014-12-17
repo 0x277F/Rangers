@@ -165,6 +165,13 @@ public class Game {
             PlayerUtil.resetPlayer(p.getHandle());
             arena.sendToGame(p);
             p.setAlive(true);
+            
+            // UGLY HACK - If the map is named Moon, Jump Boost II, Weakness I, and Mining Fatigue I will be added
+            if (arena.getName().equals("Moon")) {
+                PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.JUMP, 1);
+                PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.WEAKNESS, 0);
+                PlayerUtil.addPermanentEffect(p.getHandle(), PotionEffectType.SLOW_DIGGING, 0);
+            }
         }
 
         for (GamePlayer p : teams.get(GameTeam.RANGERS)) {

@@ -47,7 +47,8 @@ public class MenuManager implements Listener {
     public void onMenuClick(InventoryClickEvent e) {
         if (menus.containsKey(e.getInventory().getTitle())) {
             e.setCancelled(true);
-            if (e.getSlot() == e.getRawSlot() && e.getCurrentItem() != null) {
+            if (e.getSlot() == e.getRawSlot() && e.getCurrentItem() != null
+                    && e.getCurrentItem().getType() != Material.AIR) {
                 menus.get(e.getInventory().getTitle()).selectItem((Player) e.getWhoClicked(), e.getSlot());
             }
         }

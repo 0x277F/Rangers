@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.UUID;
 
 import net.coasterman10.rangers.Rangers;
-import net.coasterman10.rangers.util.TaskSchedule;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -28,9 +27,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 public class GamePlayer {
-    private static final int VANISH_TIME = 45;
-    private static final int VANISH_COOLDOWN = 60;
-
     private static final int DOUBLE_JUMP_PERIOD = 5;
     private static final int DOUBLE_JUMP_TICKS = 160;
 
@@ -39,10 +35,7 @@ public class GamePlayer {
     private GameTeam team;
     private boolean doubleJump;
     private boolean alive;
-
-    private boolean vanished;
-    private long lastVanish;
-    private TaskSchedule vanishTasks = new TaskSchedule();
+    private boolean cloaked;
 
     private static Collection<String> upgradeCategories = new HashSet<>();
 
@@ -56,7 +49,7 @@ public class GamePlayer {
     }
 
     // Upgrades the player can get:
-    // ranger.ability - none, vanish
+    // ranger.ability - none, cloak
     // ranger.bow - none, 16arrows
     // ranger.secondary - throwingknife, strikers
     // bandit.secondary - bow, mace
@@ -102,11 +95,10 @@ public class GamePlayer {
 
     public void quit() {
         // Perform any cleanup when the player leaves
-        vanishTasks.cancelAll();
         if (isInGame())
             game.removePlayer(this);
         alive = false;
-        vanished = false;
+        cloaked = false;
         setCanDoubleJump(false);
     }
 
@@ -151,49 +143,28 @@ public class GamePlayer {
         upgrades.put(name, value);
     }
 
-    public boolean isVanished() {
-        return vanished;
+    public boolean isCloaked() {
+        return cloaked;
     }
 
-    public void vanish() {
-        if (System.currentTimeMillis() - lastVanish < 1000 * VANISH_COOLDOWN)
-            getHandle().sendMessage(ChatColor.RED + "I can't hide again so quickly!");
-
-        getHandle().sendMessage(ChatColor.AQUA + "Vanished");
+    public void cloak() {
+        if (isCloaked())
+            return;
+        getHandle().sendMessage(ChatColor.GOLD + "Cloaked");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
             p.hidePlayer(getHandle());
-        vanished = true;
-
-        // Send some warning messages and cut the player off at 45 seconds
-        vanishTasks.addTask(new BukkitRunnable() {
-            @Override
-            public void run() {
-                getHandle().sendMessage(ChatColor.GOLD + "I don't think I can hide for much longer...");
-            }
-        }.runTaskLater(Rangers.instance(), (VANISH_TIME - 15) * 20L));
-        vanishTasks.addTask(new BukkitRunnable() {
-            @Override
-            public void run() {
-                getHandle().sendMessage(ChatColor.RED + "I can only hide for a few more seconds!");
-            }
-        }.runTaskLater(Rangers.instance(), (VANISH_TIME - 5) * 20L));
-        vanishTasks.addTask(new BukkitRunnable() {
-            @Override
-            public void run() {
-                unvanish();
-            }
-        }.runTaskLater(Rangers.instance(), VANISH_TIME * 20L));
+        cloaked = true;
     }
 
-    public void unvanish() {
-        getHandle().sendMessage(ChatColor.AQUA + "Unvanished");
+    public void uncloak() {
+        if (!isCloaked())
+            return;
+        getHandle().sendMessage(ChatColor.GOLD + "Uncloaked");
         getHandle().getWorld().playSound(getHandle().getLocation(), Sound.ENDERMAN_TELEPORT, 0.8F, 1F);
         for (Player p : Bukkit.getOnlinePlayers())
             p.showPlayer(getHandle());
-        vanished = false;
-        lastVanish = System.currentTimeMillis();
-        vanishTasks.cancelAll();
+        cloaked = false;
     }
 
     public void setAlive(boolean alive) {

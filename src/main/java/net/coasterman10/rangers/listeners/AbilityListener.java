@@ -1,8 +1,6 @@
 package net.coasterman10.rangers.listeners;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -10,6 +8,7 @@ import java.util.UUID;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
+import net.coasterman10.rangers.kits.ItemStackBuilder;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -31,7 +30,6 @@ import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerFishEvent.State;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -39,15 +37,12 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 public class AbilityListener implements Listener {
     private final Plugin plugin;
     private Set<UUID> throwingKnifeCooldowns = new HashSet<>();
     private Set<UUID> doubleJumpers = new HashSet<>();
-    private Set<UUID> futureSneak = new HashSet<>();
-    private Map<UUID, BukkitTask> sneakTasks = new HashMap<>();
 
     public AbilityListener(Plugin plugin) {
         this.plugin = plugin;
@@ -116,14 +111,14 @@ public class AbilityListener implements Listener {
 
         if (e.getEntity() instanceof Player) {
             GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
-            if (player.isVanished())
-                player.unvanish();
+            if (player.isCloaked())
+                player.uncloak();
         }
 
         if (e.getDamager() instanceof Player) {
             GamePlayer player = PlayerManager.getPlayer((Player) e.getDamager());
-            if (player.isVanished())
-                player.unvanish();
+            if (player.isCloaked())
+                player.uncloak();
         }
     }
 
@@ -147,8 +142,8 @@ public class AbilityListener implements Listener {
 
         if (e.getEntity() instanceof Player) {
             GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
-            if (player.isVanished())
-                player.unvanish();
+            if (player.isCloaked())
+                player.uncloak();
         }
     }
 
@@ -156,8 +151,8 @@ public class AbilityListener implements Listener {
     public void onFireBow(EntityShootBowEvent e) {
         if (e.getEntity() instanceof Player) {
             GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
-            if (player.isVanished())
-                player.unvanish();
+            if (player.isCloaked())
+                player.uncloak();
         }
     }
 
@@ -286,50 +281,54 @@ public class AbilityListener implements Listener {
                     e.getPlayer().getInventory().remove(Material.SLIME_BALL);
                 }
             }
-        }
-    }
 
-    @EventHandler
-    public void onSneak(final PlayerToggleSneakEvent e) {
-        final GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-        if (e.isSneaking()) {
-            if (player.getGame() != null && player.getGame().isRunning() && player.getTeam() == GameTeam.RANGERS
-                    && player.getUpgradeSelection("ranger.ability").equals("vanish")
-                    && !futureSneak.contains(player.id)) {
-                futureSneak.add(player.id);
-                // If they are still sneaking after 3 seconds, vanish
-                sneakTasks.put(player.id, new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        if (player.getHandle() != null && player.getHandle().isSneaking()) {
-                            final Location initial = player.getHandle().getLocation();
-                            player.vanish();
-                            sneakTasks.put(player.id, new BukkitRunnable() {
-                                @Override
-                                public void run() {
-                                    if (player.getHandle() != null) {
-                                        if (player.getHandle().getLocation().distance(initial) > 1.0
-                                                && player.isVanished()) {
-                                            player.unvanish();
-                                            cancel();
-                                        }
-                                    } else {
-                                        cancel();
-                                    }
-                                }
-                            }.runTaskTimer(plugin, 0L, 5L));
+            // Cloak Ability - Completely hide player for 10 seconds. 30 second cooldown.
+            if (e.getItem().getType() == Material.QUARTZ) {
+                if (e.getItem().getItemMeta().hasDisplayName()
+                        && e.getItem().getItemMeta().getDisplayName().contains("READY")
+                        && !PlayerManager.getPlayer(e.getPlayer()).isCloaked()) {
+                    final UUID id = e.getPlayer().getUniqueId();
+                    PlayerManager.getPlayer(e.getPlayer()).cloak();
+
+                    // Uncloak after 10 seconds
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            if (Bukkit.getPlayer(id) != null) {
+                                PlayerManager.getPlayer(id).uncloak();
+                            }
                         }
-                        futureSneak.remove(player.id);
-                    }
-                }.runTaskLater(plugin, 60L));
-            }
-        } else {
-            if (sneakTasks.containsKey(player.id)) {
-                sneakTasks.remove(player.id).cancel();
-            }
-            futureSneak.remove(player.id);
-            if (player.isVanished()) {
-                player.unvanish();
+                    }.runTaskLater(plugin, 200L);
+
+                    // Cooldown using the item itself as the display for the cooldown
+                    final ItemStack item = e.getItem();
+                    final int index = e.getPlayer().getInventory().getHeldItemSlot();
+                    new BukkitRunnable() {
+                        int seconds = 30;
+
+                        @Override
+                        public void run() {
+                            Player player = Bukkit.getPlayer(id);
+                            if (player != null && player.getInventory().getItem(index).getType() == Material.QUARTZ) {
+                                if (seconds == 0) {
+                                    player.getInventory().setItem(
+                                            index,
+                                            new ItemStackBuilder(item).setDisplayName(
+                                                    ChatColor.YELLOW + "Cloak " + ChatColor.GREEN + "READY").build());
+                                    cancel();
+                                } else {
+                                    player.getInventory().setItem(
+                                            index,
+                                            new ItemStackBuilder(item).setDisplayName(
+                                                    ChatColor.YELLOW + "Cloak " + ChatColor.RED + seconds).build());
+                                }
+                                seconds--;
+                            } else {
+                                cancel();
+                            }
+                        }
+                    }.runTaskTimer(plugin, 0L, 20L);
+                }
             }
         }
     }

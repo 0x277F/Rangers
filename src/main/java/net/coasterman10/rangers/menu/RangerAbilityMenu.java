@@ -9,8 +9,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.potion.Potion;
-import org.bukkit.potion.PotionType;
 
 public class RangerAbilityMenu implements Menu {
     @Override
@@ -22,16 +20,15 @@ public class RangerAbilityMenu implements Menu {
     public void open(Player player) {
         Inventory inv = Bukkit.createInventory(null, 9, getTitle());
         inv.addItem(new ItemStackBuilder(Material.EYE_OF_ENDER).setDisplayName("None").build());
-        inv.addItem(new ItemStackBuilder(new Potion(PotionType.INVISIBILITY).toItemStack(1)).setDisplayName("Vanish")
-                .build());
+        inv.addItem(new ItemStackBuilder(Material.QUARTZ).setDisplayName("Cloak").build());
         player.openInventory(inv);
     }
 
     @Override
     public void selectItem(Player player, int index) {
         GamePlayer data = PlayerManager.getPlayer(player);
-        data.setUpgradeSelection("ranger.ability", index == 1 ? "vanish" : "none");
+        data.setUpgradeSelection("ranger.ability", index == 1 ? "cloak" : "none");
         player.closeInventory();
-        player.sendMessage(ChatColor.GREEN + "Selected ability: " + (index == 1 ? "Vanish" : "None"));
+        player.sendMessage(ChatColor.GREEN + "Selected ability: " + (index == 1 ? "Cloak" : "None"));
     }
 }
