@@ -22,7 +22,7 @@ public class ArenaManager {
         if (arenaConfig == null)
             return;
         for (String id : arenaConfig.getKeys(false)) {
-            Arena arena = new Arena(id, new ConfigSectionAccessor(config, id));
+            Arena arena = new ClassicArena(id, new ConfigSectionAccessor(config, id));
             arena.load();
             arenas.put(arena.getId().toLowerCase(), arena);
         }

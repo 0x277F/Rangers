@@ -7,6 +7,7 @@ import java.util.List;
 import me.confuser.barapi.BarAPI;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
+import net.coasterman10.rangers.arena.ClassicArena;
 import net.coasterman10.rangers.boss.SpawnBossSubcommand;
 import net.coasterman10.rangers.command.QuitCommand;
 import net.coasterman10.rangers.command.SubcommandExecutor;
@@ -26,7 +27,7 @@ import net.coasterman10.rangers.command.sign.SignRemoveCommand;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
-import net.coasterman10.rangers.game.Game;
+import net.coasterman10.rangers.game.ClassicGame;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameSettings;
 import net.coasterman10.rangers.listeners.AbilityListener;
@@ -192,7 +193,10 @@ public class Rangers extends JavaPlugin {
 
         // Load the games for each arena
         for (Arena a : arenaManager.getArenas()) {
-            new Game(settings, a);
+            if (a instanceof ClassicArena) {
+                ClassicGame cg = new ClassicGame(settings, (ClassicArena) a, this);
+                getServer().getPluginManager().registerEvents(cg, this);
+            }
         }
 
         // Game Settings - this is the alternative to global variables

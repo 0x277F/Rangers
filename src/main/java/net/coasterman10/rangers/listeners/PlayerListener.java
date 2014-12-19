@@ -15,7 +15,6 @@ import net.coasterman10.spectate.SpectateAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
@@ -103,13 +102,6 @@ public class PlayerListener implements Listener {
                             ChatColor.DARK_AQUA
                                     + "You are now spectating the match. Click anywhere to return to the lobby.");
                 }
-            }
-        } else {
-            if (e.getClickedBlock().getType() == Material.CHEST && e.getPlayer().getItemInHand() != null
-                    && e.getPlayer().getItemInHand().getType() == Material.SKULL_ITEM) {
-                ((Chest) e.getClickedBlock().getState()).getBlockInventory().addItem(e.getPlayer().getItemInHand());
-                e.getPlayer().getInventory().remove(e.getPlayer().getItemInHand());
-                e.setCancelled(true);
             }
         }
     }
@@ -259,7 +251,7 @@ public class PlayerListener implements Listener {
             }
         } else if (!allowedDrops.contains(e.getItem().getItemStack().getType())) {
             GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-            if (player.getGame() != null && player.getGame().isRunning())
+            if (player.isInGame() && player.isAlive())
                 e.setCancelled(true);
         }
     }

@@ -131,7 +131,7 @@ public class GamePlayer {
     }
 
     public boolean isBanditLeader() {
-        return isInGame() && equals(game.getBanditLeader());
+        return isInGame() && game instanceof ClassicGame && this == ((ClassicGame) game).getBanditLeader();
     }
 
     public String getUpgradeSelection(String name) {
