@@ -60,8 +60,14 @@ public class AbilityListener implements Listener {
 
                 e.getPlayer().getItemInHand().setDurability((short) 0);
 
-                if (dist.getY() < 2)
+                if (dist.getY() < 2) {
+                    e.getPlayer()
+                            .sendMessage(
+                                    ChatColor.RED
+                                            + "The grapple was not able to grip the surface well... try grappling to somewhere higher up.");
+                    e.getPlayer().getWorld().playSound(e.getHook().getLocation(), Sound.ITEM_BREAK, 0.75F, 1F);
                     return;
+                }
 
                 double dx = dist.getX();
                 double dy = dist.getY() + 1;
@@ -127,7 +133,7 @@ public class AbilityListener implements Listener {
         if (e.isFlying() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
             Player p = e.getPlayer();
             GamePlayer player = PlayerManager.getPlayer(p);
-            if (player.getGame() != null && player.canDoubleJump()) {
+            if (player.isAlive() && player.canDoubleJump()) {
                 player.doubleJump();
                 doubleJumpers.add(player.id);
             }
@@ -309,7 +315,8 @@ public class AbilityListener implements Listener {
                         @Override
                         public void run() {
                             Player player = Bukkit.getPlayer(id);
-                            if (player != null && player.getInventory().getItem(index).getType() == Material.QUARTZ) {
+                            if (player != null && player.getInventory().getItem(index) != null
+                                    && player.getInventory().getItem(index).getType() == Material.QUARTZ) {
                                 if (seconds == 0) {
                                     player.getInventory().setItem(
                                             index,

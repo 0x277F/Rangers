@@ -31,7 +31,7 @@ public class ArenaSetMaxCommand implements Subcommand {
     public String getArguments() {
         return ChatColor.GREEN + "<id>";
     }
-    
+
     @Override
     public String getPermission() {
         return "rangers.arena.build";
@@ -61,9 +61,9 @@ public class ArenaSetMaxCommand implements Subcommand {
                     target = player.getLocation();
                 }
                 a.setMax(target);
-                sender.sendMessage(ChatColor.GREEN + "Set maximum bound of arena \"" + ChatColor.YELLOW + a.getId()
-                        + ChatColor.GREEN + "\" to " + ChatColor.AQUA + "(" + target.getBlockX() + ","
-                        + target.getBlockY() + "," + target.getBlockZ() + ")");
+                sender.sendMessage(ChatColor.GREEN + "Set maximum bound of arena \"" + a.getName() + "\" to "
+                        + ChatColor.AQUA + "(" + target.getBlockX() + "," + target.getBlockY() + ","
+                        + target.getBlockZ() + ")");
                 a.save();
             } else {
                 sender.sendMessage(ChatColor.RED + "No such arena \"" + ChatColor.GOLD + args[0] + ChatColor.RED + "\"");

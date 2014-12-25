@@ -77,11 +77,10 @@ public class ArenaSetSpawnCommand implements Subcommand {
                     teamName = "Bandits";
                     break;
                 case 2:
-                    a.setLobby(spawn);
-                    sender.sendMessage(ChatColor.GREEN + "Set lobby location for arena \"" + ChatColor.YELLOW
-                            + a.getId() + ChatColor.GREEN + "\" to " + ChatColor.AQUA + "[(" + spawn.getX() + ","
-                            + spawn.getY() + "," + spawn.getZ() + "), (" + spawn.getYaw() + "," + spawn.getPitch()
-                            + ")]");
+                    a.setLobbySpawn(spawn);
+                    sender.sendMessage(ChatColor.GREEN + "Set lobby spawn for arena \"" + a.getName() + "\" to "
+                            + ChatColor.AQUA + "[(" + spawn.getX() + "," + spawn.getY() + "," + spawn.getZ() + "), ("
+                            + spawn.getYaw() + "," + spawn.getPitch() + ")]");
                     return true;
                 case 3:
                     a.setSpectatorSpawn(spawn);
@@ -89,10 +88,9 @@ public class ArenaSetSpawnCommand implements Subcommand {
                     break;
                 }
 
-                sender.sendMessage(ChatColor.GREEN + "Set spawn of arena \"" + ChatColor.YELLOW + a.getId()
-                        + ChatColor.GREEN + "\" for " + ChatColor.AQUA + teamName + ChatColor.GREEN + " to "
-                        + ChatColor.AQUA + "[(" + spawn.getX() + "," + spawn.getY() + "," + spawn.getZ() + "), ("
-                        + spawn.getYaw() + "," + spawn.getPitch() + ")]");
+                sender.sendMessage(ChatColor.GREEN + "Set spawn of arena \"" + a.getName() + "\" for " + ChatColor.AQUA
+                        + teamName + ChatColor.GREEN + " to " + ChatColor.AQUA + "[(" + spawn.getX() + ","
+                        + spawn.getY() + "," + spawn.getZ() + "), (" + spawn.getYaw() + "," + spawn.getPitch() + ")]");
                 a.save();
             } else {
                 sender.sendMessage(ChatColor.RED + "No such arena \"" + ChatColor.GOLD + args[0] + ChatColor.RED + "\"");

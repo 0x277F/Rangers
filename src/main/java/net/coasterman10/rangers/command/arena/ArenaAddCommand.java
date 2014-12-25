@@ -1,6 +1,7 @@
 package net.coasterman10.rangers.command.arena;
 
 import net.coasterman10.rangers.arena.ArenaManager;
+import net.coasterman10.rangers.arena.ArenaType;
 import net.coasterman10.rangers.command.Subcommand;
 
 import org.bukkit.ChatColor;
@@ -25,9 +26,9 @@ public class ArenaAddCommand implements Subcommand {
 
     @Override
     public String getArguments() {
-        return ChatColor.GREEN + "<id>";
+        return ChatColor.GREEN + "<id> <classic|war|bossfight>";
     }
-    
+
     @Override
     public String getPermission() {
         return "rangers.arena.build";
@@ -40,16 +41,21 @@ public class ArenaAddCommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        if (args.length == 0) {
+        if (args.length < 2) {
             return false;
         } else {
-            if (arenaManager.addArena(args[0])) {
-                sender.sendMessage(ChatColor.GREEN + "Added arena \"" + args[0] + "\"");
-            } else {
-                sender.sendMessage(ChatColor.RED + "Arena with id \"" + arenaManager.getArena(args[0]).getId()
-                        + "\" already exists");
+            try {
+                ArenaType type = ArenaType.valueOf(args[1].toUpperCase());
+                if (arenaManager.addArena(args[0], type)) {
+                    sender.sendMessage(ChatColor.GREEN + "Added arena \"" + args[0] + "\"");
+                } else {
+                    sender.sendMessage(ChatColor.RED + "Arena with id \"" + arenaManager.getArena(args[0]).getName()
+                            + "\" already exists");
+                }
+                return true;
+            } catch (IllegalArgumentException e) {
+                return false;
             }
-            return true;
         }
     }
 }

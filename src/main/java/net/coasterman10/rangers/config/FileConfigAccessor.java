@@ -14,6 +14,11 @@ public class FileConfigAccessor implements ConfigAccessor {
     private final File file;
     private FileConfiguration config;
     private InputStream defaults;
+    
+    public FileConfigAccessor(File file) {
+        this.file = file;
+        defaults = null;
+    }
 
     public FileConfigAccessor(File file, InputStream defaults) {
         this.file = file;
@@ -47,6 +52,12 @@ public class FileConfigAccessor implements ConfigAccessor {
 
     @Override
     public FileConfiguration get() {
+        if (config == null)
+            reload();
         return config;
+    }
+    
+    public File getFile() {
+        return file;
     }
 }

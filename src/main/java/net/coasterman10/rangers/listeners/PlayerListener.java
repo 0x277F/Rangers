@@ -7,7 +7,7 @@ import java.util.List;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.PlayerUtil;
 import net.coasterman10.rangers.Rangers;
-import net.coasterman10.rangers.game.Game;
+import net.coasterman10.rangers.arena.GameState;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
 import net.coasterman10.spectate.SpectateAPI;
@@ -43,7 +43,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.kitteh.tag.AsyncPlayerReceiveNameTagEvent;
 
 public class PlayerListener implements Listener {
     private final Rangers plugin;
@@ -68,9 +67,7 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onLeave(PlayerQuitEvent e) {
         GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-        if (player.getGame() != null) {
-            player.getGame().removePlayer(player);
-        }
+        player.quit();
         PlayerManager.removePlayer(e.getPlayer());
     }
 
@@ -78,9 +75,9 @@ public class PlayerListener implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         if (SpectateAPI.isSpectator(e.getPlayer())) {
             GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-            if (player.getGame() != null) {
+            if (player.isInGame()) {
                 SpectateAPI.removeSpectator(e.getPlayer());
-                player.getGame().getArena().sendToLobby(player);
+                player.getHandle().teleport(player.getArena().getLobbySpawn());
             }
         }
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) {
@@ -93,14 +90,16 @@ public class PlayerListener implements Listener {
             }
             if (s.getLine(1).toLowerCase().contains("click here") && s.getLine(2).toLowerCase().contains("to spectate")) {
                 GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-                if (player.getGame() != null) {
-                    SpectateAPI.addSpectator(e.getPlayer());
-                    player.getGame().getArena().sendSpectatorToGame(player);
-                    e.getPlayer().setAllowFlight(true);
-                    e.getPlayer().setFlying(true);
-                    e.getPlayer().sendMessage(
-                            ChatColor.DARK_AQUA
-                                    + "You are now spectating the match. Click anywhere to return to the lobby.");
+                if (player.isInGame()) {
+                    if (player.getArena().getState() == GameState.RUNNING) {
+                        SpectateAPI.addSpectator(e.getPlayer());
+                        player.getHandle().teleport(player.getArena().getSpectatorSpawn());
+                        e.getPlayer().setAllowFlight(true);
+                        e.getPlayer().setFlying(true);
+                        e.getPlayer().sendMessage(
+                                ChatColor.DARK_AQUA
+                                        + "You are now spectating the match. Click anywhere to return to the lobby.");
+                    }
                 }
             }
         }
@@ -219,7 +218,7 @@ public class PlayerListener implements Listener {
     public void onRespawn(PlayerRespawnEvent e) {
         final GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
         if (player.isInGame()) {
-            e.setRespawnLocation(player.getGame().getArena().getLobby());
+            e.setRespawnLocation(player.getArena().getLobbySpawn());
             player.setAlive(false);
         } else {
             e.setRespawnLocation(plugin.getLobbySpawn());
@@ -258,7 +257,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onDropItem(PlayerDropItemEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null) {
+        if (PlayerManager.getPlayer(e.getPlayer()).isInGame()) {
             if (!allowedDrops.contains(e.getItemDrop().getItemStack().getType()))
                 e.setCancelled(true);
         }
@@ -266,7 +265,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()
+        if (PlayerManager.getPlayer(e.getPlayer()).isInGame() || !e.getPlayer().isOp()
                 || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
@@ -274,7 +273,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).getGame() != null || !e.getPlayer().isOp()
+        if (PlayerManager.getPlayer(e.getPlayer()).isInGame() || !e.getPlayer().isOp()
                 || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
@@ -283,8 +282,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
         if (e.getEntity() instanceof Player && e.getDamager() instanceof Player) {
-            GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
-            if (player.getGame() == null || !player.getGame().allowPvp() || !player.isAlive())
+            if (!PlayerManager.getPlayer((Player) e.getEntity()).isAlive())
                 e.setCancelled(true);
         }
     }
@@ -292,18 +290,8 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onEntityDamage(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player) {
-            Game g = PlayerManager.getPlayer((Player) e.getEntity()).getGame();
-            if (g == null || !g.allowPvp())
+            if (!PlayerManager.getPlayer((Player) e.getEntity()).isAlive())
                 e.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onTag(AsyncPlayerReceiveNameTagEvent e) {
-        if (PlayerManager.isInGame(e.getPlayer()) && PlayerManager.isInGame(e.getNamedPlayer())
-                && !e.getPlayer().canSee(e.getNamedPlayer())
-                && !e.getPlayer().getNearbyEntities(10, 10, 10).contains(e.getNamedPlayer())) {
-            e.setTag("§§§§");
         }
     }
 }

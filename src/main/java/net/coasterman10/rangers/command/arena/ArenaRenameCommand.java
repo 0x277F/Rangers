@@ -7,26 +7,26 @@ import net.coasterman10.rangers.command.Subcommand;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
-public class ArenaSetNameCommand implements Subcommand {
+public class ArenaRenameCommand implements Subcommand {
     private final ArenaManager arenaManager;
 
-    public ArenaSetNameCommand(ArenaManager arenaManager) {
+    public ArenaRenameCommand(ArenaManager arenaManager) {
         this.arenaManager = arenaManager;
     }
 
     @Override
     public String getName() {
-        return "setname";
+        return "rename";
     }
 
     @Override
     public String getDescription() {
-        return "Sets the name for an arena";
+        return "Renames an arena";
     }
 
     @Override
     public String getArguments() {
-        return ChatColor.GREEN + "<id> <name>";
+        return ChatColor.GREEN + "<oldName> <newName>";
     }
 
     @Override
@@ -47,12 +47,15 @@ public class ArenaSetNameCommand implements Subcommand {
             Arena a = arenaManager.getArena(args[0]);
             if (a != null) {
                 StringBuilder name = new StringBuilder();
-                for (int i = 1; i < args.length; i++)
+                for (int i = 1; i < args.length; i++) {
                     name.append(args[i]);
-                a.setName(name.toString());
-                sender.sendMessage(ChatColor.GREEN + "Set name of arena \"" + ChatColor.YELLOW + a.getId()
-                        + ChatColor.GREEN + "\" to \"" + ChatColor.AQUA + a.getName() + ChatColor.GREEN + "\"");
-                a.save();
+                }
+                if (a.rename(name.toString())) {
+                    sender.sendMessage(ChatColor.GREEN + "Renamed arena \"" + a.getName() + "\" to \"" + ChatColor.AQUA
+                            + a.getName() + ChatColor.GREEN + "\"");
+                } else {
+                    sender.sendMessage(ChatColor.RED + "Could not rename arena \"" + a.getName() + "\"");
+                }
             } else {
                 sender.sendMessage(ChatColor.RED + "No such arena \"" + ChatColor.GOLD + args[0] + ChatColor.RED + "\"");
             }

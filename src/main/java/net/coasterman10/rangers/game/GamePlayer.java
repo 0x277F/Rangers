@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.UUID;
 
 import net.coasterman10.rangers.Rangers;
+import net.coasterman10.rangers.arena.Arena;
+import net.coasterman10.rangers.arena.ClassicArena;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -31,11 +33,12 @@ public class GamePlayer {
     private static final int DOUBLE_JUMP_TICKS = 160;
 
     public final UUID id;
-    private Game game;
+    private Arena arena;
     private GameTeam team;
     private boolean doubleJump;
     private boolean alive;
     private boolean cloaked;
+    private Location lastSafeLocation;
 
     private static Collection<String> upgradeCategories = new HashSet<>();
 
@@ -92,13 +95,36 @@ public class GamePlayer {
                     .warning("Could not save player data for " + getName() + " (" + id.toString() + ")");
         }
     }
+    
+    public void updateSafeLocation() {
+        Location loc = getHandle().getLocation();
+        int x = loc.getBlockX();
+        int z = loc.getBlockZ();
+        for (int y = loc.getBlockY() + 1; y >= 0; y--) {
+            Material type = loc.getWorld().getBlockAt(x, y, z).getType();
+            if (type == Material.LAVA || type == Material.STATIONARY_LAVA || type == Material.FIRE)
+                break;
+            if (loc.getWorld().getBlockAt(x, y, z).getType().isSolid()) {
+                loc.setX(x + 0.5);
+                loc.setY(y + 1.25);
+                loc.setZ(z + 0.5);
+                lastSafeLocation = loc;
+                break;
+            }
+        }
+    }
+
+    public void joinArena(Arena arena) {
+        if (arena.addPlayer(this))
+            this.arena = arena;
+    }
 
     public void quit() {
-        // Perform any cleanup when the player leaves
         if (isInGame())
-            game.removePlayer(this);
+            arena.removePlayer(this);
         alive = false;
         cloaked = false;
+        team = null;
         setCanDoubleJump(false);
     }
 
@@ -118,20 +144,16 @@ public class GamePlayer {
         return team;
     }
 
-    public void setGame(Game game) {
-        this.game = game;
-    }
-
-    public Game getGame() {
-        return game;
+    public Arena getArena() {
+        return arena;
     }
 
     public boolean isInGame() {
-        return game != null;
+        return arena != null;
     }
 
     public boolean isBanditLeader() {
-        return isInGame() && game instanceof ClassicGame && this == ((ClassicGame) game).getBanditLeader();
+        return isInGame() && arena instanceof ClassicArena && this == ((ClassicArena) arena).getBanditLeader();
     }
 
     public String getUpgradeSelection(String name) {
@@ -261,7 +283,7 @@ public class GamePlayer {
         p.sendMessage(ChatColor.GREEN + "Double Jump ability recharged");
     }
 
-    public void dropHead(Location loc) {
+    public void dropHead() {
         ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         meta.setOwner(getName());
@@ -277,8 +299,14 @@ public class GamePlayer {
                 name.append(" (").append(team.getName()).append(")");
         meta.setDisplayName(name.toString());
         head.setItemMeta(meta);
-        Item i = loc.getWorld().dropItem(loc, head);
+        if (lastSafeLocation == null)
+            lastSafeLocation = getHandle().getLocation();
+        Item i = lastSafeLocation.getWorld().dropItem(lastSafeLocation, head);
         i.setVelocity(new Vector(0, 0, 0));
-        i.teleport(loc);
+        i.teleport(lastSafeLocation);
+    }
+
+    public void sendMessage(String msg) {
+        getHandle().sendMessage(msg);
     }
 }

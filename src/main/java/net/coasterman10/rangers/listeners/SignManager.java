@@ -38,8 +38,8 @@ public class SignManager implements Listener {
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             if (signs.containsKey(e.getClickedBlock().getLocation())) {
                 ArenaSign s = signs.get(e.getClickedBlock().getLocation());
-                if (s instanceof ArenaJoinSign && s.hasGame()) {
-                    s.getGame().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
+                if (s instanceof ArenaJoinSign && s.hasArena()) {
+                    s.getArena().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
                 }
             }
         }
@@ -87,9 +87,9 @@ public class SignManager implements Listener {
         s.setArena(a);
         signs.put(loc, s);
         if (save) {
-            ConfigurationSection conf = config.get().getConfigurationSection(a.getId());
+            ConfigurationSection conf = config.get().getConfigurationSection(a.getName());
             if (conf == null) {
-                conf = config.get().createSection(a.getId());
+                conf = config.get().createSection(a.getName());
             }
             ConfigUtil.setLocation(conf, "join", loc);
             config.save();
@@ -103,9 +103,9 @@ public class SignManager implements Listener {
         s.setArena(a);
         signs.put(loc, s);
         if (save) {
-            ConfigurationSection conf = config.get().getConfigurationSection(a.getId());
+            ConfigurationSection conf = config.get().getConfigurationSection(a.getName());
             if (conf == null) {
-                conf = config.get().createSection(a.getId());
+                conf = config.get().createSection(a.getName());
             }
             ConfigUtil.setLocation(conf, "status", loc);
             config.save();
@@ -117,7 +117,7 @@ public class SignManager implements Listener {
         if (sign == null)
             return false;
         signs.remove(loc);
-        ConfigurationSection conf = config.get().getConfigurationSection(sign.getArena().getId());
+        ConfigurationSection conf = config.get().getConfigurationSection(sign.getArena().getName());
         if (conf != null) {
             conf.set("status", null);
             config.save();

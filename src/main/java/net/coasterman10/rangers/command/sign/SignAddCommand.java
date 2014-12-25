@@ -64,13 +64,13 @@ public class SignAddCommand implements Subcommand {
                 }
                 if (args[1].equalsIgnoreCase("join")) {
                     signManager.addJoinSign(a, sign);
-                    sender.sendMessage(ChatColor.GREEN + "Added join sign for arena \"" + ChatColor.YELLOW + a.getId()
-                            + ChatColor.GREEN + "\" at " + ChatColor.AQUA + "(" + sign.getX() + "," + sign.getY() + ","
-                            + sign.getZ() + ")");
+                    sender.sendMessage(ChatColor.GREEN + "Added join sign for arena \"" + ChatColor.YELLOW
+                            + a.getName() + ChatColor.GREEN + "\" at " + ChatColor.AQUA + "(" + sign.getX() + ","
+                            + sign.getY() + "," + sign.getZ() + ")");
                 } else if (args[1].equalsIgnoreCase("status")) {
                     signManager.addStatusSign(a, sign);
                     sender.sendMessage(ChatColor.GREEN + "Added status sign for arena \"" + ChatColor.YELLOW
-                            + a.getId() + ChatColor.GREEN + "\" at " + ChatColor.AQUA + "(" + sign.getX() + ","
+                            + a.getName() + ChatColor.GREEN + "\" at " + ChatColor.AQUA + "(" + sign.getX() + ","
                             + sign.getY() + "," + sign.getZ() + ")");
                 } else {
                     return false;

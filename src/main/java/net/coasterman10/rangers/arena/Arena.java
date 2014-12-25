@@ -1,220 +1,214 @@
 package net.coasterman10.rangers.arena;
 
-import java.util.HashMap;
+import java.io.File;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.Map;
 
-import net.coasterman10.rangers.SpawnVector;
-import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.ConfigUtil;
-import net.coasterman10.rangers.game.Game;
+import net.coasterman10.rangers.config.FileConfigAccessor;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
-import org.bukkit.util.Vector;
+import org.bukkit.entity.EntityType;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
-public class Arena {
-    private final String id;
-    private final ConfigSectionAccessor config;
+public abstract class Arena implements Listener {
     private String name;
-    private World world;
     private Location min, max;
-    private Location lobby;
-    private Location spectatorSpawn;
-    private Map<GameTeam, Location> spawns = new HashMap<>();
-    private Map<GameTeam, Location> chests = new HashMap<>();
-    private Game game;
+    private FileConfigAccessor config;
+    protected Location lobbySpawn;
+    protected Location spectatorSpawn;
+    protected Map<GameTeam, Location> spawns = new EnumMap<>(GameTeam.class);
+    protected Collection<GamePlayer> players = new HashSet<>();
+    protected GameState state;
+    protected Map<GameState, GameStateTasks> stateTasks = new EnumMap<>(GameState.class);
+    protected int seconds;
 
-    public Arena(String id, ConfigSectionAccessor config) {
-        this.id = id;
+    public Arena(String name, FileConfigAccessor config, Plugin plugin) {
+        this.name = name;
         this.config = config;
+        Bukkit.getPluginManager().registerEvents(this, plugin);
+        new UpdateTask().runTaskTimer(plugin, 0L, 20L);
     }
 
     public void load() {
         config.reload();
-        ConfigurationSection conf = config.get();
-
-        name = conf.getString("name");
-
-        // Load the world. Necessary to make sense of any further values.
-        String worldName = conf.getString("world");
-        if (worldName == null)
-            return;
-        world = Bukkit.getWorld(worldName);
-        if (world == null)
-            return;
-
-        // Minimum and maximum positions for the arena.
-        Vector minVector = ConfigUtil.getVector(conf, "min");
-        Vector maxVector = ConfigUtil.getVector(conf, "max");
-        if (minVector != null)
-            min = minVector.toLocation(world);
-        if (maxVector != null)
-            max = maxVector.toLocation(world);
-
-        // Correct the coordinates if necessary.
-        // TODO Offload to cleaner utility method
-        if (min.getX() > max.getX()) {
-            double x = min.getX();
-            min.setX(max.getX());
-            max.setX(x);
-        }
-        if (min.getY() > max.getY()) {
-            double y = min.getY();
-            min.setY(max.getY());
-            max.setY(y);
-        }
-        if (min.getZ() > max.getZ()) {
-            double z = min.getZ();
-            min.setZ(max.getZ());
-            max.setZ(z);
-        }
-
-        // Lobby and spectator spawns.
-        SpawnVector lobbyVector = ConfigUtil.getSpawnVector(conf, "lobby");
-        SpawnVector spectatorSpawnVector = ConfigUtil.getSpawnVector(conf, "spectator-spawn");
-        if (lobbyVector != null)
-            lobby = lobbyVector.toLocation(world);
-        if (spectatorSpawnVector != null)
-            spectatorSpawn = spectatorSpawnVector.toLocation(world);
-
-        // Spawns and chests for each team.
+        ConfigurationSection conf = getConfig();
+        name = conf.getString("name", name);
+        min = ConfigUtil.getLocation(conf, "bounds.min");
+        max = ConfigUtil.getLocation(conf, "bounds.max");
+        lobbySpawn = ConfigUtil.getLocation(conf, "lobby");
+        spectatorSpawn = ConfigUtil.getLocation(conf, "spectator-spawn");
         for (GameTeam team : GameTeam.values()) {
-            SpawnVector spawnVector = ConfigUtil.getSpawnVector(conf, "spawns." + team.name().toLowerCase());
-            Vector chestVector = ConfigUtil.getVector(conf, "chests." + team.name().toLowerCase());
-            if (spawnVector != null)
-                spawns.put(team, spawnVector.toLocation(world));
-            if (chestVector != null)
-                chests.put(team, chestVector.toLocation(world));
+            spawns.put(team, ConfigUtil.getLocation(conf, "spawns." + team.name().toLowerCase()));
         }
     }
 
     public void save() {
-        ConfigurationSection conf = config.get();
-
+        ConfigurationSection conf = getConfig();
         conf.set("name", name);
-        conf.set("world", world != null ? world.getName() : null);
-
-        ConfigUtil.setVector(conf, "min", min != null ? min.toVector() : null);
-        ConfigUtil.setVector(conf, "max", max != null ? max.toVector() : null);
-
-        ConfigUtil.setSpawnVector(conf, "lobby", lobby != null ? new SpawnVector(lobby) : null);
-        ConfigUtil.setSpawnVector(conf, "spectator-spawn", spectatorSpawn != null ? new SpawnVector(spectatorSpawn)
-                : null);
-
+        ConfigUtil.setLocation(conf, "bounds.min", min);
+        ConfigUtil.setLocation(conf, "bounds.max", max);
+        ConfigUtil.setLocation(conf, "lobby", lobbySpawn);
+        ConfigUtil.setLocation(conf, "spectator-spawn", spectatorSpawn);
         for (GameTeam team : GameTeam.values()) {
-            SpawnVector spawn = spawns.get(team) != null ? new SpawnVector(spawns.get(team)) : null;
-            Vector chest = chests.get(team) != null ? chests.get(team).toVector() : null;
-            ConfigUtil.setSpawnVector(conf, "spawns." + team.name().toLowerCase(), spawn);
-            ConfigUtil.setVector(conf, "chests." + team.name().toLowerCase(), chest);
+            ConfigUtil.setLocation(conf, "spawns." + team.name().toLowerCase(), spawns.get(team));
         }
-
         config.save();
     }
 
-    public Game getGame() {
-        return game;
+    public void unload() {
+        save();
+        HandlerList.unregisterAll(this);
     }
 
-    public void setGame(Game game) {
-        this.game = game;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public boolean hasGame() {
-        return game != null;
-    }
-
-    public Location getLobby() {
-        return lobby;
+    public boolean rename(String newName) {
+        save();
+        File oldFile = config.getFile();
+        File newFile = new File(oldFile.getParentFile(), newName + ".yml");
+        if (!oldFile.renameTo(newFile)) {
+            return false;
+        }
+        config = new FileConfigAccessor(newFile);
+        config.reload();
+        name = newName;
+        config.get().set("name", name);
+        save();
+        return true;
     }
 
     public void setMin(Location min) {
         this.min = min;
-        this.world = min.getWorld(); // TODO Check that all locations are in this world
     }
 
     public void setMax(Location max) {
         this.max = max;
     }
 
-    public void setSpawn(GameTeam team, Location spawn) {
-        spawns.put(team, spawn);
-    }
-
-    public void setChest(GameTeam team, Location chest) {
-        chests.put(team, chest);
-    }
-
-    public void setLobby(Location lobby) {
-        this.lobby = lobby;
+    public void setLobbySpawn(Location lobbySpawn) {
+        this.lobbySpawn = lobbySpawn;
     }
 
     public void setSpectatorSpawn(Location spectatorSpawn) {
         this.spectatorSpawn = spectatorSpawn;
     }
 
-    public void sendToLobby(GamePlayer player) {
-        player.getHandle().teleport(lobby);
+    public void setSpawn(GameTeam team, Location spawn) {
+        spawns.put(team, spawn);
     }
 
-    public void sendToGame(GamePlayer player) {
-        if (player.getTeam() != null)
-            player.getHandle().teleport(spawns.get(player.getTeam()));
+    public final int getPlayerCount() {
+        return players.size();
     }
 
-    public void sendSpectatorToGame(GamePlayer player) {
-        player.getHandle().teleport(spectatorSpawn);
+    public final int getMinPlayers() {
+        return getConfig().getInt("min-players");
     }
 
-    public Location getChest(GameTeam team) {
-        return chests.get(team);
+    public final int getMaxPlayers() {
+        return getConfig().getInt("max-players");
     }
 
-    public GameTeam getTeamOfChest(Location location) {
-        Block b = location.getBlock();
-        if (b.getType() == Material.CHEST || b.getType() == Material.ENDER_CHEST) {
-            for (GameTeam team : GameTeam.values()) {
-                if (getChest(team).equals(location))
-                    return team;
-            }
-        }
-        return null;
+    public GameState getState() {
+        return state;
     }
 
-    public void clearGround() {
-        for (Entity e : world.getEntitiesByClasses(Item.class, Arrow.class)) {
-            if (e.getLocation().toVector().isInAABB(min.toVector(), max.toVector())) {
-                e.remove();
-            }
-        }
+    public int getSeconds() {
+        return seconds;
     }
+
+    public Location getLobbySpawn() {
+        return lobbySpawn;
+    }
+
+    public Location getSpectatorSpawn() {
+        return spectatorSpawn;
+    }
+
+    public abstract ArenaType getType();
 
     public boolean isValid() {
-        if (name == null || world == null || min == null || max == null || lobby == null || spectatorSpawn == null)
+        return name != null && min != null && max != null && lobbySpawn != null && spectatorSpawn != null;
+    }
+
+    public final boolean addPlayer(GamePlayer player) {
+        if (players.contains(player)) {
+            player.sendMessage(ChatColor.GOLD + "You are already in this game.");
             return false;
-        for (GameTeam team : GameTeam.values())
-            if (spawns.get(team) == null || chests.get(team) == null)
-                return false;
-        return true;
+        } else if (players.size() >= getConfig().getInt("max-players")) {
+            player.sendMessage(ChatColor.RED + "This game is full!");
+            return false;
+        } else {
+            players.add(player);
+            onPlayerJoin(player);
+            return true;
+        }
+    }
+
+    public final boolean removePlayer(GamePlayer player) {
+        if (!players.contains(player)) {
+            player.sendMessage(ChatColor.GOLD + "You were not in this game.");
+            return false;
+        } else {
+            players.remove(player);
+            onPlayerLeave(player);
+            return true;
+        }
+    }
+
+    protected void onPlayerJoin(GamePlayer player) {
+        // Stub for subclasses to hook into
+    }
+
+    protected void onPlayerLeave(GamePlayer player) {
+        // Stub for subclasses to hook into
+    }
+
+    protected final ConfigurationSection getConfig() {
+        return config.get();
+    }
+
+    protected final void setState(GameState state) {
+        if (this.state != state) {
+            this.state = state;
+            stateTasks.get(state).start();
+        }
+    }
+
+    protected void clearEntities() {
+        for (Entity e : min.getWorld().getEntities()) {
+            if (e.getType() == EntityType.ARROW || e.getType() == EntityType.DROPPED_ITEM) {
+                if (e.getLocation().toVector().isInAABB(min.toVector(), max.toVector())) {
+                    e.remove();
+                }
+            }
+        }
+    }
+
+    protected void broadcast(String message) {
+        for (GamePlayer player : players) {
+            player.sendMessage(message);
+        }
+    }
+
+    private final class UpdateTask extends BukkitRunnable {
+        @Override
+        public void run() {
+            stateTasks.get(state).onSecond();
+        }
     }
 }

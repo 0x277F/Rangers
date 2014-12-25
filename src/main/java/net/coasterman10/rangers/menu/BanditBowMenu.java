@@ -10,12 +10,17 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
-public class BanditBowMenu implements Menu {
+public class BanditBowMenu implements PreferenceMenu {
     @Override
     public String getTitle() {
         return "Select Bandit Bow Upgrades";
     }
 
+    @Override
+    public String getPreferenceKey() {
+        return "bandit.bow";
+    }
+    
     @Override
     public void open(Player player) {
         Inventory inv = Bukkit.createInventory(null, 9, getTitle());
@@ -27,8 +32,7 @@ public class BanditBowMenu implements Menu {
     @Override
     public void selectItem(Player player, int index) {
         GamePlayer data = PlayerManager.getPlayer(player);
-        data.setUpgradeSelection("bandit.bow", index == 1 ? "8arrows" : "none");
-        player.closeInventory();
-        player.sendMessage(ChatColor.GREEN + "Selected bow upgrade: " + (index == 1 ? "+8 Arrows" : "None"));
+        data.setUpgradeSelection(getPreferenceKey(), index == 1 ? "8arrows" : "none");
+        player.sendMessage(ChatColor.GREEN + "Selected Bandit Bow Upgrade: " + (index == 1 ? "+8 Arrows" : "None"));
     }
 }

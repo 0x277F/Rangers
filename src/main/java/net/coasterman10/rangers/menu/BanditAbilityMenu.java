@@ -10,10 +10,15 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
-public class BanditAbilityMenu implements Menu {
+public class BanditAbilityMenu implements PreferenceMenu {
     @Override
     public String getTitle() {
         return "Select Bandit Ability";
+    }
+    
+    @Override
+    public String getPreferenceKey() {
+        return "bandit.ability";
     }
 
     @Override
@@ -28,8 +33,7 @@ public class BanditAbilityMenu implements Menu {
     @Override
     public void selectItem(Player player, int index) {
         GamePlayer data = PlayerManager.getPlayer(player);
-        data.setUpgradeSelection("bandit.ability", index == 1 ? "grapple" : "none");
-        player.closeInventory();
-        player.sendMessage(ChatColor.GREEN + "Selected ability: " + (index == 1 ? "Grapple" : "None"));
+        data.setUpgradeSelection(getPreferenceKey(), index == 1 ? "grapple" : "none");
+        player.sendMessage(ChatColor.GREEN + "Selected Bandit Ability: " + (index == 1 ? "Grapple" : "None"));
     }
 }

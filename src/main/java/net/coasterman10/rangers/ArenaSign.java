@@ -1,7 +1,6 @@
 package net.coasterman10.rangers;
 
 import net.coasterman10.rangers.arena.Arena;
-import net.coasterman10.rangers.game.Game;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -28,10 +27,6 @@ public abstract class ArenaSign {
         return arena;
     }
 
-    public Game getGame() {
-        return arena.getGame();
-    }
-
     public abstract void update();
 
     protected void setLine(int index, String line) {
@@ -45,7 +40,7 @@ public abstract class ArenaSign {
         }
     }
     
-    public boolean hasGame() {
-        return arena != null && arena.hasGame();
+    public boolean hasArena() {
+        return arena != null;
     }
 }

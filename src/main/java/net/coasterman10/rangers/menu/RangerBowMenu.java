@@ -10,10 +10,15 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
-public class RangerBowMenu implements Menu {
+public class RangerBowMenu implements PreferenceMenu {
     @Override
     public String getTitle() {
         return "Select Ranger Bow Upgrades";
+    }
+    
+    @Override
+    public String getPreferenceKey() {
+        return "ranger.bow";
     }
 
     @Override
@@ -27,8 +32,8 @@ public class RangerBowMenu implements Menu {
     @Override
     public void selectItem(Player player, int index) {
         GamePlayer data = PlayerManager.getPlayer(player);
-        data.setUpgradeSelection("ranger.bow", index == 1 ? "16arrows" : "none");
+        data.setUpgradeSelection(getPreferenceKey(), index == 1 ? "16arrows" : "none");
         player.closeInventory();
-        player.sendMessage(ChatColor.GREEN + "Selected bow upgrade: " + (index == 1 ? "+16 Arrows" : "None"));
+        player.sendMessage(ChatColor.GREEN + "Selected Ranger Bow Upgrade: " + (index == 1 ? "+16 Arrows" : "None"));
     }
 }

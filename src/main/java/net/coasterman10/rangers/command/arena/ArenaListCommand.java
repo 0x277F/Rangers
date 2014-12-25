@@ -44,12 +44,10 @@ public class ArenaListCommand implements Subcommand {
         sender.sendMessage(ChatColor.GOLD + "Arenas");
         for (Arena a : arenaManager.getArenas()) {
             StringBuilder sb = new StringBuilder(32);
-            sb.append(ChatColor.GOLD).append("- ").append(ChatColor.AQUA).append(a.getId());
-            sb.append(ChatColor.GOLD).append(" - ");
-            sb.append(ChatColor.GREEN).append("\"").append(a.getName()).append("\"");
-            sb.append(ChatColor.GOLD).append(" - ");
-            sb.append(a.hasGame() ? ChatColor.GREEN : (a.isValid() ? ChatColor.YELLOW : ChatColor.RED));
-            sb.append(a.hasGame() ? "Active" : (a.isValid() ? "Inactive" : "Invalid"));
+            sb.append(ChatColor.AQUA).append("- ").append(ChatColor.WHITE).append(a.getName());
+            sb.append(ChatColor.AQUA).append(" - ");
+            sb.append(a.isValid() ? ChatColor.GREEN : ChatColor.RED);
+            sb.append(a.isValid() ? "Active" : "Invalid");
             sender.sendMessage(sb.toString());
         }
         return true;

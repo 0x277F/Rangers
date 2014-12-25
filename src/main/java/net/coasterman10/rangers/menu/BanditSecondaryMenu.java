@@ -10,10 +10,15 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
-public class BanditSecondaryMenu implements Menu {
+public class BanditSecondaryMenu implements PreferenceMenu {
     @Override
     public String getTitle() {
         return "Select Bandit Secondary Weapon";
+    }
+    
+    @Override
+    public String getPreferenceKey() {
+        return "bandit.secondary";
     }
 
     @Override
@@ -27,8 +32,8 @@ public class BanditSecondaryMenu implements Menu {
     @Override
     public void selectItem(Player player, int index) {
         GamePlayer data = PlayerManager.getPlayer(player);
-        data.setUpgradeSelection("bandit.secondary", index == 1 ? "mace" : "bow");
+        data.setUpgradeSelection(getPreferenceKey(), index == 1 ? "mace" : "bow");
         player.closeInventory();
-        player.sendMessage(ChatColor.GREEN + "Selected secondary Bandit weapon: " + (index == 1 ? "Mace" : "Crossbow"));
+        player.sendMessage(ChatColor.GREEN + "Selected Secondary Bandit Weapon: " + (index == 1 ? "Mace" : "Crossbow"));
     }
 }

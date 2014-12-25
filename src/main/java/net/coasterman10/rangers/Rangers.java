@@ -1,13 +1,12 @@
 package net.coasterman10.rangers;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
 import me.confuser.barapi.BarAPI;
-import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
-import net.coasterman10.rangers.arena.ClassicArena;
 import net.coasterman10.rangers.boss.SpawnBossSubcommand;
 import net.coasterman10.rangers.command.QuitCommand;
 import net.coasterman10.rangers.command.SubcommandExecutor;
@@ -18,7 +17,7 @@ import net.coasterman10.rangers.command.arena.ArenaRemoveCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetChestCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetMaxCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetMinCommand;
-import net.coasterman10.rangers.command.arena.ArenaSetNameCommand;
+import net.coasterman10.rangers.command.arena.ArenaRenameCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetSpawnCommand;
 import net.coasterman10.rangers.command.rangers.RangersReloadCommand;
 import net.coasterman10.rangers.command.rangers.RangersSettingCommand;
@@ -27,7 +26,6 @@ import net.coasterman10.rangers.command.sign.SignRemoveCommand;
 import net.coasterman10.rangers.config.ConfigAccessor;
 import net.coasterman10.rangers.config.ConfigSectionAccessor;
 import net.coasterman10.rangers.config.PluginConfigAccessor;
-import net.coasterman10.rangers.game.ClassicGame;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameSettings;
 import net.coasterman10.rangers.listeners.AbilityListener;
@@ -36,14 +34,9 @@ import net.coasterman10.rangers.listeners.PlayerDeathListener;
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.SignManager;
 import net.coasterman10.rangers.listeners.WorldListener;
-import net.coasterman10.rangers.menu.BanditAbilityMenu;
-import net.coasterman10.rangers.menu.BanditBowMenu;
-import net.coasterman10.rangers.menu.BanditSecondaryMenu;
-import net.coasterman10.rangers.menu.RangerAbilityMenu;
-import net.coasterman10.rangers.menu.RangerBowMenu;
-import net.coasterman10.rangers.menu.RangerSecondaryMenu;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -78,7 +71,7 @@ public class Rangers extends JavaPlugin {
 
         ConfigAccessor configYml = new PluginConfigAccessor(this);
 
-        arenaManager = new ArenaManager(new ConfigSectionAccessor(configYml, "arenas"));
+        arenaManager = new ArenaManager(this, new File(getDataFolder(), "arenas"));
         worldListener = new WorldListener();
         playerListener = new PlayerListener(this);
         abilityListener = new AbilityListener(this);
@@ -90,19 +83,6 @@ public class Rangers extends JavaPlugin {
 
         saveDefaultConfig();
         loadConfig();
-
-        menuManager.addSignMenu(new RangerAbilityMenu(),
-                new SignText().setLine(1, "Select").setLine(2, "Ranger Ability"));
-        menuManager.addSignMenu(new RangerBowMenu(),
-                new SignText().setLine(1, "Select Ranger").setLine(2, "Bow Upgrades"));
-        menuManager.addSignMenu(new RangerSecondaryMenu(),
-                new SignText().setLine(1, "Select Ranger").setLine(2, "Secondary"));
-        menuManager.addSignMenu(new BanditAbilityMenu(),
-                new SignText().setLine(1, "Select").setLine(2, "Bandit Ability"));
-        menuManager.addSignMenu(new BanditBowMenu(),
-                new SignText().setLine(1, "Select Bandit").setLine(2, "Bow Upgrades"));
-        menuManager.addSignMenu(new BanditSecondaryMenu(),
-                new SignText().setLine(1, "Select Bandit").setLine(2, "Secondary"));
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);
@@ -121,7 +101,7 @@ public class Rangers extends JavaPlugin {
         arenaCommand.registerSubcommand(new ArenaAddCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaRemoveCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaListCommand(arenaManager));
-        arenaCommand.registerSubcommand(new ArenaSetNameCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaRenameCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetMinCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetMaxCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetSpawnCommand(arenaManager));
@@ -171,10 +151,6 @@ public class Rangers extends JavaPlugin {
         BarAPI.setMessage(p, settings.idleBarMessage, 100F);
     }
 
-    public void dropHead(Player player) {
-        playerDeathListener.dropHead(player);
-    }
-
     private void loadConfig() {
         // Load the lobby spawn location. Default is in world "lobby" at location (0,64,0). If the world doesn't exist,
         // create it to save ourselves the hassle of setting the thing up.
@@ -190,14 +166,6 @@ public class Rangers extends JavaPlugin {
             lobbySpawn.setPitch((float) getConfig().getDouble("spawn.pitch"));
 
         arenaManager.loadArenas();
-
-        // Load the games for each arena
-        for (Arena a : arenaManager.getArenas()) {
-            if (a instanceof ClassicArena) {
-                ClassicGame cg = new ClassicGame(settings, (ClassicArena) a, this);
-                getServer().getPluginManager().registerEvents(cg, this);
-            }
-        }
 
         // Game Settings - this is the alternative to global variables
         settings.load();
@@ -215,5 +183,9 @@ public class Rangers extends JavaPlugin {
         }
         playerListener.setAllowedDrops(allowedDrops);
         playerDeathListener.setAllowedDrops(allowedDrops);
+    }
+
+    public String getBarMessage() {
+        return ChatColor.translateAlternateColorCodes('&', getConfig().getString("bar-message"));
     }
 }

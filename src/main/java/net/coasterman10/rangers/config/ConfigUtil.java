@@ -24,9 +24,16 @@ public class ConfigUtil {
      * @return New Vector from components
      */
     public static Vector getVector(ConfigurationSection config, String path) {
-        double x = config.getDouble(path(path, "x"));
-        double y = config.getDouble(path(path, "y"));
-        double z = config.getDouble(path(path, "z"));
+        String[] coordinates = config.getString(path).split(",");
+        double x = 0, y = 0, z = 0;
+        if (coordinates.length == 3) {
+            try {
+                x = Double.parseDouble(coordinates[0]);
+                y = Double.parseDouble(coordinates[1]);
+                z = Double.parseDouble(coordinates[2]);
+            } catch (NumberFormatException e) {
+            }
+        }
         return new Vector(x, y, z);
     }
 
@@ -41,12 +48,7 @@ public class ConfigUtil {
         if (vector == null) {
             config.set(path, null);
         } else {
-            ConfigurationSection section = config.getConfigurationSection(path);
-            if (section == null)
-                section = config.createSection(path);
-            section.set("x", vector.getX());
-            section.set("y", vector.getY());
-            section.set("z", vector.getZ());
+            config.set(path, vector.getX() + "," + vector.getY() + "," + vector.getZ());
         }
     }
 
@@ -58,11 +60,24 @@ public class ConfigUtil {
      * @return New SpawnVector from components
      */
     public static SpawnVector getSpawnVector(ConfigurationSection config, String path) {
-        double x = config.getDouble(path(path, "x"));
-        double y = config.getDouble(path(path, "y"));
-        double z = config.getDouble(path(path, "z"));
-        float yaw = (float) config.getDouble(path(path, "yaw"));
-        float pitch = (float) config.getDouble(path(path, "pitch"));
+        String[] coordinates = config.getString(path).split(",");
+        double x = 0, y = 0, z = 0;
+        float yaw = 0, pitch = 0;
+        if (coordinates.length >= 3) {
+            try {
+                x = Double.parseDouble(coordinates[0]);
+                y = Double.parseDouble(coordinates[1]);
+                z = Double.parseDouble(coordinates[2]);
+            } catch (NumberFormatException e) {
+            }
+            if (coordinates.length == 5) {
+                try {
+                    yaw = Float.parseFloat(coordinates[3]);
+                    pitch = Float.parseFloat(coordinates[4]);
+                } catch (NumberFormatException e) {
+                }
+            }
+        }
         return new SpawnVector(x, y, z, yaw, pitch);
     }
 
@@ -77,14 +92,8 @@ public class ConfigUtil {
         if (vector == null) {
             config.set(path, null);
         } else {
-            ConfigurationSection section = config.getConfigurationSection(path);
-            if (section == null)
-                section = config.createSection(path);
-            section.set("x", vector.getX());
-            section.set("y", vector.getY());
-            section.set("z", vector.getZ());
-            section.set("yaw", vector.getYaw());
-            section.set("pitch", vector.getPitch());
+            config.set(path, vector.getX() + "," + vector.getY() + "," + vector.getZ() + "," + vector.getYaw() + ","
+                    + vector.getPitch());
         }
     }
 
@@ -97,17 +106,30 @@ public class ConfigUtil {
      * @return New Location from components, or null if world is unspecified or nonexistent.
      */
     public static Location getLocation(ConfigurationSection config, String path) {
-        String worldName = config.getString(path(path, "world"));
-        if (worldName == null || worldName.isEmpty())
-            return null;
-        World world = Bukkit.getWorld(worldName);
+        String[] coordinates = config.getString(path).split(",");
+        World world = null;
+        double x = 0, y = 0, z = 0;
+        float yaw = 0, pitch = 0;
+        if (coordinates.length >= 4) {
+            world = Bukkit.getWorld(coordinates[0]);
+            if (world == null)
+                return null;
+            try {
+                x = Double.parseDouble(coordinates[1]);
+                y = Double.parseDouble(coordinates[2]);
+                z = Double.parseDouble(coordinates[3]);
+            } catch (NumberFormatException e) {
+            }
+            if (coordinates.length == 6) {
+                try {
+                    yaw = Float.parseFloat(coordinates[4]);
+                    pitch = Float.parseFloat(coordinates[5]);
+                } catch (NumberFormatException e) {
+                }
+            }
+        }
         if (world == null)
             return null;
-        double x = config.getDouble(path(path, "x"));
-        double y = config.getDouble(path(path, "y"));
-        double z = config.getDouble(path(path, "z"));
-        float yaw = (float) config.getDouble(path(path, "yaw"));
-        float pitch = (float) config.getDouble(path(path, "pitch"));
         return new Location(world, x, y, z, yaw, pitch);
     }
 
@@ -122,27 +144,8 @@ public class ConfigUtil {
         if (location == null) {
             config.set(path, null);
         } else {
-            ConfigurationSection section = config.getConfigurationSection(path);
-            if (section == null)
-                section = config.createSection(path);
-            section.set("world", location.getWorld().getName());
-            section.set("x", location.getX());
-            section.set("y", location.getY());
-            section.set("z", location.getZ());
-            section.set("yaw", location.getYaw());
-            section.set("pitch", location.getPitch());
+            config.set(path, location.getWorld().getName() + "," + location.getX() + "," + location.getY() + ","
+                    + location.getZ() + "," + location.getYaw() + "," + location.getPitch());
         }
-    }
-
-    /**
-     * Returns a cleaned up path based on the base path given by the programmer and the specified key. If the programmer
-     * uses null or an empty string, this will return just the key and forgo the insertion of the path separator (".").
-     * 
-     * @param path The base path given by the programmer
-     * @param key The key within the path.
-     * @return The complete path assuming the programmer entered a legal path.
-     */
-    private static String path(String path, String key) {
-        return (path == null || path.isEmpty() ? key : path + "." + key);
     }
 }

@@ -61,9 +61,9 @@ public class ArenaSetMinCommand implements Subcommand {
                     target = player.getLocation();
                 }
                 a.setMin(target);
-                sender.sendMessage(ChatColor.GREEN + "Set minimum bound of arena \"" + ChatColor.YELLOW + a.getId()
-                        + ChatColor.GREEN + "\" to " + ChatColor.AQUA + "(" + target.getBlockX() + ","
-                        + target.getBlockY() + "," + target.getBlockZ() + ")");
+                sender.sendMessage(ChatColor.GREEN + "Set minimum bound of arena \"" + a.getName() + "\" to "
+                        + ChatColor.AQUA + "(" + target.getBlockX() + "," + target.getBlockY() + ","
+                        + target.getBlockZ() + ")");
                 a.save();
             } else {
                 sender.sendMessage(ChatColor.RED + "No such arena \"" + ChatColor.GOLD + args[0] + ChatColor.RED + "\"");

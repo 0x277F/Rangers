@@ -10,10 +10,15 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
-public class RangerAbilityMenu implements Menu {
+public class RangerAbilityMenu implements PreferenceMenu {
     @Override
     public String getTitle() {
         return "Select Ranger Ability";
+    }
+    
+    @Override
+    public String getPreferenceKey() {
+        return "ranger.ability";
     }
 
     @Override
@@ -27,8 +32,8 @@ public class RangerAbilityMenu implements Menu {
     @Override
     public void selectItem(Player player, int index) {
         GamePlayer data = PlayerManager.getPlayer(player);
-        data.setUpgradeSelection("ranger.ability", index == 1 ? "cloak" : "none");
+        data.setUpgradeSelection(getPreferenceKey(), index == 1 ? "cloak" : "none");
         player.closeInventory();
-        player.sendMessage(ChatColor.GREEN + "Selected ability: " + (index == 1 ? "Cloak" : "None"));
+        player.sendMessage(ChatColor.GREEN + "Selected Ranger Ability: " + (index == 1 ? "Cloak" : "None"));
     }
 }

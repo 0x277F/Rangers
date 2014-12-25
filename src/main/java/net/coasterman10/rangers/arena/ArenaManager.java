@@ -1,60 +1,69 @@
 package net.coasterman10.rangers.arena;
 
+import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.coasterman10.rangers.config.ConfigAccessor;
-import net.coasterman10.rangers.config.ConfigSectionAccessor;
+import net.coasterman10.rangers.config.FileConfigAccessor;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.plugin.Plugin;
 
 public class ArenaManager {
-    private final ConfigAccessor config;
+    private final Plugin plugin;
+    private File arenaFolder;
     private Map<String, Arena> arenas = new HashMap<>();
 
-    public ArenaManager(ConfigAccessor config) {
-        this.config = config;
+    public ArenaManager(Plugin plugin, File arenaFolder) {
+        this.plugin = plugin;
+        this.arenaFolder = arenaFolder;
     }
-
+    
     public void loadArenas() {
-        ConfigurationSection arenaConfig = config.get();
-        if (arenaConfig == null)
-            return;
-        for (String id : arenaConfig.getKeys(false)) {
-            Arena arena = new ClassicArena(id, new ConfigSectionAccessor(config, id));
+        for (File file : arenaFolder.listFiles()) {
+            FileConfigAccessor config = new FileConfigAccessor(file);
+            ConfigurationSection conf = config.get();
+            String name = conf.getString("name", null);
+            ArenaType type = ArenaType.valueOf(conf.getString("type", null).toUpperCase());
+            Arena arena = type.newInstance(name, config, plugin);
+            arenas.put(name, arena);
+            Bukkit.getPluginManager().registerEvents(arena, plugin);
+        }
+    }
+    
+    public Arena getArena(String name) {
+        return arenas.get(name);
+    }
+
+    public boolean addArena(String name, ArenaType type) {
+        if (!arenas.containsKey(name)) {
+            File arenaFile = new File(arenaFolder, name + ".yml");
+            FileConfigAccessor config = new FileConfigAccessor(arenaFile);
+            Arena arena = type.newInstance(name, config, plugin);
             arena.load();
-            arenas.put(arena.getId().toLowerCase(), arena);
-        }
-    }
-
-    public boolean addArena(String id) {
-        if (getArena(id) == null) {
-            arenas.put(id, new Arena(id, new ConfigSectionAccessor(config, id)));
-            config.get().createSection(id);
-            config.save();
+            arenas.put(name, arena);
+            Bukkit.getPluginManager().registerEvents(arena, plugin);
             return true;
         } else {
             return false;
         }
     }
 
-    public boolean removeArena(String id) {
-        if (getArena(id) != null) {
-            arenas.remove(id);
-            config.get().set(id, null);
-            config.save();
+    public boolean removeArena(String name) {
+        if (arenas.containsKey(name)) {
+            Arena arena = arenas.remove(name);
+            arena.unload();
+            new File(arenaFolder, name + ".yml").delete();
             return true;
         } else {
             return false;
         }
-    }
-
-    public Arena getArena(String id) {
-        return arenas.get(id.toLowerCase());
     }
 
     public Collection<Arena> getArenas() {
-        return arenas.values();
+        return Collections.unmodifiableCollection(arenas.values());
     }
 }
