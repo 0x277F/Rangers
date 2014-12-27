@@ -63,9 +63,9 @@ public class ArenaJoinCommand implements Subcommand {
             return true;
         }
         
-        Arena a = arenaManager.getArena(args[0]);
-        if (a != null) {
-            a.addPlayer(PlayerManager.getPlayer(p));
+        Arena arena = arenaManager.getArena(args[0]);
+        if (arena != null) {
+            PlayerManager.getPlayer(p).joinArena(arena);
         } else {
             sender.sendMessage(ChatColor.RED + "No arena with id \"" + args[0] + "\"");
         }

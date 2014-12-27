@@ -1,6 +1,6 @@
 package net.coasterman10.rangers.arena;
 
-import net.coasterman10.rangers.config.FileConfigAccessor;
+import net.coasterman10.rangers.util.FileConfigAccessor;
 
 import org.bukkit.plugin.Plugin;
 

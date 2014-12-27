@@ -8,19 +8,16 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 
 public abstract class ArenaSign {
+    protected final Arena arena;
     protected final Location location;
-    protected Arena arena;
 
-    public ArenaSign(Location location) {
+    public ArenaSign(Arena arena, Location location) {
+        this.arena = arena;
         this.location = location;
     }
 
     public Location getLocation() {
         return location;
-    }
-
-    public void setArena(Arena arena) {
-        this.arena = arena;
     }
 
     public Arena getArena() {

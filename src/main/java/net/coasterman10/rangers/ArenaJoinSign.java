@@ -1,17 +1,19 @@
 package net.coasterman10.rangers;
 
+import net.coasterman10.rangers.arena.Arena;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 
 public class ArenaJoinSign extends ArenaSign {
-    public ArenaJoinSign(Location location) {
-        super(location);
+    public ArenaJoinSign(Arena arena, Location location) {
+        super(arena, location);
     }
 
     public void update() {
         if (hasArena()) {
             setLine(0, ChatColor.BOLD + arena.getName());
-            setLine(1, "Classic");
+            setLine(1, arena.getType().getName());
             if (arena.getPlayerCount() < arena.getMaxPlayers()) {
                 setLine(2, ChatColor.GREEN + "Right Click");
                 setLine(3, ChatColor.GREEN + "To Join");

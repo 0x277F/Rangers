@@ -1,4 +1,4 @@
-package net.coasterman10.rangers.arena;
+package net.coasterman10.rangers.game;
 
 public interface GameStateTasks {
     void start();

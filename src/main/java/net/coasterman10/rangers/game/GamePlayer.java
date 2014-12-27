@@ -10,6 +10,7 @@ import java.util.UUID;
 import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ClassicArena;
+import net.coasterman10.rangers.util.PlayerUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -120,12 +121,15 @@ public class GamePlayer {
     }
 
     public void quit() {
-        if (isInGame())
+        if (isInGame()) {
             arena.removePlayer(this);
+            arena = null;
+        }
         alive = false;
         cloaked = false;
         team = null;
         setCanDoubleJump(false);
+        PlayerUtil.resetPlayer(getHandle());
     }
 
     public Player getHandle() {

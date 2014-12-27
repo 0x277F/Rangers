@@ -6,10 +6,13 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import net.coasterman10.rangers.config.ConfigUtil;
-import net.coasterman10.rangers.config.FileConfigAccessor;
 import net.coasterman10.rangers.game.GamePlayer;
+import net.coasterman10.rangers.game.GameState;
+import net.coasterman10.rangers.game.GameStateTasks;
 import net.coasterman10.rangers.game.GameTeam;
+import net.coasterman10.rangers.util.ConfigUtil;
+import net.coasterman10.rangers.util.FileConfigAccessor;
+import net.coasterman10.rangers.util.PlayerUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -17,6 +20,7 @@ import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
@@ -24,14 +28,14 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public abstract class Arena implements Listener {
     private String name;
-    private Location min, max;
     private FileConfigAccessor config;
+    private Location min, max;
     protected Location lobbySpawn;
     protected Location spectatorSpawn;
     protected Map<GameTeam, Location> spawns = new EnumMap<>(GameTeam.class);
+    private Map<GameState, GameStateTasks> stateTasks = new EnumMap<>(GameState.class);
+    private GameState state;
     protected Collection<GamePlayer> players = new HashSet<>();
-    protected GameState state;
-    protected Map<GameState, GameStateTasks> stateTasks = new EnumMap<>(GameState.class);
     protected int seconds;
 
     public Arena(String name, FileConfigAccessor config, Plugin plugin) {
@@ -39,8 +43,9 @@ public abstract class Arena implements Listener {
         this.config = config;
         Bukkit.getPluginManager().registerEvents(this, plugin);
         new UpdateTask().runTaskTimer(plugin, 0L, 20L);
+        state = GameState.LOBBY;
     }
-
+    
     public void load() {
         config.reload();
         ConfigurationSection conf = getConfig();
@@ -68,7 +73,9 @@ public abstract class Arena implements Listener {
     }
 
     public void unload() {
-        save();
+        for (GamePlayer player : players) {
+            removePlayer(player);
+        }
         HandlerList.unregisterAll(this);
     }
 
@@ -86,7 +93,7 @@ public abstract class Arena implements Listener {
         config = new FileConfigAccessor(newFile);
         config.reload();
         name = newName;
-        config.get().set("name", name);
+        getConfig().set("name", name);
         save();
         return true;
     }
@@ -155,6 +162,9 @@ public abstract class Arena implements Listener {
         } else {
             players.add(player);
             onPlayerJoin(player);
+            Player handle = player.getHandle();
+            handle.teleport(lobbySpawn);
+            PlayerUtil.resetPlayer(handle);
             return true;
         }
     }
@@ -168,6 +178,10 @@ public abstract class Arena implements Listener {
             onPlayerLeave(player);
             return true;
         }
+    }
+
+    protected void registerStateTasks(GameState state, GameStateTasks tasks) {
+        stateTasks.put(state, tasks);
     }
 
     protected void onPlayerJoin(GamePlayer player) {
@@ -208,7 +222,9 @@ public abstract class Arena implements Listener {
     private final class UpdateTask extends BukkitRunnable {
         @Override
         public void run() {
-            stateTasks.get(state).onSecond();
+            GameStateTasks tasks = stateTasks.get(state);
+            if (tasks != null)
+                tasks.onSecond();
         }
     }
 }

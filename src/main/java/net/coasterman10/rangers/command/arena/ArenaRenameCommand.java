@@ -3,15 +3,18 @@ package net.coasterman10.rangers.command.arena;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.command.Subcommand;
+import net.coasterman10.rangers.listeners.SignManager;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
 public class ArenaRenameCommand implements Subcommand {
     private final ArenaManager arenaManager;
+    private final SignManager signManager;
 
-    public ArenaRenameCommand(ArenaManager arenaManager) {
+    public ArenaRenameCommand(ArenaManager arenaManager, SignManager signManager) {
         this.arenaManager = arenaManager;
+        this.signManager = signManager;
     }
 
     @Override
@@ -51,6 +54,7 @@ public class ArenaRenameCommand implements Subcommand {
                     name.append(args[i]);
                 }
                 if (a.rename(name.toString())) {
+                    signManager.saveSigns(); // Re-save the sign configuration to reflect the name change.
                     sender.sendMessage(ChatColor.GREEN + "Renamed arena \"" + a.getName() + "\" to \"" + ChatColor.AQUA
                             + a.getName() + ChatColor.GREEN + "\"");
                 } else {

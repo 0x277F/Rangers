@@ -4,7 +4,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import net.coasterman10.rangers.arena.Arena;
-import net.coasterman10.rangers.arena.GameState;
+import net.coasterman10.rangers.game.GameState;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -19,8 +19,8 @@ public class ArenaStatusSign extends ArenaSign {
         STATUS_TEXT.put(GameState.ENDING, "Ending");
     }
 
-    public ArenaStatusSign(Location location) {
-        super(location);
+    public ArenaStatusSign(Arena arena, Location location) {
+        super(arena, location);
     }
 
     public void update() {

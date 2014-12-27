@@ -1,7 +1,12 @@
 package net.coasterman10.rangers.listeners;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import net.coasterman10.rangers.ArenaJoinSign;
 import net.coasterman10.rangers.ArenaSign;
@@ -9,12 +14,10 @@ import net.coasterman10.rangers.ArenaStatusSign;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
-import net.coasterman10.rangers.config.ConfigAccessor;
-import net.coasterman10.rangers.config.ConfigUtil;
+import net.coasterman10.rangers.util.ConfigAccessor;
+import net.coasterman10.rangers.util.ConfigUtil;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.configuration.ConfigurationSection;
@@ -26,7 +29,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 public class SignManager implements Listener {
     private final ArenaManager arenaManager;
     private final ConfigAccessor config;
-    private Map<Location, ArenaSign> signs = new HashMap<>();
+    private Map<Arena, Collection<ArenaSign>> signs = new HashMap<>();
+    private Map<Location, ArenaSign> signLocations = new HashMap<>();
 
     public SignManager(ArenaManager arenaManager, ConfigAccessor config) {
         this.arenaManager = arenaManager;
@@ -36,10 +40,10 @@ public class SignManager implements Listener {
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (signs.containsKey(e.getClickedBlock().getLocation())) {
-                ArenaSign s = signs.get(e.getClickedBlock().getLocation());
+            if (signLocations.containsKey(e.getClickedBlock().getLocation())) {
+                ArenaSign s = signLocations.get(e.getClickedBlock().getLocation());
                 if (s instanceof ArenaJoinSign && s.hasArena()) {
-                    s.getArena().addPlayer(PlayerManager.getPlayer(e.getPlayer()));
+                    PlayerManager.getPlayer(e.getPlayer()).joinArena(s.getArena());
                 }
             }
         }
@@ -49,104 +53,99 @@ public class SignManager implements Listener {
         config.reload();
         ConfigurationSection conf = config.get();
 
-        for (String arena : conf.getKeys(false)) {
-            Arena a = arenaManager.getArena(arena);
-            if (a == null)
+        for (String name : conf.getKeys(false)) {
+            Arena arena = arenaManager.getArena(name);
+            if (arena == null)
                 continue;
-            ConfigurationSection signConf = conf.getConfigurationSection(arena);
+            ConfigurationSection signConf = conf.getConfigurationSection(name);
             if (signConf == null)
                 continue;
-            Location join = ConfigUtil.getLocation(signConf, "join");
-            if (join != null) {
-                addJoinSign(a, join, false);
+            for (Location joinSign : ConfigUtil.getLocationList(signConf, "join")) {
+                addJoinSign(arena, joinSign, false);
             }
-            Location status = ConfigUtil.getLocation(signConf, "status");
-            if (status != null) {
-                addStatusSign(a, status, false);
+            for (Location statusSign : ConfigUtil.getLocationList(signConf, "status")) {
+                addStatusSign(arena, statusSign, false);
             }
         }
+    }
+    
+    public void saveSigns() {
+        ConfigurationSection conf = config.get();
+        for (Entry<Arena, Collection<ArenaSign>> entry : signs.entrySet()) {
+            Arena arena = entry.getKey();
+            List<Location> joinSigns = new ArrayList<>();
+            List<Location> statusSigns = new ArrayList<>();
+            for (ArenaSign sign : entry.getValue()) {
+                if (sign instanceof ArenaJoinSign) {
+                    joinSigns.add(sign.getLocation());
+                } else {
+                    statusSigns.add(sign.getLocation());
+                }
+            }
+            ConfigUtil.setLocationList(conf, arena.getName() + ".join", joinSigns);
+            ConfigUtil.setLocationList(conf, arena.getName() + ".status", statusSigns);
+        }
+        // Clean up any rogue sections caused by an arena being renamed
+        for (String key : conf.getKeys(false)) {
+            if (arenaManager.getArena(key) == null) {
+                conf.set(key, null);
+            }
+        }
+        config.save();
     }
 
     public void update() {
-        for (ArenaSign s : signs.values())
+        for (ArenaSign s : signLocations.values()) {
             s.update();
-    }
-
-    public void addJoinSign(Arena a, Location loc) {
-        addJoinSign(a, loc, true);
-    }
-
-    public void addStatusSign(Arena a, Location loc) {
-        addStatusSign(a, loc, true);
-    }
-
-    private void addJoinSign(Arena a, Location loc, boolean save) {
-        if (!(loc.getBlock().getState() instanceof Sign))
-            placeSign(loc);
-        ArenaJoinSign s = new ArenaJoinSign(loc);
-        s.setArena(a);
-        signs.put(loc, s);
-        if (save) {
-            ConfigurationSection conf = config.get().getConfigurationSection(a.getName());
-            if (conf == null) {
-                conf = config.get().createSection(a.getName());
-            }
-            ConfigUtil.setLocation(conf, "join", loc);
-            config.save();
         }
     }
 
-    private void addStatusSign(Arena a, Location loc, boolean save) {
-        if (!(loc.getBlock().getState() instanceof Sign))
-            placeSign(loc);
-        ArenaStatusSign s = new ArenaStatusSign(loc);
-        s.setArena(a);
-        signs.put(loc, s);
-        if (save) {
-            ConfigurationSection conf = config.get().getConfigurationSection(a.getName());
-            if (conf == null) {
-                conf = config.get().createSection(a.getName());
-            }
-            ConfigUtil.setLocation(conf, "status", loc);
-            config.save();
+    public void addJoinSign(Arena arena, Location loc) {
+        addJoinSign(arena, loc, true);
+    }
+
+    public void addStatusSign(Arena arena, Location loc) {
+        addStatusSign(arena, loc, true);
+    }
+
+    private void addJoinSign(Arena arena, Location loc, boolean save) {
+        ArenaJoinSign sign = new ArenaJoinSign(arena, loc);
+        addSign(arena, sign);
+        if (save)
+            saveSigns();
+    }
+
+    private void addStatusSign(Arena arena, Location loc, boolean save) {
+        ArenaStatusSign sign = new ArenaStatusSign(arena, loc);
+        addSign(arena, sign);
+        if (save)
+            saveSigns();
+    }
+
+    private void addSign(Arena arena, ArenaSign sign) {
+        Collection<ArenaSign> signsForArena = signs.get(arena);
+        if (signsForArena == null) {
+            signsForArena = new HashSet<>();
+            signs.put(arena, signsForArena);
         }
+        signsForArena.add(sign);
+        signLocations.put(sign.getLocation(), sign);
     }
 
     public boolean removeSign(Location loc) {
-        ArenaSign sign = signs.get(loc);
+        ArenaSign sign = signLocations.get(loc);
         if (sign == null)
             return false;
-        signs.remove(loc);
-        ConfigurationSection conf = config.get().getConfigurationSection(sign.getArena().getName());
-        if (conf != null) {
-            conf.set("status", null);
-            config.save();
-        }
+        signLocations.remove(loc);
+        if (signs.containsKey(sign.getArena()))
+            signs.get(sign.getArena()).remove(sign);
         BlockState state = loc.getBlock().getState();
         if (state instanceof Sign) {
             for (int i = 0; i < 4; i++)
                 ((Sign) state).setLine(i, "");
             state.update(true);
         }
+        saveSigns();
         return true;
-    }
-
-    private static void placeSign(Location loc) {
-        if (loc.getBlock().getRelative(BlockFace.DOWN).getType().isSolid()) {
-            loc.getBlock().setType(Material.SIGN); // There is a solid block below, we can just place a sign there
-        } else {
-            // Check every block face for a solid block; if we find a solid block, place a wall sign
-            for (BlockFace face : new BlockFace[] { BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST }) {
-                if (loc.getBlock().getRelative(face).getType().isSolid()) {
-                    BlockFace facing = face.getOppositeFace();
-                    BlockState state = loc.getBlock().getState();
-                    state.setType(Material.WALL_SIGN);
-                    org.bukkit.material.Sign data = new org.bukkit.material.Sign(state.getType());
-                    data.setFacingDirection(facing);
-                    state.update(true);
-                    break;
-                }
-            }
-        }
     }
 }

@@ -1,4 +1,4 @@
-package net.coasterman10.rangers.config;
+package net.coasterman10.rangers.util;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;

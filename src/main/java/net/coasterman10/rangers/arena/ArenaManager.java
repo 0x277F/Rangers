@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.coasterman10.rangers.config.FileConfigAccessor;
+import net.coasterman10.rangers.util.FileConfigAccessor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -21,19 +21,25 @@ public class ArenaManager {
         this.plugin = plugin;
         this.arenaFolder = arenaFolder;
     }
-    
+
     public void loadArenas() {
         for (File file : arenaFolder.listFiles()) {
             FileConfigAccessor config = new FileConfigAccessor(file);
             ConfigurationSection conf = config.get();
             String name = conf.getString("name", null);
-            ArenaType type = ArenaType.valueOf(conf.getString("type", null).toUpperCase());
-            Arena arena = type.newInstance(name, config, plugin);
-            arenas.put(name, arena);
-            Bukkit.getPluginManager().registerEvents(arena, plugin);
+            try {
+                ArenaType type = ArenaType.valueOf(conf.getString("type", "").toUpperCase());
+                Arena arena = type.newInstance(name, config, plugin);
+                arena.load();
+                arenas.put(name, arena);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning(
+                        "Could not load arena \"" + name + "\": type \"" + conf.getString("type", "")
+                                + "\" is undefined");
+            }
         }
     }
-    
+
     public Arena getArena(String name) {
         return arenas.get(name);
     }

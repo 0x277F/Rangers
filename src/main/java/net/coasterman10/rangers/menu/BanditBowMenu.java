@@ -3,6 +3,7 @@ package net.coasterman10.rangers.menu;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.kits.ItemStackBuilder;
+import net.coasterman10.rangers.util.SignText;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -17,10 +18,15 @@ public class BanditBowMenu implements PreferenceMenu {
     }
 
     @Override
+    public SignText getSignText() {
+        return new SignText(new String[] { "Bandit Bow", "Upgrade:", "", "" });
+    }
+
+    @Override
     public String getPreferenceKey() {
         return "bandit.bow";
     }
-    
+
     @Override
     public void open(Player player) {
         Inventory inv = Bukkit.createInventory(null, 9, getTitle());

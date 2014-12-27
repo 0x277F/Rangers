@@ -1,5 +1,6 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.util;
 
+import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
 
@@ -15,7 +16,6 @@ import org.bukkit.potion.PotionEffectType;
 
 public class PlayerUtil {
     private PlayerUtil() {
-
     }
 
     public static void resetPlayer(Player p) {
@@ -38,7 +38,7 @@ public class PlayerUtil {
     }
 
     public static void addPermanentEffect(Player p, PotionEffectType effect, int amp) {
-        p.addPotionEffect(new PotionEffect(effect, Integer.MAX_VALUE, amp));
+        p.addPotionEffect(new PotionEffect(effect, Integer.MAX_VALUE, amp, true));
     }
 
     public static ItemStack getHead(Player player) {

@@ -1,9 +1,8 @@
-package net.coasterman10.rangers.config;
+package net.coasterman10.rangers.util;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map.Entry;
 
 import net.coasterman10.rangers.Rangers;
 
@@ -14,7 +13,7 @@ public class FileConfigAccessor implements ConfigAccessor {
     private final File file;
     private FileConfiguration config;
     private InputStream defaults;
-    
+
     public FileConfigAccessor(File file) {
         this.file = file;
         defaults = null;
@@ -35,9 +34,6 @@ public class FileConfigAccessor implements ConfigAccessor {
             config.setDefaults(defaultConfig);
         }
         
-        for (Entry<String, Object> value : config.getDefaults().getValues(true).entrySet())
-            if (!config.isSet(value.getKey()))
-                config.set(value.getKey(), value.getValue());
         save();
     }
 
@@ -56,7 +52,7 @@ public class FileConfigAccessor implements ConfigAccessor {
             reload();
         return config;
     }
-    
+
     public File getFile() {
         return file;
     }

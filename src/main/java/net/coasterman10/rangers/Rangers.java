@@ -14,34 +14,34 @@ import net.coasterman10.rangers.command.arena.ArenaAddCommand;
 import net.coasterman10.rangers.command.arena.ArenaJoinCommand;
 import net.coasterman10.rangers.command.arena.ArenaListCommand;
 import net.coasterman10.rangers.command.arena.ArenaRemoveCommand;
+import net.coasterman10.rangers.command.arena.ArenaRenameCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetChestCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetMaxCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetMinCommand;
-import net.coasterman10.rangers.command.arena.ArenaRenameCommand;
 import net.coasterman10.rangers.command.arena.ArenaSetSpawnCommand;
 import net.coasterman10.rangers.command.rangers.RangersReloadCommand;
-import net.coasterman10.rangers.command.rangers.RangersSettingCommand;
 import net.coasterman10.rangers.command.sign.SignAddCommand;
 import net.coasterman10.rangers.command.sign.SignRemoveCommand;
-import net.coasterman10.rangers.config.ConfigAccessor;
-import net.coasterman10.rangers.config.ConfigSectionAccessor;
-import net.coasterman10.rangers.config.PluginConfigAccessor;
 import net.coasterman10.rangers.game.GamePlayer;
-import net.coasterman10.rangers.game.GameSettings;
 import net.coasterman10.rangers.listeners.AbilityListener;
 import net.coasterman10.rangers.listeners.MenuManager;
 import net.coasterman10.rangers.listeners.PlayerDeathListener;
 import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.SignManager;
 import net.coasterman10.rangers.listeners.WorldListener;
+import net.coasterman10.rangers.menu.PreferenceMenu;
+import net.coasterman10.rangers.util.ConfigAccessor;
+import net.coasterman10.rangers.util.ConfigSectionAccessor;
+import net.coasterman10.rangers.util.ConfigUtil;
+import net.coasterman10.rangers.util.EmptyChunkGenerator;
+import net.coasterman10.rangers.util.PluginConfigAccessor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.WorldCreator;
 import org.bukkit.entity.Player;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -54,6 +54,7 @@ public class Rangers extends JavaPlugin {
     }
 
     private Location lobbySpawn;
+    private String idleBarMessage;
 
     private WorldListener worldListener;
     private PlayerListener playerListener;
@@ -62,8 +63,6 @@ public class Rangers extends JavaPlugin {
     private SignManager signManager;
     private MenuManager menuManager;
     private ArenaManager arenaManager;
-
-    private GameSettings settings;
 
     @Override
     public void onEnable() {
@@ -79,8 +78,6 @@ public class Rangers extends JavaPlugin {
         signManager = new SignManager(arenaManager, new ConfigSectionAccessor(configYml, "signs"));
         menuManager = new MenuManager();
 
-        settings = new GameSettings(configYml);
-
         saveDefaultConfig();
         loadConfig();
 
@@ -93,7 +90,6 @@ public class Rangers extends JavaPlugin {
         pm.registerEvents(playerDeathListener, this);
 
         SubcommandExecutor rangersCommand = new SubcommandExecutor("rangers");
-        rangersCommand.registerSubcommand(new RangersSettingCommand(settings));
         rangersCommand.registerSubcommand(new RangersReloadCommand(this));
         rangersCommand.registerSubcommand(new SpawnBossSubcommand());
 
@@ -101,7 +97,7 @@ public class Rangers extends JavaPlugin {
         arenaCommand.registerSubcommand(new ArenaAddCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaRemoveCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaListCommand(arenaManager));
-        arenaCommand.registerSubcommand(new ArenaRenameCommand(arenaManager));
+        arenaCommand.registerSubcommand(new ArenaRenameCommand(arenaManager, signManager));
         arenaCommand.registerSubcommand(new ArenaSetMinCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetMaxCommand(arenaManager));
         arenaCommand.registerSubcommand(new ArenaSetSpawnCommand(arenaManager));
@@ -117,6 +113,10 @@ public class Rangers extends JavaPlugin {
         getCommand("sign").setExecutor(signCommand);
         getCommand("quit").setExecutor(new QuitCommand(this));
 
+        for (PreferenceMenu menu : PreferenceMenu.menus) {
+            menuManager.addSignMenu(menu.getSignText(), menu);
+        }
+
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -125,7 +125,7 @@ public class Rangers extends JavaPlugin {
         }.runTaskTimer(this, 0L, 10L);
 
         for (Player p : Bukkit.getOnlinePlayers()) {
-            BarAPI.setMessage(p, settings.idleBarMessage, 100F);
+            BarAPI.setMessage(p, idleBarMessage, 100F);
         }
     }
 
@@ -137,8 +137,17 @@ public class Rangers extends JavaPlugin {
         }
     }
 
+    @Override
+    public ChunkGenerator getDefaultWorldGenerator(String name, String id) {
+        return new EmptyChunkGenerator();
+    }
+
     public Location getLobbySpawn() {
         return lobbySpawn;
+    }
+
+    public String getIdleBarMessage() {
+        return idleBarMessage;
     }
 
     public void sendToLobby(Player p) {
@@ -146,31 +155,15 @@ public class Rangers extends JavaPlugin {
         if (player.isInGame()) {
             player.quit();
         }
-        PlayerUtil.resetPlayer(p);
         p.teleport(lobbySpawn);
-        BarAPI.setMessage(p, settings.idleBarMessage, 100F);
+        BarAPI.setMessage(p, idleBarMessage, 100F);
     }
 
     private void loadConfig() {
-        // Load the lobby spawn location. Default is in world "lobby" at location (0,64,0). If the world doesn't exist,
-        // create it to save ourselves the hassle of setting the thing up.
-        String lobbyWorldName = getConfig().getString("spawn.world");
-        World lobbyWorld = new WorldCreator(lobbyWorldName).generator(new EmptyChunkGenerator()).createWorld();
-        double lobbyX = getConfig().getDouble("spawn.x");
-        double lobbyY = getConfig().getDouble("spawn.y");
-        double lobbyZ = getConfig().getDouble("spawn.z");
-        lobbySpawn = new Location(lobbyWorld, lobbyX, lobbyY, lobbyZ);
-        if (getConfig().contains("spawn.yaw"))
-            lobbySpawn.setYaw((float) getConfig().getDouble("spawn.yaw"));
-        if (getConfig().contains("spawn.pitch"))
-            lobbySpawn.setPitch((float) getConfig().getDouble("spawn.pitch"));
+        lobbySpawn = ConfigUtil.getLocation(getConfig(), "spawn");
+        idleBarMessage = ChatColor.translateAlternateColorCodes('&', getConfig().getString("idle-bar-message"));
 
         arenaManager.loadArenas();
-
-        // Game Settings - this is the alternative to global variables
-        settings.load();
-
-        // Load the signs to join the arenas
         signManager.loadSigns();
 
         // Load the allowed drops list

@@ -3,6 +3,7 @@ package net.coasterman10.rangers.menu;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.kits.ItemStackBuilder;
+import net.coasterman10.rangers.util.SignText;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -14,6 +15,11 @@ public class BanditAbilityMenu implements PreferenceMenu {
     @Override
     public String getTitle() {
         return "Select Bandit Ability";
+    }
+    
+    @Override
+    public SignText getSignText() {
+        return new SignText(new String[] { "Bandit", "Ability:" , "", ""});
     }
     
     @Override

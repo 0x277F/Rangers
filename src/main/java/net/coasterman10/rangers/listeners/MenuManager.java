@@ -4,53 +4,52 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.menu.PreferenceMenu;
+import net.coasterman10.rangers.util.SignText;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
+import de.blablubbabc.insigns.InSigns;
 import de.blablubbabc.insigns.SignSendEvent;
 
 public class MenuManager implements Listener {
-    private Map<Location, PreferenceMenu> signMenus = new HashMap<>();
+    private Map<SignText, PreferenceMenu> signMenus = new HashMap<>();
     private Map<UUID, PreferenceMenu> currentMenus = new HashMap<>();
+    private Map<UUID, Sign> clickedSigns = new HashMap<>();
 
-    public void addSignMenu(Location loc, PreferenceMenu menu) {
-        signMenus.put(loc, menu);
-    }
-    
-    public void addSignMenus(Map<Location, PreferenceMenu> menus) {
-        signMenus.putAll(menus);
+    public void addSignMenu(SignText text, PreferenceMenu menu) {
+        signMenus.put(text, menu);
     }
 
     @EventHandler
     public void onSignSend(SignSendEvent e) {
-        PreferenceMenu menu = signMenus.get(e.getLocation());
+        PreferenceMenu menu = getMenu(e.getLocation().getBlock());
         if (menu != null) {
-            e.setLine(0, "Ranger/Bandit");
-            e.setLine(1, "Preferences");
-            e.setLine(2, ChatColor.GREEN + "[Selection]");
+            SignText text = menu.getSignText();
+            e.setLine(0, text.getLine(0));
+            e.setLine(1, text.getLine(1));
+            String selection = PlayerManager.getPlayer(e.getPlayer()).getUpgradeSelection(menu.getPreferenceKey());
+            e.setLine(2, ChatColor.GREEN + selection); // TODO: User-friendly selection name
             e.setLine(3, "Click To Change");
         }
     }
 
     @EventHandler
     public void onSignClick(PlayerInteractEvent e) {
-        if (e.getClickedBlock() != null) {
-            if (e.getClickedBlock().getType() == Material.WALL_SIGN
-                    || e.getClickedBlock().getType() == Material.SIGN_POST) {
-                PreferenceMenu menu = signMenus.get(e.getClickedBlock().getLocation());
-                if (menu != null) {
-                    menu.open(e.getPlayer());
-                    currentMenus.put(e.getPlayer().getUniqueId(), menu);
-                }
-            }
+        PreferenceMenu menu = getMenu(e.getClickedBlock());
+        if (menu != null) {
+            menu.open(e.getPlayer());
+            currentMenus.put(e.getPlayer().getUniqueId(), menu);
+            clickedSigns.put(e.getPlayer().getUniqueId(), (Sign) e.getClickedBlock().getState());
         }
     }
 
@@ -64,7 +63,16 @@ public class MenuManager implements Listener {
                 menu.selectItem((Player) e.getWhoClicked(), e.getSlot());
                 e.getWhoClicked().closeInventory();
                 currentMenus.remove(e.getWhoClicked().getUniqueId());
+                InSigns.sendSignChange((Player) e.getWhoClicked(), clickedSigns.remove(e.getWhoClicked().getUniqueId()));
             }
+        }
+    }
+
+    private PreferenceMenu getMenu(Block block) {
+        if (block != null && (block.getType() == Material.WALL_SIGN || block.getType() == Material.SIGN_POST)) {
+            return signMenus.get(new SignText(((Sign) block.getState()).getLines()));
+        } else {
+            return null;
         }
     }
 }
