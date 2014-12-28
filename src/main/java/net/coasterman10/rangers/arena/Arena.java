@@ -6,7 +6,7 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import net.coasterman10.rangers.game.GamePlayer;
+import net.coasterman10.rangers.GamePlayer;
 import net.coasterman10.rangers.game.GameState;
 import net.coasterman10.rangers.game.GameStateTasks;
 import net.coasterman10.rangers.game.GameTeam;

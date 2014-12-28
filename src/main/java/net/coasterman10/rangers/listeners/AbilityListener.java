@@ -5,8 +5,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
+import net.coasterman10.rangers.GamePlayer;
 import net.coasterman10.rangers.PlayerManager;
-import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameTeam;
 import net.coasterman10.rangers.kits.ItemStackBuilder;
 

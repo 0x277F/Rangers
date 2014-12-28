@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import net.coasterman10.rangers.game.GamePlayer;
-
 import org.bukkit.entity.Player;
 
 public class PlayerManager {

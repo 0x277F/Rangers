@@ -11,9 +11,9 @@ import java.util.Map;
 import java.util.Random;
 
 import me.confuser.barapi.BarAPI;
+import net.coasterman10.rangers.GamePlayer;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.Rangers;
-import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameScoreboard;
 import net.coasterman10.rangers.game.GameState;
 import net.coasterman10.rangers.game.GameStateTasks;
@@ -98,6 +98,9 @@ public class ClassicArena extends Arena {
         for (Collection<GamePlayer> team : teams.values()) {
             team.clear();
         }
+        for (Collection<String> heads : headsToRedeem.values()) {
+            heads.clear();
+        }
         for (GamePlayer player : players) {
             BarAPI.setMessage(player.getHandle(), Rangers.instance().getBarMessage(), 100F);
             if (player.isAlive())
@@ -115,7 +118,7 @@ public class ClassicArena extends Arena {
         }
     }
 
-    protected void start() {
+    protected void startGame() {
         scoreboard.setScore(GameTeam.RANGERS, 0);
         scoreboard.setScore(GameTeam.BANDITS, 0);
 
@@ -197,12 +200,17 @@ public class ClassicArena extends Arena {
     @Override
     protected void onPlayerJoin(GamePlayer player) {
         scoreboard.setForPlayer(player.getHandle());
+        if (getState() == GameState.LOBBY && players.size() >= getMinPlayers()) {
+            setState(GameState.STARTING);
+        }
     }
 
     @Override
     protected void onPlayerLeave(GamePlayer player) {
         player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
-        if (getState() == GameState.RUNNING) {
+        if (getState() == GameState.STARTING && players.size() < getMinPlayers()) {
+            setState(GameState.LOBBY);
+        } else if (getState() == GameState.RUNNING) {
             player.dropHead();
         }
     }
@@ -328,7 +336,7 @@ public class ClassicArena extends Arena {
         public void start() {
             timeLimit = getConfig().getInt("time-limit");
             seconds = timeLimit;
-            start();
+            startGame();
             onSecond();
         }
 
@@ -344,8 +352,8 @@ public class ClassicArena extends Arena {
                             + (seconds / 60) + (seconds % 60 >= 10 ? ":" : ":0") + (seconds % 60), seconds
                             / (float) timeLimit * 100F);
                 }
+                seconds--;
             }
-            seconds--;
         }
     }
 
@@ -365,8 +373,8 @@ public class ClassicArena extends Arena {
                 for (GamePlayer player : players) {
                     BarAPI.setMessage(player.getHandle(), ending.message, 100F);
                 }
+                seconds--;
             }
-            seconds--;
         }
     }
 

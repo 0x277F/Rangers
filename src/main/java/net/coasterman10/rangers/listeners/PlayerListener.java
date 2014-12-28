@@ -4,9 +4,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import net.coasterman10.rangers.GamePlayer;
 import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.Rangers;
-import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.game.GameState;
 import net.coasterman10.rangers.game.GameTeam;
 import net.coasterman10.rangers.util.PlayerUtil;
@@ -36,6 +36,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.metadata.MetadataValue;
@@ -138,7 +139,8 @@ public class PlayerListener implements Listener {
                 ItemStack item = ((Player) damager).getItemInHand();
                 if (item != null) {
                     msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
-                    String itemName = item.getItemMeta().hasDisplayName() ? item.getItemMeta().getDisplayName() : null;
+                    String itemName = item.hasItemMeta() ? (item.getItemMeta().hasDisplayName() ? item.getItemMeta()
+                            .getDisplayName() : null) : null;
                     if (itemName != null) {
                         msg.append(itemName);
                     } else {
@@ -231,6 +233,11 @@ public class PlayerListener implements Listener {
                 player.setCanDoubleJump(false);
             }
         }.runTask(plugin);
+    }
+    
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onTeleport(PlayerTeleportEvent e) {
+        PlayerManager.getPlayer(e.getPlayer()).updateSafeLocation();
     }
 
     @EventHandler

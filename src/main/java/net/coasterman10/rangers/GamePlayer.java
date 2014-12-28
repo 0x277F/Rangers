@@ -1,4 +1,4 @@
-package net.coasterman10.rangers.game;
+package net.coasterman10.rangers;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,9 +7,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.UUID;
 
-import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ClassicArena;
+import net.coasterman10.rangers.game.GameTeam;
 import net.coasterman10.rangers.util.PlayerUtil;
 
 import org.bukkit.Bukkit;
@@ -96,7 +96,7 @@ public class GamePlayer {
                     .warning("Could not save player data for " + getName() + " (" + id.toString() + ")");
         }
     }
-    
+
     public void updateSafeLocation() {
         Location loc = getHandle().getLocation();
         int x = loc.getBlockX();
@@ -312,5 +312,18 @@ public class GamePlayer {
 
     public void sendMessage(String msg) {
         getHandle().sendMessage(msg);
+    }
+
+    public void dropInventory(Collection<Material> allowedDrops) {
+        for (ItemStack item : getHandle().getInventory()) {
+            if (item == null)
+                continue;
+            Material type = item.getType();
+            if (type == Material.SKULL_ITEM || allowedDrops.contains(type)) {
+                Item i = lastSafeLocation.getWorld().dropItem(lastSafeLocation, item);
+                i.setVelocity(new Vector(0, 0, 0));
+                i.teleport(lastSafeLocation);
+            }
+        }
     }
 }

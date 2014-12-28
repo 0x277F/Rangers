@@ -22,7 +22,6 @@ import net.coasterman10.rangers.command.arena.ArenaSetSpawnCommand;
 import net.coasterman10.rangers.command.rangers.RangersReloadCommand;
 import net.coasterman10.rangers.command.sign.SignAddCommand;
 import net.coasterman10.rangers.command.sign.SignRemoveCommand;
-import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.listeners.AbilityListener;
 import net.coasterman10.rangers.listeners.MenuManager;
 import net.coasterman10.rangers.listeners.PlayerDeathListener;
@@ -127,6 +126,24 @@ public class Rangers extends JavaPlugin {
         for (Player p : Bukkit.getOnlinePlayers()) {
             BarAPI.setMessage(p, idleBarMessage, 100F);
         }
+        
+        // Continually update the safe locations of players, with a maximum of 10 players per tick.
+        // The more players that join the server, the lower the resolution of the safe location system.
+        // The maximum delay for a server of 100 players is 10 ticks between updates.
+        new BukkitRunnable() {
+            int i = 0;
+            @Override
+            public void run() {
+                Player[] players = Bukkit.getOnlinePlayers();
+                for (int j = 0; j < 10 && j < players.length; j++) {
+                    if (i >= players.length) {
+                        i = 0;
+                    }
+                    PlayerManager.getPlayer(players[i]).updateSafeLocation();
+                    i++;
+                }
+            }
+        }.runTaskTimer(this, 0L, 1L);
     }
 
     @Override
@@ -179,6 +196,6 @@ public class Rangers extends JavaPlugin {
     }
 
     public String getBarMessage() {
-        return ChatColor.translateAlternateColorCodes('&', getConfig().getString("bar-message"));
+        return idleBarMessage;
     }
 }

@@ -1,6 +1,6 @@
 package net.coasterman10.rangers.kits;
 
-import net.coasterman10.rangers.game.GamePlayer;
+import net.coasterman10.rangers.GamePlayer;
 
 public interface Kit {
     public static final Kit RANGER = new RangerKit();

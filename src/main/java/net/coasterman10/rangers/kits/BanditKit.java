@@ -1,6 +1,6 @@
 package net.coasterman10.rangers.kits;
 
-import net.coasterman10.rangers.game.GamePlayer;
+import net.coasterman10.rangers.GamePlayer;
 
 import org.bukkit.Color;
 import org.bukkit.Material;

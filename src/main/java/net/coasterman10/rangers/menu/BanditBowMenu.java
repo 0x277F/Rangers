@@ -1,7 +1,7 @@
 package net.coasterman10.rangers.menu;
 
+import net.coasterman10.rangers.GamePlayer;
 import net.coasterman10.rangers.PlayerManager;
-import net.coasterman10.rangers.game.GamePlayer;
 import net.coasterman10.rangers.kits.ItemStackBuilder;
 import net.coasterman10.rangers.util.SignText;
 
