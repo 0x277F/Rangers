@@ -27,6 +27,8 @@ public class ArenaManager {
             FileConfigAccessor config = new FileConfigAccessor(file);
             ConfigurationSection conf = config.get();
             String name = conf.getString("name", null);
+            if (name == null)
+                continue;
             try {
                 ArenaType type = ArenaType.valueOf(conf.getString("type", "").toUpperCase());
                 Arena arena = type.newInstance(name, config, plugin);

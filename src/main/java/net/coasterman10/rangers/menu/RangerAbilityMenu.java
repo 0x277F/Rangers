@@ -1,8 +1,8 @@
 package net.coasterman10.rangers.menu;
 
-import net.coasterman10.rangers.GamePlayer;
-import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.kits.ItemStackBuilder;
+import net.coasterman10.rangers.player.PlayerData;
+import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.util.SignText;
 
 import org.bukkit.Bukkit;
@@ -16,12 +16,12 @@ public class RangerAbilityMenu implements PreferenceMenu {
     public String getTitle() {
         return "Select Ranger Ability";
     }
-    
+
     @Override
     public SignText getSignText() {
-        return new SignText(new String[] { "Ranger", "Ability:" , "", ""});
+        return new SignText(new String[] { "Ranger", "Ability:", "", "" });
     }
-    
+
     @Override
     public String getPreferenceKey() {
         return "ranger.ability";
@@ -37,7 +37,7 @@ public class RangerAbilityMenu implements PreferenceMenu {
 
     @Override
     public void selectItem(Player player, int index) {
-        GamePlayer data = PlayerManager.getPlayer(player);
+        PlayerData data = RangersPlayer.getPlayer(player).getData();
         data.setUpgradeSelection(getPreferenceKey(), index == 1 ? "cloak" : "none");
         player.closeInventory();
         player.sendMessage(ChatColor.GREEN + "Selected Ranger Ability: " + (index == 1 ? "Cloak" : "None"));

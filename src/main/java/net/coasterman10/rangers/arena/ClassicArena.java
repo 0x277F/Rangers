@@ -11,17 +11,16 @@ import java.util.Map;
 import java.util.Random;
 
 import me.confuser.barapi.BarAPI;
-import net.coasterman10.rangers.GamePlayer;
-import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.game.GameScoreboard;
 import net.coasterman10.rangers.game.GameState;
 import net.coasterman10.rangers.game.GameStateTasks;
-import net.coasterman10.rangers.game.GameTeam;
+import net.coasterman10.rangers.game.RangersTeam;
 import net.coasterman10.rangers.kits.Kit;
+import net.coasterman10.rangers.player.RangersPlayer;
+import net.coasterman10.rangers.player.RangersPlayer.PlayerState;
 import net.coasterman10.rangers.util.ConfigUtil;
 import net.coasterman10.rangers.util.FileConfigAccessor;
-import net.coasterman10.rangers.util.PlayerUtil;
 import net.coasterman10.spectate.SpectateAPI;
 
 import org.bukkit.Bukkit;
@@ -40,10 +39,10 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffectType;
 
 public class ClassicArena extends Arena {
-    private Map<GameTeam, Location> chests = new EnumMap<>(GameTeam.class);
-    private Map<GameTeam, Collection<String>> headsToRedeem = new EnumMap<>(GameTeam.class);
-    protected Map<GameTeam, Collection<GamePlayer>> teams = new EnumMap<>(GameTeam.class);
-    protected GamePlayer banditLeader;
+    private Map<RangersTeam, Location> chests = new EnumMap<>(RangersTeam.class);
+    private Map<RangersTeam, Collection<String>> headsToRedeem = new EnumMap<>(RangersTeam.class);
+    protected Map<RangersTeam, Collection<RangersPlayer>> teams = new EnumMap<>(RangersTeam.class);
+    protected RangersPlayer banditLeader;
     private GameScoreboard scoreboard = new GameScoreboard();
     private EndingType ending = null;
 
@@ -55,8 +54,8 @@ public class ClassicArena extends Arena {
         registerStateTasks(GameState.RUNNING, new RunningState());
         registerStateTasks(GameState.ENDING, new EndingState());
 
-        for (GameTeam team : GameTeam.values()) {
-            teams.put(team, new HashSet<GamePlayer>());
+        for (RangersTeam team : RangersTeam.values()) {
+            teams.put(team, new HashSet<RangersPlayer>());
             headsToRedeem.put(team, new HashSet<String>());
         }
     }
@@ -64,20 +63,20 @@ public class ClassicArena extends Arena {
     @Override
     public void load() {
         super.load();
-        for (GameTeam team : GameTeam.values()) {
+        for (RangersTeam team : RangersTeam.values()) {
             chests.put(team, ConfigUtil.getLocation(getConfig(), "chests." + team.name().toLowerCase()));
         }
     }
 
     @Override
     public void save() {
-        for (GameTeam team : GameTeam.values()) {
+        for (RangersTeam team : RangersTeam.values()) {
             ConfigUtil.setLocation(getConfig(), "chests." + team.name().toLowerCase(), chests.get(team));
         }
         super.save();
     }
 
-    public void setChest(GameTeam team, Location chest) {
+    public void setChest(RangersTeam team, Location chest) {
         chests.put(team, chest);
     }
 
@@ -86,7 +85,7 @@ public class ClassicArena extends Arena {
         if (!super.isValid()) {
             return false;
         }
-        for (GameTeam team : GameTeam.values()) {
+        for (RangersTeam team : RangersTeam.values()) {
             if (spawns.get(team) == null || chests.get(team) == null) {
                 return false;
             }
@@ -95,20 +94,19 @@ public class ClassicArena extends Arena {
     }
 
     protected void reset() {
-        for (Collection<GamePlayer> team : teams.values()) {
+        for (Collection<RangersPlayer> team : teams.values()) {
             team.clear();
         }
         for (Collection<String> heads : headsToRedeem.values()) {
             heads.clear();
         }
-        for (GamePlayer player : players) {
-            BarAPI.setMessage(player.getHandle(), Rangers.instance().getBarMessage(), 100F);
-            if (player.isAlive())
-                player.getHandle().teleport(lobbySpawn);
-            PlayerUtil.resetPlayer(player.getHandle());
-            player.setCanDoubleJump(false);
+        for (RangersPlayer player : players) {
+            BarAPI.setMessage(player.getBukkitPlayer(), Rangers.instance().getBarMessage(), 100F);
+            if (player.isPlaying())
+                player.teleport(lobbySpawn);
+            player.resetPlayer();
             player.setTeam(null);
-            player.setAlive(false);
+            player.setState(PlayerState.GAME_LOBBY);
         }
         scoreboard.reset();
         banditLeader = null;
@@ -119,22 +117,22 @@ public class ClassicArena extends Arena {
     }
 
     protected void startGame() {
-        scoreboard.setScore(GameTeam.RANGERS, 0);
-        scoreboard.setScore(GameTeam.BANDITS, 0);
+        scoreboard.setScore(RangersTeam.RANGERS, 0);
+        scoreboard.setScore(RangersTeam.BANDITS, 0);
 
         clearEntities();
 
-        List<GamePlayer> bandits = new ArrayList<>(teams.get(GameTeam.BANDITS));
+        List<RangersPlayer> bandits = new ArrayList<>(teams.get(RangersTeam.BANDITS));
         banditLeader = bandits.get(new Random().nextInt(bandits.size()));
-        scoreboard.setBanditLeader(banditLeader.getHandle());
+        scoreboard.setBanditLeader(banditLeader.getBukkitPlayer());
         broadcast(ChatColor.RED + banditLeader.getName() + " is the Bandit Leader");
 
         // Teleport all players to arena and set them as alive
-        for (GamePlayer player : players) {
-            SpectateAPI.removeSpectator(player.getHandle());
-            PlayerUtil.resetPlayer(player.getHandle());
-            player.getHandle().teleport(spawns.get(player.getTeam()));
-            player.setAlive(true);
+        for (RangersPlayer player : players) {
+            SpectateAPI.removeSpectator(player.getBukkitPlayer());
+            player.resetPlayer();
+            player.teleport(spawns.get(player.getTeam()));
+            player.setState(PlayerState.GAME_PLAYING);
         }
 
         // Add permanent effects for arnea
@@ -146,8 +144,8 @@ public class ClassicArena extends Arena {
                     PotionEffectType type = PotionEffectType.getById(Integer.parseInt(effect));
                     if (type != null) {
                         int amp = Math.max(0, effects.getInt(effect));
-                        for (GamePlayer player : players) {
-                            PlayerUtil.addPermanentEffect(player.getHandle(), type, amp);
+                        for (RangersPlayer player : players) {
+                            player.addPermanentEffect(type, amp);
                         }
                     }
                 } catch (NumberFormatException e) {
@@ -155,62 +153,62 @@ public class ClassicArena extends Arena {
             }
         }
 
-        for (GamePlayer ranger : teams.get(GameTeam.RANGERS)) {
+        for (RangersPlayer ranger : teams.get(RangersTeam.RANGERS)) {
             Kit.RANGER.apply(ranger);
-            ranger.setCanDoubleJump(true);
-            PlayerUtil.addPermanentEffect(ranger.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
-            PlayerUtil.addPermanentEffect(ranger.getHandle(), PotionEffectType.SPEED, 0);
-            headsToRedeem.get(GameTeam.RANGERS).add(ranger.getHandle().getName());
+            ranger.addPermanentEffect(PotionEffectType.DAMAGE_RESISTANCE, 0);
+            ranger.addPermanentEffect(PotionEffectType.SPEED, 0);
+            headsToRedeem.get(RangersTeam.RANGERS).add(ranger.getName());
         }
 
         // If teams are unbalanced and there are 2 or fewer bandits, do not give bandits slowness
-        boolean slowness = teams.get(GameTeam.RANGERS).size() == teams.get(GameTeam.BANDITS).size()
-                || teams.get(GameTeam.BANDITS).size() > 2;
-        for (GamePlayer bandit : teams.get(GameTeam.BANDITS)) {
+        boolean slowness = teams.get(RangersTeam.RANGERS).size() == teams.get(RangersTeam.BANDITS).size()
+                || teams.get(RangersTeam.BANDITS).size() > 2;
+        for (RangersPlayer bandit : teams.get(RangersTeam.BANDITS)) {
             Kit.BANDIT.apply(bandit);
-            PlayerUtil.addPermanentEffect(bandit.getHandle(), PotionEffectType.DAMAGE_RESISTANCE, 0);
+            bandit.addPermanentEffect(PotionEffectType.DAMAGE_RESISTANCE, 0);
             if (slowness) {
-                PlayerUtil.addPermanentEffect(bandit.getHandle(), PotionEffectType.SLOW, 0);
+                bandit.addPermanentEffect(PotionEffectType.SLOW, 0);
             } else {
                 bandit.sendMessage(ChatColor.GOLD + "The teams are unbalanced, so you have been spared of slowness.");
             }
         }
 
-        headsToRedeem.get(GameTeam.BANDITS).add(banditLeader.getName());
+        headsToRedeem.get(RangersTeam.BANDITS).add(banditLeader.getName());
     }
 
     private void selectTeams() {
-        LinkedList<GamePlayer> playersToAdd = new LinkedList<>(players);
+        LinkedList<RangersPlayer> playersToAdd = new LinkedList<>(players);
         Collections.shuffle(playersToAdd);
-        GameTeam nextTeam = GameTeam.RANGERS;
+        RangersTeam nextTeam = RangersTeam.RANGERS;
         while (!playersToAdd.isEmpty()) {
-            GamePlayer next = playersToAdd.poll();
+            RangersPlayer next = playersToAdd.poll();
             teams.get(nextTeam).add(next);
             next.setTeam(nextTeam);
+            scoreboard.setTeam(next.getBukkitPlayer(), nextTeam);
             next.sendMessage(ChatColor.DARK_AQUA + "You have been selected to join the " + nextTeam.getChatColor()
                     + nextTeam.getName());
             nextTeam = nextTeam.opponent();
         }
     }
 
-    public GamePlayer getBanditLeader() {
+    public RangersPlayer getBanditLeader() {
         return banditLeader;
     }
 
     @Override
-    protected void onPlayerJoin(GamePlayer player) {
-        scoreboard.setForPlayer(player.getHandle());
+    protected void onPlayerJoin(RangersPlayer player) {
+        scoreboard.setForPlayer(player.getBukkitPlayer());
         if (getState() == GameState.LOBBY && players.size() >= getMinPlayers()) {
             setState(GameState.STARTING);
         }
     }
 
     @Override
-    protected void onPlayerLeave(GamePlayer player) {
-        player.getHandle().setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
-        if (getState() == GameState.STARTING && players.size() < getMinPlayers()) {
+    protected void onPlayerLeave(RangersPlayer player) {
+        player.getBukkitPlayer().setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+        if ((getState() == GameState.STARTING && players.size() < getMinPlayers()) || players.size() == 0) {
             setState(GameState.LOBBY);
-        } else if (getState() == GameState.RUNNING) {
+        } else if (player.isPlaying()) {
             player.dropHead();
         }
     }
@@ -229,12 +227,12 @@ public class ClassicArena extends Arena {
         Block clicked = e.getClickedBlock();
         if (clicked == null || clicked.getType() != Material.CHEST)
             return;
-        GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
+        RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
         if (player.getArena() != this)
             return;
         // Check if the chest they clicked on is the one corresponding to their team.
-        GameTeam team = player.getTeam();
-        GameTeam opponent = team.opponent();
+        RangersTeam team = player.getTeam();
+        RangersTeam opponent = team.opponent();
         if (clicked.getLocation().equals(chests.get(team))) {
             SkullMeta meta = (SkullMeta) item.getItemMeta();
             if (meta.hasOwner()) {
@@ -267,19 +265,19 @@ public class ClassicArena extends Arena {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent e) {
         // Precondition: player must be participating in this game
-        GamePlayer player = PlayerManager.getPlayer(e.getEntity());
+        RangersPlayer player = RangersPlayer.getPlayer(e.getEntity());
         if (!players.contains(player))
             return;
 
         // End the game if all players have died
-        boolean playersAlive = false;
-        for (GamePlayer p : players) {
-            if (p.isAlive()) {
-                playersAlive = true;
+        boolean playersPlaying = false;
+        for (RangersPlayer p : players) {
+            if (p.isPlaying()) {
+                playersPlaying = true;
                 break;
             }
         }
-        if (!playersAlive) {
+        if (!playersPlaying) {
             ending = EndingType.ALL_DIED;
             setState(GameState.ENDING);
         }
@@ -320,8 +318,8 @@ public class ClassicArena extends Arena {
                 if (seconds == teamSelect) {
                     selectTeams();
                 }
-                for (GamePlayer player : players) {
-                    BarAPI.setMessage(player.getHandle(), ChatColor.GREEN + "Starting in " + seconds, seconds
+                for (RangersPlayer player : players) {
+                    BarAPI.setMessage(player.getBukkitPlayer(), ChatColor.GREEN + "Starting in " + seconds, seconds
                             / (float) countdownDuration * 100F);
                 }
                 seconds--;
@@ -347,10 +345,11 @@ public class ClassicArena extends Arena {
                     ending = EndingType.TIME;
                 setState(GameState.ENDING);
             } else {
-                for (GamePlayer player : players) {
-                    BarAPI.setMessage(player.getHandle(), (seconds >= 30 ? ChatColor.GREEN : ChatColor.RED).toString()
-                            + (seconds / 60) + (seconds % 60 >= 10 ? ":" : ":0") + (seconds % 60), seconds
-                            / (float) timeLimit * 100F);
+                for (RangersPlayer player : players) {
+                    BarAPI.setMessage(player.getBukkitPlayer(),
+                            (seconds >= 30 ? ChatColor.GREEN : ChatColor.RED).toString() + (seconds / 60)
+                                    + (seconds % 60 >= 10 ? ":" : ":0") + (seconds % 60), seconds / (float) timeLimit
+                                    * 100F);
                 }
                 seconds--;
             }
@@ -370,8 +369,8 @@ public class ClassicArena extends Arena {
                 setState(GameState.LOBBY);
                 ending = null;
             } else {
-                for (GamePlayer player : players) {
-                    BarAPI.setMessage(player.getHandle(), ending.message, 100F);
+                for (RangersPlayer player : players) {
+                    BarAPI.setMessage(player.getBukkitPlayer(), ending.message, 100F);
                 }
                 seconds--;
             }

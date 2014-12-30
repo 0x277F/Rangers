@@ -11,9 +11,9 @@ import java.util.Map.Entry;
 import net.coasterman10.rangers.ArenaJoinSign;
 import net.coasterman10.rangers.ArenaSign;
 import net.coasterman10.rangers.ArenaStatusSign;
-import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
+import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.util.ConfigAccessor;
 import net.coasterman10.rangers.util.ConfigUtil;
 
@@ -43,7 +43,7 @@ public class SignManager implements Listener {
             if (signLocations.containsKey(e.getClickedBlock().getLocation())) {
                 ArenaSign s = signLocations.get(e.getClickedBlock().getLocation());
                 if (s instanceof ArenaJoinSign && s.hasArena()) {
-                    PlayerManager.getPlayer(e.getPlayer()).joinArena(s.getArena());
+                    RangersPlayer.getPlayer(e.getPlayer()).joinArena(s.getArena());
                 }
             }
         }

@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.menu.PreferenceMenu;
+import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.util.SignText;
 
 import org.bukkit.ChatColor;
@@ -23,12 +23,12 @@ import de.blablubbabc.insigns.SignSendEvent;
 
 public class MenuManager implements Listener {
     private static final Map<String, String> upgradeNames = new HashMap<>();
-   
+
     // TODO: Cleaner upgrade system
     static {
         upgradeNames.put("none", "None");
         upgradeNames.put("cloak", "Cloak");
-        upgradeNames.put("throwingknife", "Throwing Knife");
+        upgradeNames.put("throwingknife", "ThrowingKnife");
         upgradeNames.put("strikers", "Strikers");
         upgradeNames.put("bow", "Bow");
         upgradeNames.put("mace", "Mace");
@@ -36,7 +36,7 @@ public class MenuManager implements Listener {
         upgradeNames.put("8arrows", "+8 Arrows");
         upgradeNames.put("16arrows", "+16 Arrows");
     }
-    
+
     private Map<SignText, PreferenceMenu> signMenus = new HashMap<>();
     private Map<UUID, PreferenceMenu> currentMenus = new HashMap<>();
     private Map<UUID, Sign> clickedSigns = new HashMap<>();
@@ -52,7 +52,8 @@ public class MenuManager implements Listener {
             SignText text = menu.getSignText();
             e.setLine(0, text.getLine(0));
             e.setLine(1, text.getLine(1));
-            String selection = PlayerManager.getPlayer(e.getPlayer()).getUpgradeSelection(menu.getPreferenceKey());
+            String selection = RangersPlayer.getPlayer(e.getPlayer()).getData()
+                    .getUpgradeSelection(menu.getPreferenceKey());
             String friendlySelection = upgradeNames.get(selection);
             e.setLine(2, ChatColor.GREEN + (friendlySelection != null ? friendlySelection : selection));
             e.setLine(3, "Click To Change");

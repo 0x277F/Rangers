@@ -1,8 +1,8 @@
 package net.coasterman10.rangers.menu;
 
-import net.coasterman10.rangers.GamePlayer;
-import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.kits.ItemStackBuilder;
+import net.coasterman10.rangers.player.PlayerData;
+import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.util.SignText;
 
 import org.bukkit.Bukkit;
@@ -16,12 +16,12 @@ public class BanditSecondaryMenu implements PreferenceMenu {
     public String getTitle() {
         return "Select Bandit Secondary Weapon";
     }
-    
+
     @Override
     public SignText getSignText() {
-        return new SignText(new String[] { "Bandit", "Secondary:" , "", ""});
+        return new SignText(new String[] { "Bandit", "Secondary:", "", "" });
     }
-    
+
     @Override
     public String getPreferenceKey() {
         return "bandit.secondary";
@@ -37,7 +37,7 @@ public class BanditSecondaryMenu implements PreferenceMenu {
 
     @Override
     public void selectItem(Player player, int index) {
-        GamePlayer data = PlayerManager.getPlayer(player);
+        PlayerData data = RangersPlayer.getPlayer(player).getData();
         data.setUpgradeSelection(getPreferenceKey(), index == 1 ? "mace" : "bow");
         player.closeInventory();
         player.sendMessage(ChatColor.GREEN + "Selected Secondary Bandit Weapon: " + (index == 1 ? "Mace" : "Crossbow"));

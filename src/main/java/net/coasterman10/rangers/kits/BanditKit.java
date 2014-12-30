@@ -1,6 +1,7 @@
 package net.coasterman10.rangers.kits;
 
-import net.coasterman10.rangers.GamePlayer;
+import net.coasterman10.rangers.player.RangersPlayer;
+import net.coasterman10.rangers.player.RangersPlayer.PlayerType;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -28,26 +29,26 @@ public class BanditKit implements Kit {
     }
 
     @Override
-    public void apply(GamePlayer player) {
-        PlayerInventory inv = player.getHandle().getInventory();
+    public void apply(RangersPlayer player) {
+        PlayerInventory inv = player.getBukkitPlayer().getInventory();
         inv.clear();
         inv.setContents(BASE);
         inv.setArmorContents(ARMOR);
 
-        if (player.getUpgradeSelection("bandit.secondary").equals("mace")) {
+        if (player.getData().getUpgradeSelection("bandit.secondary").equals("mace")) {
             inv.setItem(1, new ItemStackBuilder(Material.DIAMOND_SPADE).setDisplayName("Mace").build());
             inv.remove(Material.ARROW);
         } else {
             ItemStack arrows = inv.getItem(8);
             arrows.setAmount(arrows.getAmount() + 8);
         }
-        
-        if (player.getUpgradeSelection("bandit.ability").equals("grapple")) {
+
+        if (player.getData().getUpgradeSelection("bandit.ability").equals("grapple")) {
             inv.setItem(2, new ItemStackBuilder(Material.FISHING_ROD).setDisplayName("Grapple").build());
             inv.setItem(3, new ItemStack(Material.BREAD, 4));
         }
 
-        if (player.isBanditLeader()) {
+        if (player.getType() == PlayerType.BANDIT_LEADER) {
             inv.setBoots(new ItemStack(Material.GOLD_BOOTS));
             inv.setHelmet(new ItemStack(Material.GOLD_HELMET));
             inv.setItem(0, new ItemStackBuilder(Material.DIAMOND_SWORD).addEnchantment(Enchantment.KNOCKBACK, 1)

@@ -1,8 +1,8 @@
 package net.coasterman10.rangers.menu;
 
-import net.coasterman10.rangers.GamePlayer;
-import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.kits.ItemStackBuilder;
+import net.coasterman10.rangers.player.PlayerData;
+import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.util.SignText;
 
 import org.bukkit.Bukkit;
@@ -37,7 +37,7 @@ public class BanditBowMenu implements PreferenceMenu {
 
     @Override
     public void selectItem(Player player, int index) {
-        GamePlayer data = PlayerManager.getPlayer(player);
+        PlayerData data = RangersPlayer.getPlayer(player).getData();
         data.setUpgradeSelection(getPreferenceKey(), index == 1 ? "8arrows" : "none");
         player.sendMessage(ChatColor.GREEN + "Selected Bandit Bow Upgrade: " + (index == 1 ? "+8 Arrows" : "None"));
     }

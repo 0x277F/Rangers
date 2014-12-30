@@ -3,9 +3,9 @@ package net.coasterman10.rangers.listeners;
 import java.util.Collection;
 import java.util.HashSet;
 
-import net.coasterman10.rangers.GamePlayer;
-import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.arena.ClassicArena;
+import net.coasterman10.rangers.player.RangersPlayer;
+import net.coasterman10.rangers.player.RangersPlayer.PlayerState;
 
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
@@ -22,8 +22,8 @@ public class PlayerDeathListener implements Listener {
 
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
-        GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-        if (player.isAlive() && player.getArena() instanceof ClassicArena) {
+        RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
+        if (player.isPlaying() && player.getArena() instanceof ClassicArena) {
             player.dropHead();
             player.dropInventory(allowedDrops);
         }
@@ -32,9 +32,9 @@ public class PlayerDeathListener implements Listener {
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
         e.getDrops().clear();
-        GamePlayer player = PlayerManager.getPlayer(e.getEntity());
-        if (player.isAlive() && player.getArena() instanceof ClassicArena) {
-            player.setAlive(false);
+        RangersPlayer player = RangersPlayer.getPlayer(e.getEntity());
+        if (player.isPlaying() && player.getArena() instanceof ClassicArena) {
+            player.setState(PlayerState.GAME_LOBBY);
             player.dropHead();
             player.dropInventory(allowedDrops);
         }

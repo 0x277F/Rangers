@@ -4,12 +4,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-import net.coasterman10.rangers.GamePlayer;
-import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.game.GameState;
-import net.coasterman10.rangers.game.GameTeam;
-import net.coasterman10.rangers.util.PlayerUtil;
+import net.coasterman10.rangers.game.RangersTeam;
+import net.coasterman10.rangers.player.RangersPlayer;
+import net.coasterman10.rangers.player.RangersPlayer.PlayerState;
 import net.coasterman10.spectate.SpectateAPI;
 
 import org.bukkit.Bukkit;
@@ -34,7 +33,6 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
@@ -43,7 +41,6 @@ import org.bukkit.metadata.MetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerListener implements Listener {
     private final Rangers plugin;
@@ -60,25 +57,18 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
-        e.getPlayer().sendMessage("Welcome to Rangers!");
+        e.getPlayer().sendMessage(ChatColor.GREEN + "Welcome to Rangers!");
         e.getPlayer().teleport(plugin.getLobbySpawn());
-        PlayerUtil.resetPlayer(e.getPlayer());
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onLeave(PlayerQuitEvent e) {
-        GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-        player.quit();
-        PlayerManager.removePlayer(e.getPlayer());
+        RangersPlayer.getPlayer(e.getPlayer()).resetPlayer();
     }
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         if (SpectateAPI.isSpectator(e.getPlayer())) {
-            GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-            if (player.isInGame()) {
+            RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
+            if (player.isInArena()) {
                 SpectateAPI.removeSpectator(e.getPlayer());
-                player.getHandle().teleport(player.getArena().getLobbySpawn());
+                player.teleport(player.getArena().getLobbySpawn());
             }
         }
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) {
@@ -90,11 +80,11 @@ public class PlayerListener implements Listener {
                 plugin.sendToLobby(e.getPlayer());
             }
             if (s.getLine(1).toLowerCase().contains("click here") && s.getLine(2).toLowerCase().contains("to spectate")) {
-                GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-                if (player.isInGame()) {
+                RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
+                if (player.isInArena()) {
                     if (player.getArena().getState() == GameState.RUNNING) {
                         SpectateAPI.addSpectator(e.getPlayer());
-                        player.getHandle().teleport(player.getArena().getSpectatorSpawn());
+                        player.teleport(player.getArena().getSpectatorSpawn());
                         e.getPlayer().setAllowFlight(true);
                         e.getPlayer().setFlying(true);
                         e.getPlayer().sendMessage(
@@ -108,34 +98,27 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
-        GamePlayer player = PlayerManager.getPlayer(e.getEntity());
+        RangersPlayer player = RangersPlayer.getPlayer(e.getEntity());
 
-        if (!player.isAlive()) {
+        if (!player.isPlaying()) {
             e.setDeathMessage(null);
             return;
         }
 
         // Huge mess of code to generate death message. Don't ask.
         StringBuilder msg = new StringBuilder(64);
-        ChatColor teamColor = (player.getTeam() != null ? player.getTeam().getChatColor() : ChatColor.WHITE);
-        msg.append(teamColor).append(e.getEntity().getName());
-        if (player.isBanditLeader())
-            msg.append("(Bandit Leader)");
-        else
-            msg.append("(").append(player.getTeam().getName()).append(")");
+        msg.append(player.getType().getChatColor()).append(e.getEntity().getName());
+        msg.append("(").append(player.getType().getName()).append(")");
         EntityDamageEvent cause = e.getEntity().getLastDamageCause();
         if (cause instanceof EntityDamageByEntityEvent) {
             Entity damager = ((EntityDamageByEntityEvent) cause).getDamager();
             if (damager instanceof Player) {
                 msg.append(ChatColor.DARK_RED).append(" was slain by ");
-                GamePlayer attacker = PlayerManager.getPlayer((Player) damager);
-                if (attacker.getTeam() == GameTeam.BANDITS)
-                    attacker.getHandle().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 40, 2));
-                msg.append(attacker.getTeam().getChatColor()).append(((Player) damager).getName());
-                if (attacker.isBanditLeader())
-                    msg.append("(Bandit Leader)");
-                else
-                    msg.append("(").append(attacker.getTeam().getName()).append(")");
+                RangersPlayer attacker = RangersPlayer.getPlayer((Player) damager);
+                if (attacker.getTeam() == RangersTeam.BANDITS)
+                    attacker.getBukkitPlayer().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 40, 2));
+                msg.append(attacker.getType().getChatColor()).append(((Player) damager).getName());
+                msg.append("(").append(attacker.getType().getName()).append(")");
                 ItemStack item = ((Player) damager).getItemInHand();
                 if (item != null) {
                     msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
@@ -155,12 +138,9 @@ public class PlayerListener implements Listener {
                 ProjectileSource shooter = ((Arrow) damager).getShooter();
                 if (shooter instanceof Player) {
                     msg.append(ChatColor.DARK_RED).append(" was shot by ");
-                    GamePlayer attacker = PlayerManager.getPlayer((Player) shooter);
-                    msg.append(attacker.getTeam().getChatColor()).append(((Player) shooter).getName());
-                    if (attacker.isBanditLeader())
-                        msg.append("(Bandit Leader)");
-                    else
-                        msg.append("(").append(attacker.getTeam().getName()).append(")");
+                    RangersPlayer attacker = RangersPlayer.getPlayer((Player) shooter);
+                    msg.append(attacker.getType().getChatColor()).append(((Player) shooter).getName());
+                    msg.append("(").append(attacker.getType().getName()).append(")");
                     boolean foundBow = false;
                     for (ItemStack item : ((Player) shooter).getInventory()) {
                         if (item == null)
@@ -198,8 +178,8 @@ public class PlayerListener implements Listener {
                     }
                     // Since it's fairly messy to deal with them offline I'm just hardcoding in that they
                     // are a Ranger (since only Rangers get the throwing knife anyway)
-                    msg.append(GameTeam.RANGERS.getChatColor()).append(shooter);
-                    msg.append("(").append(GameTeam.RANGERS.getName()).append(")");
+                    msg.append(RangersTeam.RANGERS.getChatColor()).append(shooter);
+                    msg.append("(").append(RangersTeam.RANGERS.getName()).append(")");
                     msg.append(ChatColor.DARK_RED).append(" using a ").append(ChatColor.YELLOW);
                     msg.append("Throwing Knife");
                 }
@@ -218,26 +198,18 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
-        final GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-        if (player.isInGame()) {
+        final RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
+        if (player.isInArena()) {
             e.setRespawnLocation(player.getArena().getLobbySpawn());
-            player.setAlive(false);
+            player.setState(PlayerState.GAME_LOBBY);
         } else {
             e.setRespawnLocation(plugin.getLobbySpawn());
         }
-
-        // Do this in a later tick because Bukkit sucks
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                player.setCanDoubleJump(false);
-            }
-        }.runTask(plugin);
     }
-    
+
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onTeleport(PlayerTeleportEvent e) {
-        PlayerManager.getPlayer(e.getPlayer()).updateSafeLocation();
+        RangersPlayer.getPlayer(e.getPlayer()).updateSafeLocation();
     }
 
     @EventHandler
@@ -248,31 +220,33 @@ public class PlayerListener implements Listener {
                 @SuppressWarnings("deprecation")
                 Player owner = Bukkit.getPlayer(meta.getOwner());
                 if (owner != null) {
-                    GamePlayer ownerData = PlayerManager.getPlayer(owner);
-                    GamePlayer pickupData = PlayerManager.getPlayer(e.getPlayer());
-                    if (ownerData.getTeam() == pickupData.getTeam()) {
+                    RangersPlayer ownerPlayer = RangersPlayer.getPlayer(owner);
+                    RangersPlayer pickupPlayer = RangersPlayer.getPlayer(e.getPlayer());
+                    if (ownerPlayer.getTeam() == pickupPlayer.getTeam()) {
                         e.setCancelled(true);
                     }
                 }
             }
         } else if (!allowedDrops.contains(e.getItem().getItemStack().getType())) {
-            GamePlayer player = PlayerManager.getPlayer(e.getPlayer());
-            if (player.isInGame() && player.isAlive())
+            RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
+            if (player.isInArena()) {
                 e.setCancelled(true);
+            }
         }
     }
 
     @EventHandler
     public void onDropItem(PlayerDropItemEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).isInGame()) {
-            if (!allowedDrops.contains(e.getItemDrop().getItemStack().getType()))
+        if (RangersPlayer.getPlayer(e.getPlayer()).isInArena()) {
+            if (!allowedDrops.contains(e.getItemDrop().getItemStack().getType())) {
                 e.setCancelled(true);
+            }
         }
     }
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).isInGame() || !e.getPlayer().isOp()
+        if (RangersPlayer.getPlayer(e.getPlayer()).isPlaying() || !e.getPlayer().isOp()
                 || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
@@ -280,7 +254,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
-        if (PlayerManager.getPlayer(e.getPlayer()).isInGame() || !e.getPlayer().isOp()
+        if (RangersPlayer.getPlayer(e.getPlayer()).isPlaying() || !e.getPlayer().isOp()
                 || !e.getPlayer().hasPermission("rangers.arena.build")) {
             e.setCancelled(true);
         }
@@ -289,16 +263,18 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
         if (e.getEntity() instanceof Player && e.getDamager() instanceof Player) {
-            if (!PlayerManager.getPlayer((Player) e.getEntity()).isAlive())
+            if (!RangersPlayer.getPlayer((Player) e.getEntity()).isPlaying()) {
                 e.setCancelled(true);
+            }
         }
     }
 
     @EventHandler
     public void onEntityDamage(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player) {
-            if (!PlayerManager.getPlayer((Player) e.getEntity()).isAlive())
+            if (!RangersPlayer.getPlayer((Player) e.getEntity()).isPlaying()) {
                 e.setCancelled(true);
+            }
         }
     }
 }

@@ -5,10 +5,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
-import net.coasterman10.rangers.GamePlayer;
-import net.coasterman10.rangers.PlayerManager;
-import net.coasterman10.rangers.game.GameTeam;
+import net.coasterman10.rangers.game.RangersTeam;
 import net.coasterman10.rangers.kits.ItemStackBuilder;
+import net.coasterman10.rangers.player.RangersPlayer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -41,8 +40,8 @@ import org.bukkit.util.Vector;
 
 public class AbilityListener implements Listener {
     private final Plugin plugin;
+    private Set<RangersPlayer> doubleJumpers = new HashSet<>();
     private Set<UUID> throwingKnifeCooldowns = new HashSet<>();
-    private Set<UUID> doubleJumpers = new HashSet<>();
 
     public AbilityListener(Plugin plugin) {
         this.plugin = plugin;
@@ -50,9 +49,9 @@ public class AbilityListener implements Listener {
 
     @EventHandler
     public void onFish(final PlayerFishEvent e) {
-        final GamePlayer p = PlayerManager.getPlayer(e.getPlayer());
-        if (p.isInGame() && p.getTeam() == GameTeam.BANDITS
-                && p.getUpgradeSelection("bandit.ability").equals("grapple")) {
+        final RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
+        if (player.isPlaying() && player.getTeam() == RangersTeam.BANDITS
+                && player.getData().isUpgradeSelected("bandit.ability", "grapple")) {
             if ((e.getState() == State.FAILED_ATTEMPT && (e.getHook().isOnGround() || !e.getHook().getLocation()
                     .subtract(0, 0.5, 0).getBlock().isEmpty()))
                     || e.getState() == State.IN_GROUND) {
@@ -64,7 +63,7 @@ public class AbilityListener implements Listener {
                     e.getPlayer()
                             .sendMessage(
                                     ChatColor.RED
-                                            + "The grapple was not able to grip the surface well... try grappling to somewhere higher up.");
+                                            + "The grOapple was not able to grip the surface well... try grappling to somewhere higher up.");
                     e.getPlayer().getWorld().playSound(e.getHook().getLocation(), Sound.ITEM_BREAK, 0.75F, 1F);
                     return;
                 }
@@ -116,15 +115,17 @@ public class AbilityListener implements Listener {
         }
 
         if (e.getEntity() instanceof Player) {
-            GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
-            if (player.isCloaked())
+            RangersPlayer player = RangersPlayer.getPlayer((Player) e.getEntity());
+            if (player.isCloaked()) {
                 player.uncloak();
+            }
         }
 
         if (e.getDamager() instanceof Player) {
-            GamePlayer player = PlayerManager.getPlayer((Player) e.getDamager());
-            if (player.isCloaked())
+            RangersPlayer player = RangersPlayer.getPlayer((Player) e.getDamager());
+            if (player.isCloaked()) {
                 player.uncloak();
+            }
         }
     }
 
@@ -132,10 +133,10 @@ public class AbilityListener implements Listener {
     public void onToggleFlight(PlayerToggleFlightEvent e) {
         if (e.isFlying() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
             Player p = e.getPlayer();
-            GamePlayer player = PlayerManager.getPlayer(p);
-            if (player.isAlive() && player.canDoubleJump()) {
-                player.doubleJump();
-                doubleJumpers.add(player.id);
+            RangersPlayer player = RangersPlayer.getPlayer(p);
+            if (player.canDoubleJump()) {
+
+                doubleJumpers.add(player);
             }
         }
     }
@@ -144,28 +145,32 @@ public class AbilityListener implements Listener {
     public void onDamage(EntityDamageEvent e) {
         if (e.getCause() == DamageCause.FALL && doubleJumpers.contains(e.getEntity().getUniqueId())) {
             e.setCancelled(true);
+            doubleJumpers.remove(e.getEntity().getUniqueId());
         }
 
         if (e.getEntity() instanceof Player) {
-            GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
-            if (player.isCloaked())
+            RangersPlayer player = RangersPlayer.getPlayer((Player) e.getEntity());
+            if (player.isCloaked()) {
                 player.uncloak();
+            }
         }
     }
 
     @EventHandler
     public void onFireBow(EntityShootBowEvent e) {
         if (e.getEntity() instanceof Player) {
-            GamePlayer player = PlayerManager.getPlayer((Player) e.getEntity());
-            if (player.isCloaked())
+            RangersPlayer player = RangersPlayer.getPlayer((Player) e.getEntity());
+            if (player.isCloaked()) {
                 player.uncloak();
+            }
         }
     }
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         if (e.getItem() != null) {
-            if (e.getItem().getType() == Material.TRIPWIRE_HOOK) {
+            if (e.getItem().getType() == Material.TRIPWIRE_HOOK
+                    && RangersPlayer.getPlayer(e.getPlayer()).getTeam() == RangersTeam.RANGERS) {
                 final Player player = e.getPlayer();
 
                 // 5 second cooldown
@@ -173,17 +178,17 @@ public class AbilityListener implements Listener {
                     throwingKnifeCooldowns.add(player.getUniqueId());
                     Location eye = player.getEyeLocation();
                     final Entity knife = player.getWorld().dropItem(eye, e.getItem());
-                    knife.setVelocity(eye.getDirection().multiply(1.3));
+                    knife.setVelocity(eye.getDirection().multiply(1.5));
 
-                    // We need to know who shot the knife in case it kills the victim
+                    // We need to know who shot the knife in case it kills a victim
                     knife.setMetadata("shooter", new FixedMetadataValue(plugin, player.getName()));
 
                     // Hit detection - because I do not feel like using NMS to create my own entity
                     new BukkitRunnable() {
                         private static final int maxTicks = 200; // Max 10 seconds
                         private static final int maxTicksOnGround = 2; // Max 0.1 seconds on ground
-                        int ticks = 0;
-                        int ticksOnGround = 0;
+                        private int ticks = 0;
+                        private int ticksOnGround = 0;
 
                         @Override
                         public void run() {
@@ -207,7 +212,7 @@ public class AbilityListener implements Listener {
 
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 // Don't hurt the guy who threw it
-                                if (player.getUniqueId().equals(p.getUniqueId()))
+                                if (player.equals(p))
                                     continue;
 
                                 // Skip anyone not in this world
@@ -215,8 +220,7 @@ public class AbilityListener implements Listener {
                                     continue;
 
                                 // Prevent friendly fire
-                                GameTeam t = PlayerManager.getPlayer(player).getTeam();
-                                if (t != null && t.equals(PlayerManager.getPlayer(p).getTeam()))
+                                if (RangersPlayer.getPlayer(p).getTeam() == RangersTeam.RANGERS)
                                     continue;
 
                                 Location pLoc = p.getLocation();
@@ -269,8 +273,7 @@ public class AbilityListener implements Listener {
 
                             if (player.getLocation().distance(striker.getLocation()) < 3) {
                                 // Rangers are the only players that can throw these, so only bandits can be damaged
-                                GamePlayer data = PlayerManager.getPlayer(player);
-                                if (data.getTeam() == GameTeam.BANDITS) {
+                                if (RangersPlayer.getPlayer(player).getTeam() == RangersTeam.BANDITS) {
                                     player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 100, 0));
                                     player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 2));
                                     player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 100, 0));
@@ -292,16 +295,17 @@ public class AbilityListener implements Listener {
             if (e.getItem().getType() == Material.QUARTZ) {
                 if (e.getItem().getItemMeta().hasDisplayName()
                         && e.getItem().getItemMeta().getDisplayName().contains("READY")
-                        && !PlayerManager.getPlayer(e.getPlayer()).isCloaked()) {
+                        && !RangersPlayer.getPlayer(e.getPlayer()).isCloaked()) {
                     final UUID id = e.getPlayer().getUniqueId();
-                    PlayerManager.getPlayer(e.getPlayer()).cloak();
+                    RangersPlayer.getPlayer(e.getPlayer()).cloak();
 
                     // Uncloak after 10 seconds
                     new BukkitRunnable() {
                         @Override
                         public void run() {
-                            if (Bukkit.getPlayer(id) != null) {
-                                PlayerManager.getPlayer(id).uncloak();
+                            Player bukkitPlayer = Bukkit.getPlayer(id);
+                            if (bukkitPlayer != null) {
+                                RangersPlayer.getPlayer(bukkitPlayer).uncloak();
                             }
                         }
                     }.runTaskLater(plugin, 200L);
@@ -344,8 +348,9 @@ public class AbilityListener implements Listener {
     public void onDeath(PlayerDeathEvent e) {
         // Bandits get regeneration II for 2 seconds when they kill a player
         if (e.getEntity().getKiller() != null) {
-            if (PlayerManager.getPlayer(e.getEntity().getKiller()).getTeam() == GameTeam.BANDITS)
+            if (RangersPlayer.getPlayer(e.getEntity().getKiller()).getTeam() == RangersTeam.BANDITS) {
                 e.getEntity().getKiller().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 1, 40));
+            }
         }
     }
 }

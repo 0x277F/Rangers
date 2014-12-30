@@ -4,7 +4,7 @@ import net.coasterman10.rangers.SpawnVector;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.command.Subcommand;
-import net.coasterman10.rangers.game.GameTeam;
+import net.coasterman10.rangers.game.RangersTeam;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -69,11 +69,11 @@ public class ArenaSetSpawnCommand implements Subcommand {
                 String teamName = null;
                 switch (team) {
                 case 0:
-                    a.setSpawn(GameTeam.RANGERS, spawn);
+                    a.setSpawn(RangersTeam.RANGERS, spawn);
                     teamName = "Rangers";
                     break;
                 case 1:
-                    a.setSpawn(GameTeam.BANDITS, spawn);
+                    a.setSpawn(RangersTeam.BANDITS, spawn);
                     teamName = "Bandits";
                     break;
                 case 2:

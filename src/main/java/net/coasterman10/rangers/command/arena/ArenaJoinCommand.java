@@ -1,9 +1,9 @@
 package net.coasterman10.rangers.command.arena;
 
-import net.coasterman10.rangers.PlayerManager;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.command.Subcommand;
+import net.coasterman10.rangers.player.RangersPlayer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -65,7 +65,7 @@ public class ArenaJoinCommand implements Subcommand {
         
         Arena arena = arenaManager.getArena(args[0]);
         if (arena != null) {
-            PlayerManager.getPlayer(p).joinArena(arena);
+            RangersPlayer.getPlayer(p).joinArena(arena);
         } else {
             sender.sendMessage(ChatColor.RED + "No arena with id \"" + args[0] + "\"");
         }

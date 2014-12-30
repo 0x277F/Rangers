@@ -16,8 +16,8 @@ import org.bukkit.scoreboard.Team;
 
 public class GameScoreboard {
     private Scoreboard board;
-    private final Map<GameTeam, Team> teams = new EnumMap<>(GameTeam.class);
-    private final Map<GameTeam, Score> scores = new EnumMap<>(GameTeam.class);
+    private final Map<RangersTeam, Team> teams = new EnumMap<>(RangersTeam.class);
+    private final Map<RangersTeam, Score> scores = new EnumMap<>(RangersTeam.class);
 
     public GameScoreboard() {
         board = Bukkit.getScoreboardManager().getNewScoreboard();
@@ -26,7 +26,7 @@ public class GameScoreboard {
         o.setDisplayName(ChatColor.GOLD + "Heads Collected");
         o.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-        for (GameTeam t : GameTeam.values()) {
+        for (RangersTeam t : RangersTeam.values()) {
             Team team = board.registerNewTeam(t.name());
             team.setAllowFriendlyFire(false);
             team.setCanSeeFriendlyInvisibles(true);
@@ -42,7 +42,7 @@ public class GameScoreboard {
         p.setScoreboard(board);
     }
 
-    public void setTeam(Player player, GameTeam team) {
+    public void setTeam(Player player, RangersTeam team) {
         if (board.getPlayerTeam(player) != null)
             board.getPlayerTeam(player).removePlayer(player);
         teams.get(team).addPlayer(player);
@@ -52,23 +52,23 @@ public class GameScoreboard {
         // TODO
     }
 
-    public void setScore(GameTeam team, int score) {
+    public void setScore(RangersTeam team, int score) {
         if (score == 0)
             setScore(team, 1); // This ensures that the score of 0 is put onto the scoreboard
 
         scores.get(team).setScore(score);
     }
 
-    public int getScore(GameTeam team) {
+    public int getScore(RangersTeam team) {
         return scores.get(team).getScore();
     }
 
-    public void incrementScore(GameTeam team) {
+    public void incrementScore(RangersTeam team) {
         setScore(team, getScore(team) + 1);
     }
 
     public void reset() {
-        for (GameTeam t : GameTeam.values()) {
+        for (RangersTeam t : RangersTeam.values()) {
             clearTeam(teams.get(t));
             setScore(t, 0);
         }

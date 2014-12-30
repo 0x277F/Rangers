@@ -1,6 +1,6 @@
 package net.coasterman10.rangers.kits;
 
-import net.coasterman10.rangers.GamePlayer;
+import net.coasterman10.rangers.player.RangersPlayer;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
@@ -29,22 +29,22 @@ public class RangerKit implements Kit {
     }
 
     @Override
-    public void apply(GamePlayer player) {
-        PlayerInventory inv = player.getHandle().getInventory();
+    public void apply(RangersPlayer player) {
+        PlayerInventory inv = player.getBukkitPlayer().getInventory();
         inv.clear();
         inv.setContents(BASE);
         inv.setArmorContents(ARMOR);
 
-        if (player.getUpgradeSelection("ranger.bow").equals("16arrows")) {
+        if (player.getData().getUpgradeSelection("ranger.bow").equals("16arrows")) {
             ItemStack arrows = inv.getItem(8);
             arrows.setAmount(arrows.getAmount() + 16);
         }
 
-        if (player.getUpgradeSelection("ranger.secondary").equals("strikers")) {
+        if (player.getData().getUpgradeSelection("ranger.secondary").equals("strikers")) {
             inv.setItem(2, new ItemStackBuilder(Material.SLIME_BALL, 3).setDisplayName("Strikers").build());
         }
 
-        if (player.getUpgradeSelection("ranger.ability").equals("cloak")) {
+        if (player.getData().getUpgradeSelection("ranger.ability").equals("cloak")) {
             inv.setItem(
                     3,
                     new ItemStackBuilder(Material.QUARTZ).setDisplayName(

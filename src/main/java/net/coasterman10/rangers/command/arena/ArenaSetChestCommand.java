@@ -4,7 +4,7 @@ import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.arena.ClassicArena;
 import net.coasterman10.rangers.command.Subcommand;
-import net.coasterman10.rangers.game.GameTeam;
+import net.coasterman10.rangers.game.RangersTeam;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -51,9 +51,9 @@ public class ArenaSetChestCommand implements Subcommand {
             Arena a = arenaManager.getArena(args[0]);
             if (a != null) {
                 if (a instanceof ClassicArena) {
-                    GameTeam team;
+                    RangersTeam team;
                     try {
-                        team = GameTeam.valueOf(args[1].toUpperCase());
+                        team = RangersTeam.valueOf(args[1].toUpperCase());
                     } catch (IllegalArgumentException e) {
                         // HACK
                         return false;

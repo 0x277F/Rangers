@@ -3,6 +3,7 @@ package net.coasterman10.rangers;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 import me.confuser.barapi.BarAPI;
@@ -29,12 +30,16 @@ import net.coasterman10.rangers.listeners.PlayerListener;
 import net.coasterman10.rangers.listeners.SignManager;
 import net.coasterman10.rangers.listeners.WorldListener;
 import net.coasterman10.rangers.menu.PreferenceMenu;
+import net.coasterman10.rangers.player.PlayerData;
+import net.coasterman10.rangers.player.RangersPlayer;
+import net.coasterman10.rangers.player.RangersPlayer.RangersPlayerListener;
 import net.coasterman10.rangers.util.ConfigAccessor;
 import net.coasterman10.rangers.util.ConfigSectionAccessor;
 import net.coasterman10.rangers.util.ConfigUtil;
 import net.coasterman10.rangers.util.EmptyChunkGenerator;
 import net.coasterman10.rangers.util.PluginConfigAccessor;
 
+import org.apache.commons.collections4.iterators.LoopingIterator;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -79,6 +84,9 @@ public class Rangers extends JavaPlugin {
 
         saveDefaultConfig();
         loadConfig();
+        
+        RangersPlayerListener.register(this);
+        PlayerData.initialize(this);
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);
@@ -131,16 +139,12 @@ public class Rangers extends JavaPlugin {
         // The more players that join the server, the lower the resolution of the safe location system.
         // The maximum delay for a server of 100 players is 10 ticks between updates.
         new BukkitRunnable() {
-            int i = 0;
             @Override
             public void run() {
-                Player[] players = Bukkit.getOnlinePlayers();
-                for (int j = 0; j < 10 && j < players.length; j++) {
-                    if (i >= players.length) {
-                        i = 0;
-                    }
-                    PlayerManager.getPlayer(players[i]).updateSafeLocation();
-                    i++;
+                Iterator<RangersPlayer> it = new LoopingIterator<>(RangersPlayer.getPlayers());
+                int players = RangersPlayer.getPlayers().size();
+                for (int i = 0; i < 10 && i < players; i++) {
+                    it.next().updateSafeLocation();
                 }
             }
         }.runTaskTimer(this, 0L, 1L);
@@ -168,8 +172,8 @@ public class Rangers extends JavaPlugin {
     }
 
     public void sendToLobby(Player p) {
-        GamePlayer player = PlayerManager.getPlayer(p);
-        if (player.isInGame()) {
+        RangersPlayer player = RangersPlayer.getPlayer(p);
+        if (player.isInArena()) {
             player.quit();
         }
         p.teleport(lobbySpawn);
