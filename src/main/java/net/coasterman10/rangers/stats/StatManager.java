@@ -26,48 +26,52 @@ import java.util.logging.Level;
 public class StatManager {
     private static BiMap<UUID, Statistic> stats = HashBiMap.create();
 
+    private static Rangers plugin;
+
+    public static void initialize(Rangers r){
+        plugin = r;
+    }
+
     public static void load(UUID uuid, Statistic stat){
         stats.put(uuid, stat);
     }
 
-    public static boolean loadFromFile(UUID uuid) throws IOException, InvalidConfigurationException, IllegalAccessException {
-        File f = new File(Rangers.instance().getDataFolder(), "stats/"+uuid.toString()+".yml");
+    public static boolean loadFromFile(UUID uuid) throws IOException, InvalidConfigurationException {
+        File f = new File(plugin.getDataFolder(), "stats/"+uuid.toString()+".yml");
         if(!f.exists())
             return false;
         else {
             FileConfiguration conf = new YamlConfiguration();
             conf.load(f);
             Statistic stat = new Statistic();
-            for(Field fe : stat.getClass().getDeclaredFields()){
-                fe.setAccessible(true);
-                String s = fe.getName();
-                Object value = conf.get(s);
-                fe.set(null, value);
+            for(String s : conf.getConfigurationSection("stats").getKeys(false)){
+                Object value = conf.get("stats."+s);
+                stat.set(s, value);
             }
             load(uuid, stat);
         }
         return true;
     }
 
-    public static void saveToFile(UUID uuid, Statistic stat) throws IOException, InvalidConfigurationException, IllegalAccessException {
-        File f = new File(Rangers.instance().getDataFolder(), "stats/" + uuid.toString() + ".yml");
+    public static void saveToFile(UUID uuid, Statistic stat) throws IOException, InvalidConfigurationException {
+        File f = new File(plugin.getDataFolder(), "stats/" + uuid.toString() + ".yml");
         if (!f.exists()) {
             try {
-                InputStream orig = Rangers.class.getResourceAsStream("/stat.yml");
+                InputStream orig = plugin.getResource("/stat.yml");
                 FileOutputStream out = new FileOutputStream(f);
                 IOUtils.copy(orig, out);
                 orig.close();
                 out.close();
             } catch (IOException e) {
-                Rangers.instance().getLogger().log(Level.SEVERE, "Could not create stat file for uuid "+uuid.toString()+"\n"+e.getMessage());
+                plugin.getLogger().log(Level.SEVERE, "Could not create stat file for uuid "+uuid.toString()+"\n"+e.getMessage());
             }
         }
         FileConfiguration conf = new YamlConfiguration();
         conf.load(f);
-        for(Field fe : stat.getClass().getDeclaredFields()){
-            fe.setAccessible(true);
-            conf.set(fe.getName(), fe.get(null));
+        for(String s : stat.getMapCompound().keySet()){
+            conf.set(s, stat.get(s));
         }
+        conf.save(f);
     }
 
     public static Statistic getStatistic(UUID uuid){
@@ -90,21 +94,21 @@ public class StatManager {
         for(int n = 0; n<9; n++){
             i.setItem(n, new ItemStackBuilder(Material.STAINED_GLASS_PANE).setColor(DyeColor.GRAY).setDisplayName(ChatColor.BOLD + "General Stats").build());
         }
-        i.setItem(10, new ItemStackBuilder(Material.GOLD_SWORD).setDisplayName("Kills").addLore("Melee Kills: "+s.getMeleeKills()).addLore("Bow Kills: "+s.getBowKills()).addLore("Total Kills: "+s.getKills()).build());
-        i.setItem(12, new ItemStackBuilder(Material.WATCH).setDisplayName("Games").addLore("Total Games Played: "+s.getGames()).build());
-        i.setItem(14, new ItemStackBuilder(Material.FIREWORK).setDisplayName("Wins/Losses").addLore("Total Games Won: " + s.getWins()).addLore("Total Games Lost: " + s.getLosses()).build());
-        i.setItem(16, new ItemStackBuilder(Material.IRON_BARDING).setDisplayName("Boss Status").addLore(s.isHasDonkey() ? "Has defeated Kalkara" : "Has yet to defeat Kalkara").build());
+        i.setItem(10, new ItemStackBuilder(Material.GOLD_SWORD).setDisplayName("Kills").addLore("Melee Kills: "+s.get("meleeKills")).addLore("Bow Kills: "+s.get("bowKills")).addLore("Total Kills: "+s.get("kills")).build());
+        i.setItem(12, new ItemStackBuilder(Material.WATCH).setDisplayName("Games").addLore("Total Games Played: "+s.get("games")).build());
+        i.setItem(14, new ItemStackBuilder(Material.FIREWORK).setDisplayName("Wins/Losses").addLore("Total Games Won: " + s.get("wins")).addLore("Total Games Lost: " + s.get("losses")).build());
+        i.setItem(16, new ItemStackBuilder(Material.IRON_BARDING).setDisplayName("Boss Status").addLore((Boolean)s.get("hasDonkey") ? "Has defeated Kalkara" : "Has yet to defeat Kalkara").build());
         for(int n = 27; n<36; n++){
             i.setItem(n, new ItemStackBuilder(Material.STAINED_GLASS_PANE).setColor(DyeColor.GREEN).setDisplayName(ChatColor.BOLD + "Ranger Stats").build());
         }
-        i.setItem(36, new ItemStackBuilder(Material.LEATHER_HELMET).setColor(DyeColor.GREEN).setDisplayName("Kills").addLore("Ranger Bow Kills: " + s.getRangerBowKills()).addLore("Ranger Melee Kills: " + s.getRangerMeleeKills()).addLore("Total Kills as Ranger: " + s.getRangerKills()).addLore("Bandit Leader Kills: " + s.getBanditLeaderKills()).build());
-        i.setItem(38, new ItemStackBuilder(Material.FIREWORK).setDisplayName("Wins/Losses").addLore("Wins as Rangers: "+s.getRangerWins()).addLore("Losses as Rangers: "+s.getRangerLosses()).build());
+        i.setItem(36, new ItemStackBuilder(Material.LEATHER_HELMET).setColor(DyeColor.GREEN).setDisplayName("Kills").addLore("Ranger Bow Kills: " + s.get("rangerBowKills")).addLore("Ranger Melee Kills: " + s.get("rangerMeleeKills")).addLore("Total Kills as Ranger: " + s.get("rangerKills")).addLore("Bandit Leader Kills: " + s.get("banditLeaderKills")).build());
+        i.setItem(38, new ItemStackBuilder(Material.FIREWORK).setDisplayName("Wins/Losses").addLore("Wins as Rangers: "+s.get("rangerWins")).addLore("Losses as Rangers: "+s.get("rangerLosses")).build());
         for(int n = 45; n<54; n++){
             i.setItem(n, new ItemStackBuilder(Material.STAINED_GLASS_PANE).setColor(DyeColor.RED).setDisplayName(ChatColor.BOLD + "Bandit Stats").build());
         }
-        i.setItem(55, new ItemStackBuilder(Material.DIAMOND_SWORD).setDisplayName("Kills").addLore("Bandit Bow Kills: "+s.getBanditBowKills()).addLore("Bandit Melee Kills: "+s.getBanditMeleeKills()).addLore("Total Bandit Kills: "+s.getBanditKills()).build());
-        i.setItem(57, new ItemStackBuilder(Material.GOLD_HELMET).setDisplayName("Bandit Leader").addLore("Games as Bandit Leader: " + s.getBanditLeaderTimes()).addLore("Kills as Bandit Leader: " + s.getBanditLeaderKills()).build());
-        i.setItem(59, new ItemStackBuilder(Material.FIREWORK).setDisplayName("Wins/Losses").addLore("Wins as Bandits: "+s.getBanditWins()).addLore("Losses as Bandits: "+s.getBanditLosses()).build());
+        i.setItem(55, new ItemStackBuilder(Material.DIAMOND_SWORD).setDisplayName("Kills").addLore("Bandit Bow Kills: "+s.get("banditBowKills")).addLore("Bandit Melee Kills: "+s.get("banditMeleeKills")).addLore("Total Bandit Kills: "+s.get("banditKills")).build());
+        i.setItem(57, new ItemStackBuilder(Material.GOLD_HELMET).setDisplayName("Bandit Leader").addLore("Games as Bandit Leader: " + s.get("banditLeaderTimes")).addLore("Kills as Bandit Leader: " + s.get("killsAsBanditLeader")).build());
+        i.setItem(59, new ItemStackBuilder(Material.FIREWORK).setDisplayName("Wins/Losses").addLore("Wins as Bandits: "+s.get("banditWins")).addLore("Losses as Bandits: "+s.get("banditLosses")).build());
         return i;
     }
 
@@ -114,14 +118,9 @@ public class StatManager {
             showTo.openInventory(i);
     }
 
-    public static void update(UUID uuid, String stat, Object value){
+    public static void update(UUID uuid, String stat, Object value) {
         Statistic s = stats.get(uuid);
-        try {
-            Field f = s.getClass().getDeclaredField(stat);
-            f.setAccessible(true);
-            f.set(null, value);
-        } catch (IllegalAccessException | NoSuchFieldException e){
-            e.printStackTrace();
-        }
+        s.set(stat, value);
+        stats.put(uuid, s);
     }
 }

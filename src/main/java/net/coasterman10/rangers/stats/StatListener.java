@@ -15,7 +15,7 @@ public class StatListener implements Listener{
     public void onPlayerConnect(PlayerJoinEvent e){
         try {
             StatManager.loadFromFile(e.getPlayer().getUniqueId());
-        } catch (IllegalAccessException | InvalidConfigurationException | IOException x){
+        } catch (InvalidConfigurationException | IOException x){
             x.printStackTrace();
         }
     }
