@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import me.confuser.barapi.BarAPI;
+import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.game.RangersTeam;
 
@@ -25,13 +27,21 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 public class RangersPlayer {
     private static final Map<UUID, RangersPlayer> players = new HashMap<>();
+    private static String barMessage;
+
+    public static void initialize(Rangers plugin) {
+        barMessage = plugin.getBarMessage();
+        Bukkit.getPluginManager().registerEvents(RangersPlayerListener.instance, plugin);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            players.put(player.getUniqueId(), new RangersPlayer(player));
+        }
+    }
 
     public static Collection<RangersPlayer> getPlayers() {
         return Collections.unmodifiableCollection(players.values());
@@ -43,13 +53,6 @@ public class RangersPlayer {
 
     public static class RangersPlayerListener implements Listener {
         private static final RangersPlayerListener instance = new RangersPlayerListener();
-
-        public static void initialize(Plugin plugin) {
-            Bukkit.getPluginManager().registerEvents(instance, plugin);
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                players.put(player.getUniqueId(), new RangersPlayer(player));
-            }
-        }
 
         // This should be the fist to execute
         @EventHandler(priority = EventPriority.LOWEST)
@@ -74,9 +77,10 @@ public class RangersPlayer {
 
     private boolean cloaked;
 
-    public RangersPlayer(Player handle) {
-        this.bukkitPlayer = handle;
+    public RangersPlayer(Player bukkitPlayer) {
+        this.bukkitPlayer = bukkitPlayer;
         data = new PlayerData(this);
+        resetPlayer();
     }
 
     public void cleanup() {
@@ -99,6 +103,7 @@ public class RangersPlayer {
         state = PlayerState.LOBBY;
         team = null;
         type = null;
+        resetPlayer();
     }
 
     public void sendMessage(String msg) {
@@ -110,6 +115,7 @@ public class RangersPlayer {
     }
 
     public void resetPlayer() {
+        BarAPI.setMessage(bukkitPlayer, barMessage, 100F);
         bukkitPlayer.setGameMode(GameMode.ADVENTURE);
         bukkitPlayer.setHealth(bukkitPlayer.getMaxHealth());
         bukkitPlayer.setFoodLevel(20);
@@ -119,12 +125,10 @@ public class RangersPlayer {
         bukkitPlayer.setExp(0F);
         bukkitPlayer.setLevel(0);
         bukkitPlayer.setFireTicks(0);
-        for (PotionEffect effect : bukkitPlayer.getActivePotionEffects())
+        for (PotionEffect effect : bukkitPlayer.getActivePotionEffects()) {
             bukkitPlayer.removePotionEffect(effect.getType());
+        }
         for (Player other : Bukkit.getOnlinePlayers()) {
-            if (!getPlayer(other).isCloaked()) {
-                bukkitPlayer.showPlayer(other);
-            }
             other.showPlayer(bukkitPlayer);
         }
     }

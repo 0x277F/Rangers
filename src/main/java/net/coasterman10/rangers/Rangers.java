@@ -32,7 +32,6 @@ import net.coasterman10.rangers.listeners.WorldListener;
 import net.coasterman10.rangers.menu.PreferenceMenu;
 import net.coasterman10.rangers.player.PlayerData;
 import net.coasterman10.rangers.player.RangersPlayer;
-import net.coasterman10.rangers.player.RangersPlayer.RangersPlayerListener;
 import net.coasterman10.rangers.util.ConfigAccessor;
 import net.coasterman10.rangers.util.ConfigSectionAccessor;
 import net.coasterman10.rangers.util.ConfigUtil;
@@ -51,12 +50,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class Rangers extends JavaPlugin {
-    private static Rangers instance;
-
-    public static Rangers instance() {
-        return instance;
-    }
-
     private Location lobbySpawn;
     private String idleBarMessage;
 
@@ -70,8 +63,6 @@ public class Rangers extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        instance = this;
-
         ConfigAccessor configYml = new PluginConfigAccessor(this);
 
         arenaManager = new ArenaManager(this, new File(getDataFolder(), "arenas"));
@@ -86,7 +77,7 @@ public class Rangers extends JavaPlugin {
         loadConfig();
 
         PlayerData.initialize(this);
-        RangersPlayerListener.initialize(this);
+        RangersPlayer.initialize(this);
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);
@@ -152,7 +143,6 @@ public class Rangers extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        instance = null;
         for (Player p : Bukkit.getOnlinePlayers()) {
             sendToLobby(p);
         }

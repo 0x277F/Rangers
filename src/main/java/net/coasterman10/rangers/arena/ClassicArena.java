@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Random;
 
 import me.confuser.barapi.BarAPI;
-import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.game.GameScoreboard;
 import net.coasterman10.rangers.game.GameState;
 import net.coasterman10.rangers.game.GameStateTasks;
@@ -101,7 +100,6 @@ public class ClassicArena extends Arena {
             heads.clear();
         }
         for (RangersPlayer player : players) {
-            BarAPI.setMessage(player.getBukkitPlayer(), Rangers.instance().getBarMessage(), 100F);
             if (player.isPlaying())
                 player.teleport(lobbySpawn);
             player.resetPlayer();

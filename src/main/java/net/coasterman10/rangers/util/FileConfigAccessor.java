@@ -4,8 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import net.coasterman10.rangers.Rangers;
-
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -42,7 +41,7 @@ public class FileConfigAccessor implements ConfigAccessor {
         try {
             config.save(file);
         } catch (IOException e) {
-            Rangers.instance().getLogger().warning("Could not save configuration to " + file);
+            Bukkit.getLogger().warning("Could not save configuration to " + file);
         }
     }
 
