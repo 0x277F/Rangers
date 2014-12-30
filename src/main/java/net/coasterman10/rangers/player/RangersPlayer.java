@@ -79,12 +79,15 @@ public class RangersPlayer {
     }
 
     public void joinArena(Arena arena) {
-
+        quit();
+        if (arena.addPlayer(this)) {
+            this.arena = arena;
+        }
     }
 
     public void quit() {
         if (isInArena()) {
-            // arena.removePlayer(this);
+            arena.removePlayer(this);
             arena = null;
         }
         state = PlayerState.LOBBY;
