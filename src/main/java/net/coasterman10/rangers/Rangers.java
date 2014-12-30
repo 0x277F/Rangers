@@ -23,6 +23,8 @@ import net.coasterman10.rangers.command.arena.ArenaSetSpawnCommand;
 import net.coasterman10.rangers.command.rangers.RangersReloadCommand;
 import net.coasterman10.rangers.command.sign.SignAddCommand;
 import net.coasterman10.rangers.command.sign.SignRemoveCommand;
+import net.coasterman10.rangers.command.stats.StatsSetCommand;
+import net.coasterman10.rangers.command.stats.StatsShowCommand;
 import net.coasterman10.rangers.listeners.AbilityListener;
 import net.coasterman10.rangers.listeners.MenuManager;
 import net.coasterman10.rangers.listeners.PlayerDeathListener;
@@ -106,10 +108,15 @@ public class Rangers extends JavaPlugin {
         signCommand.registerSubcommand(new SignAddCommand(signManager, arenaManager));
         signCommand.registerSubcommand(new SignRemoveCommand(signManager));
 
+        SubcommandExecutor statsCommand = new SubcommandExecutor("stats");
+        statsCommand.registerSubcommand(new StatsSetCommand());
+        statsCommand.registerSubcommand(new StatsShowCommand());
+
         getCommand("rangers").setExecutor(rangersCommand);
         getCommand("arena").setExecutor(arenaCommand);
         getCommand("sign").setExecutor(signCommand);
         getCommand("quit").setExecutor(new QuitCommand(this));
+        getCommand("stats").setExecutor(statsCommand);
 
         for (PreferenceMenu menu : PreferenceMenu.menus) {
             menuManager.addSignMenu(menu.getSignText(), menu);
