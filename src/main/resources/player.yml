@@ -1,0 +1,9 @@
+upgrades:
+  ranger:
+    ability: none
+    secondary: throwingknife
+    bow: none
+  bandit:
+    ability: none
+    secondary: bow
+    bow: none
