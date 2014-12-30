@@ -51,11 +51,13 @@ public class RangersPlayer {
             }
         }
 
-        @EventHandler(priority = EventPriority.MONITOR)
+        // This should be the fist to execute
+        @EventHandler(priority = EventPriority.LOWEST)
         public void onPlayerJoin(PlayerJoinEvent e) {
             players.put(e.getPlayer().getUniqueId(), new RangersPlayer(e.getPlayer()));
         }
 
+        // This should be the last to execute
         @EventHandler(priority = EventPriority.MONITOR)
         public void onPlayerLeave(PlayerQuitEvent e) {
             players.remove(e.getPlayer().getUniqueId()).cleanup();
