@@ -41,28 +41,10 @@ public class StatsSetCommand implements Subcommand {
         if(args.length != 3)
             return false;
         UUID uuid = Bukkit.getPlayer(args[0]).getUniqueId();
-        Statistic s = StatManager.getStatistic(uuid);
         Object value = args[2];
         String statName = args[1];
-
-        boolean foundStat = false;
-
-        for(Field f : s.getClass().getDeclaredFields()){
-            if(f.getName().equals(statName)){
-                foundStat = true;
-                f.setAccessible(true);
-                try {
-                    f.set(null, value);
-                    sender.sendMessage(ChatColor.GREEN + "Statistic " + statName + " for uuid " + uuid.toString() + " was updated to value " + value);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-                break;
-            }
-        }
-        if(!foundStat)
-            sender.sendMessage(ChatColor.RED + "Cannot find specified statistic!");
-
+        StatManager.update(uuid, statName, value);
+        sender.sendMessage(ChatColor.GREEN + "Statistic " + statName + " for uuid " + uuid.toString() + " was updated to value " + StatManager.getStatistic(uuid).get(statName));
         return true;
     }
 }

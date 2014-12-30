@@ -34,6 +34,7 @@ import net.coasterman10.rangers.listeners.WorldListener;
 import net.coasterman10.rangers.menu.PreferenceMenu;
 import net.coasterman10.rangers.player.PlayerData;
 import net.coasterman10.rangers.player.RangersPlayer;
+import net.coasterman10.rangers.stats.StatManager;
 import net.coasterman10.rangers.util.ConfigAccessor;
 import net.coasterman10.rangers.util.ConfigSectionAccessor;
 import net.coasterman10.rangers.util.ConfigUtil;
@@ -80,6 +81,8 @@ public class Rangers extends JavaPlugin {
 
         PlayerData.initialize(this);
         RangersPlayer.initialize(this);
+
+        StatManager.initialize(this);
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);
