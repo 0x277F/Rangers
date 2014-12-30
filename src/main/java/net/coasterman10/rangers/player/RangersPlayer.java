@@ -19,6 +19,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -43,16 +44,19 @@ public class RangersPlayer {
     public static class RangersPlayerListener implements Listener {
         private static final RangersPlayerListener instance = new RangersPlayerListener();
 
-        public static void register(Plugin plugin) {
+        public static void initialize(Plugin plugin) {
             Bukkit.getPluginManager().registerEvents(instance, plugin);
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                players.put(player.getUniqueId(), new RangersPlayer(player));
+            }
         }
 
-        @EventHandler
+        @EventHandler(priority = EventPriority.MONITOR)
         public void onPlayerJoin(PlayerJoinEvent e) {
             players.put(e.getPlayer().getUniqueId(), new RangersPlayer(e.getPlayer()));
         }
 
-        @EventHandler
+        @EventHandler(priority = EventPriority.MONITOR)
         public void onPlayerLeave(PlayerQuitEvent e) {
             players.remove(e.getPlayer().getUniqueId()).cleanup();
         }

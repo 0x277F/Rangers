@@ -84,9 +84,9 @@ public class Rangers extends JavaPlugin {
 
         saveDefaultConfig();
         loadConfig();
-        
-        RangersPlayerListener.register(this);
+
         PlayerData.initialize(this);
+        RangersPlayerListener.initialize(this);
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(worldListener, this);
