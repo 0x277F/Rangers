@@ -80,7 +80,6 @@ public class RangersPlayer {
     public RangersPlayer(Player bukkitPlayer) {
         this.bukkitPlayer = bukkitPlayer;
         data = new PlayerData(this);
-        resetPlayer();
     }
 
     public void cleanup() {

@@ -69,7 +69,7 @@ public class Rangers extends JavaPlugin {
         worldListener = new WorldListener();
         playerListener = new PlayerListener(this);
         abilityListener = new AbilityListener(this);
-        playerDeathListener = new PlayerDeathListener();
+        playerDeathListener = new PlayerDeathListener(this);
         signManager = new SignManager(arenaManager, new ConfigSectionAccessor(configYml, "signs"));
         menuManager = new MenuManager();
 
