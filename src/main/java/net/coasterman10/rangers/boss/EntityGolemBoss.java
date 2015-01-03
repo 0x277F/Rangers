@@ -24,9 +24,9 @@ import net.minecraft.server.v1_7_R3.World;
 
 import org.bukkit.Effect;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.v1_7_R3.entity.CraftIronGolem;
 import org.bukkit.craftbukkit.v1_7_R3.util.UnsafeList;
 import org.bukkit.entity.Damageable;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -63,8 +63,7 @@ public class EntityGolemBoss extends EntityIronGolem {
         this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, true));
         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget(this, EntityPlayer.class, 0, false));
         this.setCustomName("Kalkara");
-        ((LivingEntity) this).addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 1,
-                false));
+        getBukkitEntity().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 1, true), true);
         random = new Random();
     }
 
@@ -112,9 +111,14 @@ public class EntityGolemBoss extends EntityIronGolem {
         }
         BarAPI.setHealth(this.match.player, this.getHealth());
     }
+    
+    @Override
+    public CraftIronGolem getBukkitEntity() {
+        return (CraftIronGolem) this.bukkitEntity;
+    }
 
     public void launch() {
-        org.bukkit.entity.Entity e = (org.bukkit.entity.Entity) this;
+        org.bukkit.entity.Entity e = getBukkitEntity();
         Vector vec = e.getLocation().getDirection();
         vec.add(new Vector(0.0D, 5.0D, 0.0D));
         vec.multiply(2);// Speed
@@ -123,7 +127,7 @@ public class EntityGolemBoss extends EntityIronGolem {
     }
 
     public void smash() {
-        org.bukkit.entity.Entity e = (org.bukkit.entity.Entity) this;
+        org.bukkit.entity.Entity e = getBukkitEntity();
         Location l = e.getLocation();
         double y = l.getY();
         for (double x = l.getX() - 10; x <= l.getX() + 10; x++) {
@@ -141,11 +145,11 @@ public class EntityGolemBoss extends EntityIronGolem {
 
     public void fireBreath() {
         Collection<Location> blocks = new HashSet<>();
-        org.bukkit.entity.Entity e = (org.bukkit.entity.Entity) this;
+        org.bukkit.entity.Entity e = getBukkitEntity();
         // TODO calculate the blocks that need particles
         for (Location l : blocks) {
-            ((org.bukkit.World) this.world).playEffect(l, Effect.MOBSPAWNER_FLAMES, 1, 1);
-            for (org.bukkit.entity.Entity be : ((org.bukkit.World) this.world).getEntities()) {
+            e.getWorld().playEffect(l, Effect.MOBSPAWNER_FLAMES, 1, 1);
+            for (org.bukkit.entity.Entity be : e.getWorld().getEntities()) {
                 if (be == this.getGoalTarget()) {
                     be.setFireTicks(1000);
                 }

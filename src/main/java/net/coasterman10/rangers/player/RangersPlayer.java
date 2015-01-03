@@ -33,6 +33,7 @@ import org.bukkit.util.Vector;
 
 public class RangersPlayer {
     private static final Map<UUID, RangersPlayer> players = new HashMap<>();
+    private static Collection<Material> allowedDrops;
     private static String barMessage;
 
     public static void initialize(Rangers plugin) {
@@ -41,6 +42,10 @@ public class RangersPlayer {
         for (Player player : Bukkit.getOnlinePlayers()) {
             players.put(player.getUniqueId(), new RangersPlayer(player));
         }
+    }
+    
+    public static void setAllowedDrops(Collection<Material> allowedDrops) {
+        RangersPlayer.allowedDrops = allowedDrops;
     }
 
     public static Collection<RangersPlayer> getPlayers() {
@@ -116,6 +121,7 @@ public class RangersPlayer {
     public void resetPlayer() {
         BarAPI.setMessage(bukkitPlayer, barMessage, 100F);
         bukkitPlayer.setGameMode(GameMode.ADVENTURE);
+        bukkitPlayer.setAllowFlight(false);
         bukkitPlayer.setHealth(bukkitPlayer.getMaxHealth());
         bukkitPlayer.setFoodLevel(20);
         bukkitPlayer.setSaturation(10F);
@@ -179,7 +185,7 @@ public class RangersPlayer {
         headDrop.teleport(lastSafeLocation);
     }
 
-    public void dropInventory(Collection<Material> allowedDrops) {
+    public void dropInventory() {
         for (ItemStack item : bukkitPlayer.getInventory()) {
             if (item == null)
                 continue;

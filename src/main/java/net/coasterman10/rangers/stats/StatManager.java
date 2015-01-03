@@ -1,10 +1,18 @@
 package net.coasterman10.rangers.stats;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.UUID;
+import java.util.logging.Level;
+
 import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.kits.ItemStackBuilder;
 import net.minecraft.util.com.google.common.collect.BiMap;
 import net.minecraft.util.com.google.common.collect.HashBiMap;
 import net.minecraft.util.org.apache.commons.io.IOUtils;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
@@ -14,14 +22,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.util.UUID;
-import java.util.logging.Level;
 
 public class StatManager {
     private static BiMap<UUID, Statistic> stats = HashBiMap.create();

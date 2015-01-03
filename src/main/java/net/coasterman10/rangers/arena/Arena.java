@@ -2,6 +2,7 @@ package net.coasterman10.rangers.arena;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -127,6 +128,11 @@ public abstract class Arena implements Listener {
     public final int getMaxPlayers() {
         return getConfig().getInt("max-players");
     }
+    
+
+    public Collection<RangersPlayer> getPlayers() {
+        return Collections.unmodifiableCollection(players);
+    }
 
     public GameState getState() {
         return state;
@@ -158,6 +164,7 @@ public abstract class Arena implements Listener {
             player.sendMessage(ChatColor.RED + "This game is full!");
             return false;
         } else {
+            broadcast(player.getName() + ChatColor.DARK_AQUA + " joined the game");
             players.add(player);
             onPlayerJoin(player);
             player.resetPlayer();
@@ -171,6 +178,7 @@ public abstract class Arena implements Listener {
             player.sendMessage(ChatColor.GOLD + "You were not in this game.");
             return false;
         } else {
+            broadcast(player.getName() + ChatColor.DARK_AQUA + " quit the game");
             players.remove(player);
             onPlayerLeave(player);
             return true;

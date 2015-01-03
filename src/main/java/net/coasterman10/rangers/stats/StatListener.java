@@ -10,7 +10,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import java.io.IOException;
 
 public class StatListener implements Listener{
-
     @EventHandler
     public void onPlayerConnect(PlayerJoinEvent e){
         try {
@@ -27,7 +26,7 @@ public class StatListener implements Listener{
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e){
-        if(e.getClickedInventory().getName().endsWith("Statistics")){
+        if(e.getInventory().getName().endsWith("Statistics")){
             e.setCancelled(true);
         }
     }

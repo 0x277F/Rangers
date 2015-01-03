@@ -196,7 +196,7 @@ public class Rangers extends JavaPlugin {
             allowedDrops.add(m);
         }
         playerListener.setAllowedDrops(allowedDrops);
-        playerDeathListener.setAllowedDrops(allowedDrops);
+        RangersPlayer.setAllowedDrops(allowedDrops);
     }
 
     public String getBarMessage() {

@@ -1,14 +1,13 @@
 package net.coasterman10.rangers.command.stats;
 
+import java.util.UUID;
+
 import net.coasterman10.rangers.command.Subcommand;
 import net.coasterman10.rangers.stats.StatManager;
-import net.coasterman10.rangers.stats.Statistic;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
-
-import java.lang.reflect.Field;
-import java.util.UUID;
 
 public class StatsSetCommand implements Subcommand {
     @Override
@@ -40,6 +39,7 @@ public class StatsSetCommand implements Subcommand {
     public boolean execute(CommandSender sender, String[] args) {
         if(args.length != 3)
             return false;
+        @SuppressWarnings("deprecation")
         UUID uuid = Bukkit.getPlayer(args[0]).getUniqueId();
         Object value = args[2];
         String statName = args[1];

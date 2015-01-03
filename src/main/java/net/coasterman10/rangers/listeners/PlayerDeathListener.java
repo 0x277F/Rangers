@@ -1,12 +1,8 @@
 package net.coasterman10.rangers.listeners;
 
-import java.util.Collection;
-import java.util.HashSet;
-
 import net.coasterman10.rangers.arena.ClassicArena;
 import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.player.RangersPlayer.PlayerState;
-import net.coasterman10.rangers.player.RangersPlayer.PlayerType;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -29,14 +25,9 @@ import org.bukkit.projectiles.ProjectileSource;
 
 public class PlayerDeathListener implements Listener {
     private final Plugin plugin;
-    private Collection<Material> allowedDrops = new HashSet<>();
 
     public PlayerDeathListener(Plugin plugin) {
         this.plugin = plugin;
-    }
-
-    public void setAllowedDrops(Collection<Material> allowedDrops) {
-        this.allowedDrops = allowedDrops;
     }
 
     @EventHandler
@@ -44,7 +35,7 @@ public class PlayerDeathListener implements Listener {
         RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
         if (player.isPlaying() && player.getArena() instanceof ClassicArena) {
             player.dropHead();
-            player.dropInventory(allowedDrops);
+            player.dropInventory();
         }
     }
 
@@ -52,15 +43,16 @@ public class PlayerDeathListener implements Listener {
     public void onDeath(PlayerDeathEvent e) {
         e.getDrops().clear();
         RangersPlayer player = RangersPlayer.getPlayer(e.getEntity());
-        if (player.isPlaying() && player.getArena() instanceof ClassicArena) {
-            player.setState(PlayerState.GAME_LOBBY);
-            player.dropHead();
-            player.dropInventory(allowedDrops);
-        }
-
+        
         if (!player.isPlaying()) {
             e.setDeathMessage(null);
             return;
+        }
+        
+        if (player.isPlaying() && player.getArena() instanceof ClassicArena) {
+            player.setState(PlayerState.GAME_LOBBY);
+            player.dropHead();
+            player.dropInventory();
         }
 
         // Huge mess of code to generate death message. Don't ask.
@@ -163,11 +155,8 @@ public class PlayerDeathListener implements Listener {
                     msg.append(ChatColor.DARK_RED).append(" was killed by ");
                     for (MetadataValue value : damager.getMetadata("shooter")) {
                         if (value.getOwningPlugin().equals(plugin)) {
-                            // Since it's fairly messy to deal with them offline I'm just hardcoding in that they are a
-                            // Ranger (since only Rangers get the throwing knife anyway)
-                            msg.append(PlayerType.RANGER.getChatColor());
+                            // The metadata value is the already prepared text we need for the death message
                             msg.append(value.asString());
-                            msg.append("(").append(PlayerType.RANGER.getName()).append(")");
                             msg.append(ChatColor.DARK_RED).append(" using a ");
                             msg.append(ChatColor.YELLOW).append("throwing knife");
                             break;
@@ -189,6 +178,7 @@ public class PlayerDeathListener implements Listener {
             // TODO: Fill in alternate death reasons
             msg.append(ChatColor.DARK_RED).append(" died");
         }
+        
         e.setDeathMessage(msg.toString());
     }
 }

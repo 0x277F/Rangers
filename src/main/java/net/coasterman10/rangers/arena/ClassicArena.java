@@ -18,6 +18,7 @@ import net.coasterman10.rangers.game.RangersTeam;
 import net.coasterman10.rangers.kits.Kit;
 import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.player.RangersPlayer.PlayerState;
+import net.coasterman10.rangers.player.RangersPlayer.PlayerType;
 import net.coasterman10.rangers.util.ConfigUtil;
 import net.coasterman10.rangers.util.FileConfigAccessor;
 import net.coasterman10.spectate.SpectateAPI;
@@ -39,10 +40,10 @@ import org.bukkit.potion.PotionEffectType;
 
 public class ClassicArena extends Arena {
     private Map<RangersTeam, Location> chests = new EnumMap<>(RangersTeam.class);
-    private Map<RangersTeam, Collection<String>> headsToRedeem = new EnumMap<>(RangersTeam.class);
     protected Map<RangersTeam, Collection<RangersPlayer>> teams = new EnumMap<>(RangersTeam.class);
+    protected Map<RangersTeam, Collection<String>> headsToRedeem = new EnumMap<>(RangersTeam.class);
     protected RangersPlayer banditLeader;
-    private GameScoreboard scoreboard = new GameScoreboard();
+    protected GameScoreboard scoreboard = new GameScoreboard();
     private EndingType ending = null;
 
     public ClassicArena(String name, FileConfigAccessor config, Plugin plugin) {
@@ -104,6 +105,7 @@ public class ClassicArena extends Arena {
                 player.teleport(lobbySpawn);
             player.resetPlayer();
             player.setTeam(null);
+            player.setType(null);
             player.setState(PlayerState.GAME_LOBBY);
         }
         scoreboard.reset();
@@ -122,6 +124,7 @@ public class ClassicArena extends Arena {
 
         List<RangersPlayer> bandits = new ArrayList<>(teams.get(RangersTeam.BANDITS));
         banditLeader = bandits.get(new Random().nextInt(bandits.size()));
+        banditLeader.setType(PlayerType.BANDIT_LEADER);
         scoreboard.setBanditLeader(banditLeader.getBukkitPlayer());
         broadcast(ChatColor.RED + banditLeader.getName() + " is the Bandit Leader");
 
@@ -153,6 +156,7 @@ public class ClassicArena extends Arena {
 
         for (RangersPlayer ranger : teams.get(RangersTeam.RANGERS)) {
             Kit.RANGER.apply(ranger);
+            ranger.getBukkitPlayer().setAllowFlight(true);
             ranger.addPermanentEffect(PotionEffectType.DAMAGE_RESISTANCE, 0);
             ranger.addPermanentEffect(PotionEffectType.SPEED, 0);
             headsToRedeem.get(RangersTeam.RANGERS).add(ranger.getName());
@@ -182,6 +186,7 @@ public class ClassicArena extends Arena {
             RangersPlayer next = playersToAdd.poll();
             teams.get(nextTeam).add(next);
             next.setTeam(nextTeam);
+            next.setType(nextTeam == RangersTeam.RANGERS ? PlayerType.RANGER : PlayerType.BANDIT);
             scoreboard.setTeam(next.getBukkitPlayer(), nextTeam);
             next.sendMessage(ChatColor.DARK_AQUA + "You have been selected to join the " + nextTeam.getChatColor()
                     + nextTeam.getName());
@@ -344,10 +349,11 @@ public class ClassicArena extends Arena {
                 setState(GameState.ENDING);
             } else {
                 for (RangersPlayer player : players) {
+                    float m = seconds / 60;
+                    float s = seconds % 60;
                     BarAPI.setMessage(player.getBukkitPlayer(),
-                            (seconds >= 30 ? ChatColor.GREEN : ChatColor.RED).toString() + (seconds / 60)
-                                    + (seconds % 60 >= 10 ? ":" : ":0") + (seconds % 60), seconds / (float) timeLimit
-                                    * 100F);
+                            (seconds >= 30 ? ChatColor.GREEN : ChatColor.RED).toString() + m + (s >= 10 ? ":" : ":0")
+                                    + s, seconds / (float) timeLimit * 100F);
                 }
                 seconds--;
             }
