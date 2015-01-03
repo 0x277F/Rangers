@@ -74,6 +74,12 @@ public class StatManager {
         conf.save(f);
     }
 
+    public static void saveAll() throws IOException, InvalidConfigurationException {
+        for(UUID uuid : stats.keySet()){
+            saveToFile(uuid, stats.get(uuid));
+        }
+    }
+
     public static Statistic getStatistic(UUID uuid){
         return stats.get(uuid);
     }

@@ -1,6 +1,7 @@
 package net.coasterman10.rangers;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -46,6 +47,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginManager;
@@ -155,6 +157,12 @@ public class Rangers extends JavaPlugin {
     public void onDisable() {
         for (Player p : Bukkit.getOnlinePlayers()) {
             sendToLobby(p);
+        }
+        try{
+            StatManager.saveAll();
+        } catch (IOException | InvalidConfigurationException e){
+            getLogger().severe("Error occured while saving statistic files:");
+            e.printStackTrace();
         }
     }
 
