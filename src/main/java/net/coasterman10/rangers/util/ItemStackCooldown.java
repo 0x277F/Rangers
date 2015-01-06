@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class ItemStackCooldown extends BukkitRunnable {
@@ -34,6 +35,7 @@ public class ItemStackCooldown extends BukkitRunnable {
                     if (meta.hasDisplayName() && item.getItemMeta().getDisplayName().contains(name)) {
                         String suffix = seconds > 0 ? ChatColor.RED + " " + seconds : ChatColor.GREEN + " READY";
                         meta.setDisplayName(ChatColor.YELLOW + name + suffix);
+                        item.setItemMeta(meta);
                     }
                 }
             }
@@ -45,5 +47,9 @@ public class ItemStackCooldown extends BukkitRunnable {
         } else {
             cancel();
         }
+    }
+
+    public void schedule(Plugin plugin) {
+        runTaskTimer(plugin, 0L, 20L);
     }
 }

@@ -1,10 +1,10 @@
 package net.coasterman10.rangers.command.arena;
 
-import net.coasterman10.rangers.SpawnVector;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.arena.ArenaManager;
 import net.coasterman10.rangers.command.Subcommand;
 import net.coasterman10.rangers.game.RangersTeam;
+import net.coasterman10.rangers.util.SpawnVector;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

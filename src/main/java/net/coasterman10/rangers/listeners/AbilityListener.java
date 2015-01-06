@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import net.coasterman10.rangers.game.RangersTeam;
 import net.coasterman10.rangers.player.RangersPlayer;
-import net.coasterman10.rangers.util.CooldownManager;
 import net.coasterman10.rangers.util.ItemStackCooldown;
 
 import org.bukkit.Bukkit;
@@ -19,7 +18,6 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -35,7 +33,6 @@ import org.bukkit.event.player.PlayerFishEvent.State;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
@@ -44,37 +41,28 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 public class AbilityListener implements Listener {
-    private static final int DOUBLE_JMUP_PERIOD = 5;
-    private static final int DOUBLE_JUMP_COOLDOWN = 8;
-    private static final int THROWING_KNIFE_COOLDOWN = 4;
-
     private final Plugin plugin;
     private Set<UUID> doubleJumpers = new HashSet<>();
-    private CooldownManager doubleJumpCooldown = new CooldownManager(DOUBLE_JUMP_COOLDOWN * 1000);
-    private CooldownManager throwingKnifeCooldown = new CooldownManager(THROWING_KNIFE_COOLDOWN * 1000);
 
     public AbilityListener(Plugin plugin) {
         this.plugin = plugin;
     }
 
     @EventHandler
-    public void onFish(final PlayerFishEvent e) {
-        final RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
-        if (player.isPlaying() && player.getTeam() == RangersTeam.BANDITS
-                && player.getData().isUpgradeSelected("bandit.ability", "grapple")) {
-            if ((e.getState() == State.FAILED_ATTEMPT && (e.getHook().isOnGround() || !e.getHook().getLocation()
-                    .subtract(0, 0.5, 0).getBlock().isEmpty()))
-                    || e.getState() == State.IN_GROUND) {
+    public void onFish(PlayerFishEvent e) {
+        Player player = e.getPlayer();
+        if (isAbilityItem(player.getItemInHand(), Material.FISHING_ROD, "Grapple")) {
+            if ((e.getState() == State.FAILED_ATTEMPT || e.getState() == State.IN_GROUND)
+                    && (e.getHook().isOnGround() || e.getHook().getLocation().subtract(0, 0.5, 0).getBlock().getType()
+                            .isSolid())) {
                 Vector dist = e.getHook().getLocation().subtract(e.getPlayer().getLocation()).toVector();
 
-                e.getPlayer().getItemInHand().setDurability((short) 0);
+                player.getItemInHand().setDurability((short) 0);
 
                 if (dist.getY() < 2) {
-                    e.getPlayer()
-                            .sendMessage(
-                                    ChatColor.RED
-                                            + "The grapple was not able to grip the surface well... try grappling to somewhere higher up.");
-                    e.getPlayer().getWorld().playSound(e.getHook().getLocation(), Sound.ITEM_BREAK, 0.75F, 1F);
+                    player.sendMessage(ChatColor.RED
+                            + "The grapple was not able to grip the surface well, try grappling to somewhere higher up.");
+                    player.getWorld().playSound(e.getHook().getLocation(), Sound.ITEM_BREAK, 0.75F, 1F);
                     return;
                 }
 
@@ -83,21 +71,27 @@ public class AbilityListener implements Listener {
                 double dz = dist.getZ();
                 double dxz = Math.sqrt(dx * dx + dz * dz);
 
-                if (e.getPlayer().getVelocity().getY() < 0)
+                if (player.getVelocity().getY() < 0) {
                     dy += 2;
+                }
 
-                final double vxz = (dxz > 0.5 ? 0.3062 + 0.0796 * dxz - 1.3795 * Math.pow(dxz, -0.5604) - 0.0109 * dy
-                        + 0.9709 * Math.pow(dy, -0.2366) : 0.0);
+                final double vxz = dxz < 0.5 ? 0.0 : 0.3062 + 0.0796 * dxz - 1.3795 * Math.pow(dxz, -0.5604) - 0.0109
+                        * dy + 0.9709 * Math.pow(dy, -0.2366);
                 final double vx = vxz * dx / dxz;
                 final double vy = 0.0809 + 0.0162 * dy + 0.3852 * Math.sqrt(dy);
                 final double vz = vxz * dz / dxz;
 
-                e.getPlayer().setVelocity(new Vector(0, vy, 0));
-                e.getPlayer().getWorld().playSound(e.getPlayer().getLocation(), Sound.ZOMBIE_INFECT, 1F, 2F);
+                player.setVelocity(new Vector(0, vy, 0));
+                player.getWorld().playSound(player.getLocation(), Sound.ZOMBIE_INFECT, 1F, 2F);
+
+                final UUID id = player.getUniqueId();
                 new BukkitRunnable() {
                     @Override
                     public void run() {
-                        e.getPlayer().setVelocity(e.getPlayer().getVelocity().setX(vx).setZ(vz));
+                        Player player = Bukkit.getPlayer(id);
+                        if (player != null) {
+                            player.setVelocity(player.getVelocity().setX(vx).setZ(vz));
+                        }
                     }
                 }.runTaskLater(plugin, 1L);
             }
@@ -108,17 +102,15 @@ public class AbilityListener implements Listener {
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
         if (e.getEntity() instanceof LivingEntity && e.getDamager() instanceof Player) {
             ItemStack item = ((Player) e.getDamager()).getItemInHand();
-            if (item.getType() == Material.DIAMOND_SPADE) {
-                ItemMeta meta = item.getItemMeta();
-                if (meta.hasDisplayName() && meta.getDisplayName().contains("Mace")) {
-                    // 30% nausea I
-                    if (new Random().nextDouble() < 0.6) {
-                        ((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION,
-                                100, 0));
-                        if (e.getEntity() instanceof Player) {
-                            ((Player) e.getEntity()).sendMessage(ChatColor.DARK_PURPLE
-                                    + "Whoa, that mace hit me pretty hard...");
-                        }
+            if (isAbilityItem(item, Material.DIAMOND_SPADE, "Mace")) {
+                // 30% nausea I
+                if (new Random().nextDouble() < 0.6) {
+                    ((LivingEntity) e.getEntity())
+                            .addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 4));
+                    ((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 0));
+                    if (e.getEntity() instanceof Player) {
+                        ((Player) e.getEntity()).sendMessage(ChatColor.DARK_PURPLE
+                                + "Whoa, that mace hit me pretty hard...");
                     }
                 }
             }
@@ -142,45 +134,18 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onToggleFlight(PlayerToggleFlightEvent e) {
         if (e.isFlying() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
-            Player p = e.getPlayer();
-            RangersPlayer player = RangersPlayer.getPlayer(p);
-            final UUID id = p.getUniqueId();
-            if (player.canDoubleJump() && !doubleJumpCooldown.isCoolingDown(id)) {
+            RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
+            if (player.canDoubleJump() && !player.isDoubleJumpReady()) {
+                Player bukkitPlayer = player.getBukkitPlayer();
                 e.setCancelled(true);
-                p.setFlying(false);
-                p.setAllowFlight(false);
-                p.setVelocity(p.getLocation().getDirection().multiply(1.3).setY(1.0));
-                p.getWorld().playEffect(p.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
-                p.getWorld().playSound(p.getLocation(), Sound.ZOMBIE_INFECT, 1.0F, 2.0F);
-                doubleJumpers.add(id);
-                doubleJumpCooldown.startCooldown(id);
+                player.setDoubleJumpReady(false);
+                bukkitPlayer.setFlying(false);
+                bukkitPlayer.setVelocity(bukkitPlayer.getLocation().getDirection().multiply(1.3).setY(1.0));
+                bukkitPlayer.getWorld().playEffect(bukkitPlayer.getLocation().add(0.0, 0.5, 0.0), Effect.SMOKE, 4);
+                bukkitPlayer.getWorld().playSound(bukkitPlayer.getLocation(), Sound.ZOMBIE_INFECT, 1.0F, 2.0F);
+                doubleJumpers.add(player.getUniqueId());
 
-                new BukkitRunnable() {
-                    float time = DOUBLE_JUMP_COOLDOWN;
-
-                    @Override
-                    public void run() {
-                        Player p = Bukkit.getPlayer(id);
-                        if (p != null) {
-                            if (!RangersPlayer.getPlayer(p).canDoubleJump()) {
-                                cancel();
-                                p.setExp(0F);
-                            } else {
-                                if (time == 0) {
-                                    cancel();
-                                    p.setAllowFlight(true);
-                                } else {
-                                    // Animate the bar refilling
-                                    p.setExp((float) (DOUBLE_JUMP_COOLDOWN - time) / (float) DOUBLE_JUMP_COOLDOWN);
-                                    time -= DOUBLE_JMUP_PERIOD / 20F;
-                                }
-                            }
-                        } else {
-                            // Not much point in this if they are offline
-                            cancel();
-                        }
-                    }
-                }.runTaskTimer(plugin, 0L, (long) DOUBLE_JMUP_PERIOD);
+                new DoubleJumpRechargeTask(player).schedule(plugin);
             }
         }
     }
@@ -213,56 +178,36 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         if (e.getItem() != null) {
-            if (isAbilityItem(e.getItem(), Material.TRIPWIRE_HOOK, "Throwing Knife")) {
+            if (isAbilityItem(e.getItem(), Material.TRIPWIRE_HOOK, "Throwing Knife READY")) {
                 Player player = e.getPlayer();
-                if (!throwingKnifeCooldown.isCoolingDown(player)) {
-                    throwingKnifeCooldown.startCooldown(player);
-                    Location eye = player.getEyeLocation();
+                Location eye = player.getEyeLocation();
 
-                    // Spawn the knife and launch it in the direction in which the player is looking
-                    Item knife = player.getWorld().dropItem(eye, e.getItem());
-                    knife.setVelocity(eye.getDirection().multiply(1.5));
+                // Spawn the knife and launch it in the direction in which the player is looking
+                Item knife = player.getWorld().dropItem(eye, e.getItem());
+                knife.setVelocity(eye.getDirection().multiply(1.5));
 
-                    // Prepare the text for the death message should the knife kill a victim
-                    RangersPlayer rp = RangersPlayer.getPlayer(player);
-                    StringBuilder msg = new StringBuilder(32);
-                    msg.append(rp.getType() != null ? rp.getType().getChatColor() : ChatColor.WHITE);
-                    msg.append(player.getName());
-                    if (rp.getType() != null) {
-                        msg.append("(").append(rp.getType().getName()).append(")");
-                    }
-                    knife.setMetadata("shooter", new FixedMetadataValue(plugin, msg.toString()));
-
-                    // Hit detection - because I do not feel like using NMS magic to create my own entity
-                    new ThrowingKnifeTask(player, knife).runTaskTimer(plugin, 0L, 1L);
+                // Prepare the text for the death message should the knife kill a victim
+                RangersPlayer rp = RangersPlayer.getPlayer(player);
+                StringBuilder msg = new StringBuilder(32);
+                msg.append(rp.getType() != null ? rp.getType().getChatColor() : ChatColor.WHITE);
+                msg.append(player.getName());
+                if (rp.getType() != null) {
+                    msg.append("(").append(rp.getType().getName()).append(")");
                 }
+                knife.setMetadata("shooter", new FixedMetadataValue(plugin, msg.toString()));
+
+                // Hit detection - because I do not feel like using NMS magic to create my own entity
+                new ThrowingKnifeTask(player, knife).runTaskTimer(plugin, 0L, 1L);
+                new ItemStackCooldown(player.getUniqueId(), Material.TRIPWIRE_HOOK, "Throwing Knife", 4)
+                        .schedule(plugin);
             }
 
             if (isAbilityItem(e.getItem(), Material.SLIME_BALL, "Strikers")) {
                 Location eye = e.getPlayer().getEyeLocation();
-                final Entity striker = eye.getWorld().dropItem(eye, new ItemStack(Material.SLIME_BALL, 1));
+                Item striker = eye.getWorld().dropItem(eye, new ItemStack(Material.SLIME_BALL, 1));
                 striker.setVelocity(eye.getDirection().multiply(0.6));
 
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        // TODO: Particle effects and better sound
-                        striker.getWorld().playSound(striker.getLocation(), Sound.BLAZE_HIT, 1F, 1.75F);
-                        striker.remove();
-                        for (Player player : Bukkit.getOnlinePlayers()) {
-                            if (!player.getWorld().equals(striker.getWorld()))
-                                continue;
-                            if (player.getLocation().distance(striker.getLocation()) < 3) {
-                                // Rangers are the only players that can throw these, so only bandits can be damaged
-                                if (RangersPlayer.getPlayer(player).getTeam() == RangersTeam.BANDITS) {
-                                    player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 100, 0));
-                                    player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 2));
-                                    player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 100, 0));
-                                }
-                            }
-                        }
-                    }
-                }.runTaskLater(plugin, 40L);
+                new StrikersTask(RangersPlayer.getPlayer(e.getPlayer()), striker).runTaskLater(plugin, 40L);
 
                 // Remove from the player's inventory
                 if (e.getItem().getAmount() > 1) {
@@ -288,7 +233,7 @@ public class AbilityListener implements Listener {
                 }.runTaskLater(plugin, 200L);
 
                 // Cooldown using the item itself as the display for the cooldown
-                new ItemStackCooldown(id, Material.QUARTZ, "Cloak", 30).runTaskTimer(plugin, 0L, 20L);
+                new ItemStackCooldown(id, Material.QUARTZ, "Cloak", 30).schedule(plugin);
             }
         }
     }
@@ -301,6 +246,22 @@ public class AbilityListener implements Listener {
             if (RangersPlayer.getPlayer(e.getEntity().getKiller()).getTeam() == RangersTeam.BANDITS) {
                 killer.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 1, 40));
             }
+        }
+    }
+
+    private static boolean isAbilityItem(ItemStack item, Material type, String name) {
+        if (item != null && item.getType() == type) {
+            if (name != null) {
+                if (item.hasItemMeta() && name.equals(ChatColor.stripColor(item.getItemMeta().getDisplayName()))) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return true;
+            }
+        } else {
+            return false;
         }
     }
 
@@ -380,19 +341,67 @@ public class AbilityListener implements Listener {
         }
     }
 
-    private static boolean isAbilityItem(ItemStack item, Material type, String name) {
-        if (item != null && item.getType() == type) {
-            if (name != null) {
-                if (item.hasItemMeta() && name.equals(ChatColor.stripColor(item.getItemMeta().getDisplayName()))) {
-                    return true;
+    private static class DoubleJumpRechargeTask extends BukkitRunnable {
+        private static final int PERIOD = 5;
+        private final UUID id;
+        private float time;
+
+        public DoubleJumpRechargeTask(RangersPlayer player) {
+            id = player.getUniqueId();
+        }
+
+        @Override
+        public void run() {
+            Player player = Bukkit.getPlayer(id);
+            if (player != null) {
+                RangersPlayer rp = RangersPlayer.getPlayer(player);
+                // Cancel if their double jump was disabled
+                if (!rp.canDoubleJump()) {
+                    cancel();
                 } else {
-                    return false;
+                    if (time <= 0) {
+                        rp.setDoubleJumpReady(true);
+                        cancel();
+                    } else {
+                        // Animate the bar refilling
+                        player.setExp((8F - time) / 8F);
+                        time -= PERIOD / 20F;
+                    }
                 }
             } else {
-                return true;
+                cancel();
             }
-        } else {
-            return false;
+        }
+
+        public void schedule(Plugin plugin) {
+            runTaskTimer(plugin, 0L, PERIOD);
+        }
+    }
+
+    private static class StrikersTask extends BukkitRunnable {
+        private final RangersTeam friendlyTeam;
+        private final Item striker;
+
+        public StrikersTask(RangersPlayer thrower, Item striker) {
+            friendlyTeam = thrower.getTeam();
+            this.striker = striker;
+        }
+
+        @Override
+        public void run() {
+            // TODO: Particle effects and better sound
+            striker.getWorld().playSound(striker.getLocation(), Sound.BLAZE_HIT, 1F, 1.75F);
+            striker.remove();
+            for (Player player : striker.getWorld().getPlayers()) {
+                if (player.getLocation().distance(striker.getLocation()) < 3) {
+                    // Prevent friendly fire
+                    if (RangersPlayer.getPlayer(player).getTeam() != friendlyTeam) {
+                        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 100, 0));
+                        player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 2));
+                        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 100, 0));
+                    }
+                }
+            }
         }
     }
 }

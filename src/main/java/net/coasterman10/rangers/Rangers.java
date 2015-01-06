@@ -47,9 +47,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World.Environment;
+import org.bukkit.WorldCreator;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
-import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -166,11 +168,6 @@ public class Rangers extends JavaPlugin {
         }
     }
 
-    @Override
-    public ChunkGenerator getDefaultWorldGenerator(String name, String id) {
-        return new EmptyChunkGenerator();
-    }
-
     public Location getLobbySpawn() {
         return lobbySpawn;
     }
@@ -189,6 +186,19 @@ public class Rangers extends JavaPlugin {
     }
 
     private void loadConfig() {
+        // Load up all the world we will need
+        ConfigurationSection worlds = getConfig().getConfigurationSection("worlds");
+        if (worlds != null) {
+            for (String world : worlds.getKeys(false)) {
+                WorldCreator wc = new WorldCreator(world);
+                wc.generator(new EmptyChunkGenerator());
+                @SuppressWarnings("deprecation")
+                Environment env = Environment.getEnvironment(worlds.getInt(world + ".dimension", 0));
+                wc.environment(env != null ? env : Environment.NORMAL);
+                Bukkit.createWorld(wc);
+            }
+        }
+        
         lobbySpawn = ConfigUtil.getLocation(getConfig(), "spawn");
         idleBarMessage = ChatColor.translateAlternateColorCodes('&', getConfig().getString("idle-bar-message"));
 

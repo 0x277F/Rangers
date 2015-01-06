@@ -1,4 +1,4 @@
-package net.coasterman10.rangers;
+package net.coasterman10.rangers.util;
 
 import org.bukkit.Location;
 import org.bukkit.World;

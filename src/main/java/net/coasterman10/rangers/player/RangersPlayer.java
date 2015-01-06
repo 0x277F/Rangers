@@ -10,6 +10,7 @@ import me.confuser.barapi.BarAPI;
 import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.arena.Arena;
 import net.coasterman10.rangers.game.RangersTeam;
+import net.minecraft.util.org.apache.commons.lang3.text.WordUtils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -81,6 +82,8 @@ public class RangersPlayer {
     private Location lastSafeLocation;
 
     private boolean cloaked;
+    private boolean canDoubleJump;
+    private boolean doubleJumpReady;
 
     public RangersPlayer(Player bukkitPlayer) {
         this.bukkitPlayer = bukkitPlayer;
@@ -223,6 +226,32 @@ public class RangersPlayer {
         bukkitPlayer.removePotionEffect(PotionEffectType.INVISIBILITY);
         cloaked = false;
     }
+    
+    public void setCanDoubleJump(boolean canDoubleJump) {
+        setDoubleJumpReady(canDoubleJump);
+        this.canDoubleJump = canDoubleJump;
+    }
+    
+    public void setDoubleJumpReady(boolean ready) {
+        doubleJumpReady = ready;
+        if (ready) {
+            bukkitPlayer.setExp(Float.intBitsToFloat(Float.floatToIntBits(1F) - 1));
+            bukkitPlayer.setAllowFlight(true);
+            bukkitPlayer.playSound(bukkitPlayer.getLocation(), Sound.WITHER_SHOOT, 0.8F, 1F);
+            sendMessage(ChatColor.GREEN + "Double Jump ready");
+        } else {
+            bukkitPlayer.setExp(0F);
+            bukkitPlayer.setAllowFlight(false);
+        }
+    }
+    
+    public boolean canDoubleJump() {
+        return canDoubleJump;
+    }
+    
+    public boolean isDoubleJumpReady() {
+        return doubleJumpReady;
+    }
 
     public boolean isCloaked() {
         return cloaked;
@@ -264,10 +293,6 @@ public class RangersPlayer {
         return state == PlayerState.GAME_SPECTATING;
     }
 
-    public boolean canDoubleJump() {
-        return isPlaying() && type == PlayerType.RANGER;
-    }
-
     public RangersTeam getTeam() {
         return team;
     }
@@ -292,7 +317,7 @@ public class RangersPlayer {
         RANGER, BANDIT, BANDIT_LEADER;
 
         public String getName() {
-            return (name().substring(0, 1).toUpperCase() + name().substring(1).toLowerCase()).replace('_', ' ');
+            return WordUtils.capitalize(name().replace('_', ' ').toLowerCase());
         }
 
         public ChatColor getChatColor() {

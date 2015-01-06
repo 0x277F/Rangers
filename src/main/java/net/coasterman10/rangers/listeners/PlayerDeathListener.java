@@ -1,11 +1,17 @@
 package net.coasterman10.rangers.listeners;
 
+import java.util.UUID;
+
 import net.coasterman10.rangers.arena.ClassicArena;
 import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.player.RangersPlayer.PlayerState;
+import net.minecraft.server.v1_7_R3.EnumClientCommand;
+import net.minecraft.server.v1_7_R3.PacketPlayInClientCommand;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.v1_7_R3.entity.CraftPlayer;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
@@ -22,6 +28,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerDeathListener implements Listener {
     private final Plugin plugin;
@@ -41,14 +48,16 @@ public class PlayerDeathListener implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
+        new RespawnTask(e.getEntity().getUniqueId()).runTaskLater(plugin, 1L);
+
         e.getDrops().clear();
-        RangersPlayer player = RangersPlayer.getPlayer(e.getEntity());
+        e.setDeathMessage(null);
         
+        RangersPlayer player = RangersPlayer.getPlayer(e.getEntity());
         if (!player.isPlaying()) {
-            e.setDeathMessage(null);
             return;
         }
-        
+
         if (player.isPlaying() && player.getArena() instanceof ClassicArena) {
             player.setState(PlayerState.GAME_LOBBY);
             player.dropHead();
@@ -178,7 +187,24 @@ public class PlayerDeathListener implements Listener {
             // TODO: Fill in alternate death reasons
             msg.append(ChatColor.DARK_RED).append(" died");
         }
-        
-        e.setDeathMessage(msg.toString());
+
+        player.getArena().broadcast(msg.toString());
+    }
+    
+    public class RespawnTask extends BukkitRunnable {
+        private final UUID id;
+
+        public RespawnTask(UUID id) {
+            this.id = id;
+        }
+
+        @Override
+        public void run() {
+            Player player = Bukkit.getPlayer(id);
+            if (player != null) {
+                ((CraftPlayer) player).getHandle().playerConnection.a(new PacketPlayInClientCommand(
+                        EnumClientCommand.PERFORM_RESPAWN));
+            }
+        }
     }
 }

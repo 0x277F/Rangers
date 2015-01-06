@@ -201,6 +201,7 @@ public class PlayerListener implements Listener {
         final RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
         if (player.isInArena()) {
             e.setRespawnLocation(player.getArena().getLobbySpawn());
+            player.setCanDoubleJump(false);
             player.setState(PlayerState.GAME_LOBBY);
         } else {
             e.setRespawnLocation(plugin.getLobbySpawn());

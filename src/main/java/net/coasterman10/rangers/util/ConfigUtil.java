@@ -3,8 +3,6 @@ package net.coasterman10.rangers.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.coasterman10.rangers.SpawnVector;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;

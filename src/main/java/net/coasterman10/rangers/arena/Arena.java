@@ -184,6 +184,12 @@ public abstract class Arena implements Listener {
             return true;
         }
     }
+    
+    public final void broadcast(String message) {
+        for (RangersPlayer player : players) {
+            player.sendMessage(message);
+        }
+    }
 
     protected void registerStateTasks(GameState state, GameStateTasks tasks) {
         stateTasks.put(state, tasks);
@@ -215,12 +221,6 @@ public abstract class Arena implements Listener {
                     e.remove();
                 }
             }
-        }
-    }
-
-    protected void broadcast(String message) {
-        for (RangersPlayer player : players) {
-            player.sendMessage(message);
         }
     }
 

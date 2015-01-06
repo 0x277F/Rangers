@@ -103,6 +103,7 @@ public class ClassicArena extends Arena {
         for (RangersPlayer player : players) {
             if (player.isPlaying())
                 player.teleport(lobbySpawn);
+            player.setCanDoubleJump(false);
             player.resetPlayer();
             player.setTeam(null);
             player.setType(null);
@@ -132,6 +133,7 @@ public class ClassicArena extends Arena {
         for (RangersPlayer player : players) {
             SpectateAPI.removeSpectator(player.getBukkitPlayer());
             player.resetPlayer();
+            player.setCanDoubleJump(true);
             player.teleport(spawns.get(player.getTeam()));
             player.setState(PlayerState.GAME_PLAYING);
         }
@@ -349,8 +351,8 @@ public class ClassicArena extends Arena {
                 setState(GameState.ENDING);
             } else {
                 for (RangersPlayer player : players) {
-                    float m = seconds / 60;
-                    float s = seconds % 60;
+                    int m = seconds / 60;
+                    int s = seconds % 60;
                     BarAPI.setMessage(player.getBukkitPlayer(),
                             (seconds >= 30 ? ChatColor.GREEN : ChatColor.RED).toString() + m + (s >= 10 ? ":" : ":0")
                                     + s, seconds / (float) timeLimit * 100F);

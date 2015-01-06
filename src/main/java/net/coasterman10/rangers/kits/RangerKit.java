@@ -23,7 +23,6 @@ public class RangerKit implements Kit {
         BASE[0] = new ItemStackBuilder(Material.IRON_SWORD).setDisplayName("Dagger").build();
         BASE[1] = new ItemStackBuilder(Material.BOW).addEnchantment(Enchantment.ARROW_DAMAGE, 1)
                 .setDisplayName("Longbow").build();
-        BASE[2] = new ItemStackBuilder(Material.TRIPWIRE_HOOK).setDisplayName("Throwing Knife").build();
         BASE[3] = new ItemStack(Material.BREAD, 4);
         BASE[8] = new ItemStack(Material.ARROW, 16);
     }
@@ -40,6 +39,12 @@ public class RangerKit implements Kit {
             arrows.setAmount(arrows.getAmount() + 16);
         }
 
+        if (player.getData().getUpgradeSelection("ranger.secondary").equals("throwingknife")) {
+            inv.setItem(
+                    2,
+                    new ItemStackBuilder(Material.TRIPWIRE_HOOK, 3).setDisplayName(
+                            ChatColor.YELLOW + "Throwing Knife " + ChatColor.GREEN + "READY").build());
+        }
         if (player.getData().getUpgradeSelection("ranger.secondary").equals("strikers")) {
             inv.setItem(2, new ItemStackBuilder(Material.SLIME_BALL, 3).setDisplayName("Strikers").build());
         }
