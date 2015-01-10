@@ -101,14 +101,14 @@ public class AbilityListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
         if (e.getEntity() instanceof LivingEntity && e.getDamager() instanceof Player) {
+            LivingEntity entity = (LivingEntity) e.getEntity();
             ItemStack item = ((Player) e.getDamager()).getItemInHand();
             if (isAbilityItem(item, Material.DIAMOND_SPADE, "Mace")) {
                 // 30% nausea I
                 if (new Random().nextDouble() < 0.6) {
-                    ((LivingEntity) e.getEntity())
-                            .addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 4));
-                    ((LivingEntity) e.getEntity()).addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 0));
-                    if (e.getEntity() instanceof Player) {
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 160, 3), true);
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 80, 1), true);
+                    if (entity instanceof Player) {
                         ((Player) e.getEntity()).sendMessage(ChatColor.DARK_PURPLE
                                 + "Whoa, that mace hit me pretty hard...");
                     }
@@ -135,7 +135,7 @@ public class AbilityListener implements Listener {
     public void onToggleFlight(PlayerToggleFlightEvent e) {
         if (e.isFlying() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
             RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
-            if (player.canDoubleJump() && !player.isDoubleJumpReady()) {
+            if (player.canDoubleJump() && player.isDoubleJumpReady()) {
                 Player bukkitPlayer = player.getBukkitPlayer();
                 e.setCancelled(true);
                 player.setDoubleJumpReady(false);
@@ -200,9 +200,7 @@ public class AbilityListener implements Listener {
                 new ThrowingKnifeTask(player, knife).runTaskTimer(plugin, 0L, 1L);
                 new ItemStackCooldown(player.getUniqueId(), Material.TRIPWIRE_HOOK, "Throwing Knife", 4)
                         .schedule(plugin);
-            }
-
-            if (isAbilityItem(e.getItem(), Material.SLIME_BALL, "Strikers")) {
+            } else if (isAbilityItem(e.getItem(), Material.SLIME_BALL, "Strikers")) {
                 Location eye = e.getPlayer().getEyeLocation();
                 Item striker = eye.getWorld().dropItem(eye, new ItemStack(Material.SLIME_BALL, 1));
                 striker.setVelocity(eye.getDirection().multiply(0.6));
@@ -215,9 +213,7 @@ public class AbilityListener implements Listener {
                 } else {
                     e.getPlayer().getInventory().remove(Material.SLIME_BALL);
                 }
-            }
-
-            if (isAbilityItem(e.getItem(), Material.QUARTZ, "Cloak READY")) {
+            } else if (isAbilityItem(e.getItem(), Material.QUARTZ, "Cloak READY")) {
                 final UUID id = e.getPlayer().getUniqueId();
                 RangersPlayer.getPlayer(e.getPlayer()).cloak();
 
@@ -342,9 +338,9 @@ public class AbilityListener implements Listener {
     }
 
     private static class DoubleJumpRechargeTask extends BukkitRunnable {
-        private static final int PERIOD = 5;
+        private static final int PERIOD = 2;
         private final UUID id;
-        private float time;
+        private float time = 8F;
 
         public DoubleJumpRechargeTask(RangersPlayer player) {
             id = player.getUniqueId();

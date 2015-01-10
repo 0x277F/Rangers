@@ -1,6 +1,8 @@
 package net.coasterman10.rangers.arena;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -11,22 +13,43 @@ import net.coasterman10.rangers.kits.Kit;
 import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.player.RangersPlayer.PlayerState;
 import net.coasterman10.rangers.player.RangersPlayer.PlayerType;
+import net.coasterman10.rangers.util.ConfigUtil;
 import net.coasterman10.rangers.util.FileConfigAccessor;
 import net.coasterman10.spectate.SpectateAPI;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffectType;
 
 public class WarArena extends ClassicArena {
     private static final Random rand = new Random();
     
+    private Location rangerLanding;
+    private Collection<RangersPlayer> deployingRangers = new HashSet<>();
+    
     public WarArena(String name, FileConfigAccessor config, Plugin plugin) {
         super(name, config, plugin);
 
         registerStateTasks(GameState.RUNNING, new WarRunningState());
+    }
+    
+    @Override
+    public void load() {
+        super.load();
+        rangerLanding = ConfigUtil.getLocation(getConfig(), "ranger-landing");
+    }
+    
+    @Override
+    public void save() {
+        ConfigUtil.setLocation(getConfig(), "ranger-landing", rangerLanding);
+        super.save();
     }
 
     @Override
@@ -36,9 +59,10 @@ public class WarArena extends ClassicArena {
 
     @Override
     public boolean isValid() {
-        if (!super.isValid()) {
+        if (!super.isValid())
             return false;
-        }
+        if (rangerLanding == null)
+            return false;
         return true;
     }
     
@@ -77,7 +101,6 @@ public class WarArena extends ClassicArena {
         for (RangersPlayer ranger : teams.get(RangersTeam.RANGERS)) {
             SpectateAPI.removeSpectator(ranger.getBukkitPlayer());
             ranger.resetPlayer();
-            Kit.RANGER.apply(ranger);
             
             // Random spawn angle within a circle of given radius
             Location spawn = spawns.get(RangersTeam.RANGERS).clone();
@@ -92,11 +115,36 @@ public class WarArena extends ClassicArena {
             ranger.addPermanentEffect(PotionEffectType.SPEED, 0);
             ranger.setState(PlayerState.GAME_PLAYING);
             headsToRedeem.get(RangersTeam.RANGERS).add(ranger.getName());
+            deployingRangers.add(ranger);
         }
 
         headsToRedeem.get(RangersTeam.BANDITS).add(banditLeader.getName());
+        
+        // TODO load up chests with goodies
     }
 
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onRangerLand(EntityDamageEvent e) {
+        // Preconditions: must be fall damge, must be a Player, must be in this arena, must be deploying
+        if (e.getCause() != DamageCause.FALL)
+            return;
+        if (!(e.getEntity() instanceof Player))
+            return;
+        RangersPlayer player = RangersPlayer.getPlayer((Player) e.getEntity());
+        if (player.getArena() != this)
+            return;
+        if (!deployingRangers.contains(player))
+            return;
+        
+        Location loc = player.getBukkitPlayer().getLocation();
+        loc.setY(rangerLanding.getY());
+        if (loc.distance(rangerLanding) < getConfig().getInt("ranger-landing-radius")) {
+            e.setCancelled(true);
+            deployingRangers.remove(player);
+            player.setCanDoubleJump(true);
+        }
+    }
+    
     public class WarRunningState extends RunningState implements GameStateTasks {
         @Override
         public void start() {

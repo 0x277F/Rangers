@@ -82,14 +82,11 @@ public class ClassicArena extends Arena {
 
     @Override
     public boolean isValid() {
-        if (!super.isValid()) {
+        if (!super.isValid())
             return false;
-        }
-        for (RangersTeam team : RangersTeam.values()) {
-            if (spawns.get(team) == null || chests.get(team) == null) {
+        for (RangersTeam team : RangersTeam.values())
+            if (spawns.get(team) == null || chests.get(team) == null)
                 return false;
-            }
-        }
         return true;
     }
 
@@ -133,7 +130,6 @@ public class ClassicArena extends Arena {
         for (RangersPlayer player : players) {
             SpectateAPI.removeSpectator(player.getBukkitPlayer());
             player.resetPlayer();
-            player.setCanDoubleJump(true);
             player.teleport(spawns.get(player.getTeam()));
             player.setState(PlayerState.GAME_PLAYING);
         }
@@ -158,6 +154,7 @@ public class ClassicArena extends Arena {
 
         for (RangersPlayer ranger : teams.get(RangersTeam.RANGERS)) {
             Kit.RANGER.apply(ranger);
+            ranger.setCanDoubleJump(true);
             ranger.getBukkitPlayer().setAllowFlight(true);
             ranger.addPermanentEffect(PotionEffectType.DAMAGE_RESISTANCE, 0);
             ranger.addPermanentEffect(PotionEffectType.SPEED, 0);

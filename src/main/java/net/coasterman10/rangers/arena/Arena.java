@@ -61,6 +61,7 @@ public abstract class Arena implements Listener {
     public void save() {
         ConfigurationSection conf = getConfig();
         conf.set("name", name);
+        conf.set("type", getType().name().toLowerCase());
         ConfigUtil.setLocation(conf, "bounds.min", min);
         ConfigUtil.setLocation(conf, "bounds.max", max);
         ConfigUtil.setLocation(conf, "lobby", lobbySpawn);
@@ -122,13 +123,12 @@ public abstract class Arena implements Listener {
     }
 
     public final int getMinPlayers() {
-        return getConfig().getInt("min-players");
+        return getConfig().getInt("min-players", 2);
     }
 
     public final int getMaxPlayers() {
-        return getConfig().getInt("max-players");
+        return getConfig().getInt("max-players", 10);
     }
-    
 
     public Collection<RangersPlayer> getPlayers() {
         return Collections.unmodifiableCollection(players);
@@ -157,18 +157,21 @@ public abstract class Arena implements Listener {
     }
 
     public final boolean addPlayer(RangersPlayer player) {
-        if (players.contains(player)) {
+        if (!isValid()) {
+            player.sendMessage(ChatColor.RED + "This game is not set up yet!");
+            return false;
+        } else if (players.contains(player)) {
             player.sendMessage(ChatColor.GOLD + "You are already in this game.");
             return false;
-        } else if (players.size() >= getConfig().getInt("max-players")) {
+        } else if (players.size() >= getMaxPlayers()) {
             player.sendMessage(ChatColor.RED + "This game is full!");
             return false;
         } else {
-            broadcast(player.getName() + ChatColor.DARK_AQUA + " joined the game");
             players.add(player);
             onPlayerJoin(player);
             player.resetPlayer();
             player.teleport(lobbySpawn);
+            broadcast(player.getName() + ChatColor.DARK_AQUA + " joined the game");
             return true;
         }
     }

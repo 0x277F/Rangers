@@ -32,7 +32,7 @@ public class SignAddCommand implements Subcommand {
 
     @Override
     public String getArguments() {
-        return ChatColor.GREEN + "<id> <join|status";
+        return ChatColor.GREEN + "<id> <join|status>";
     }
 
     @Override
@@ -58,7 +58,7 @@ public class SignAddCommand implements Subcommand {
                 @SuppressWarnings("deprecation")
                 Location sign = ((Player) sender).getTargetBlock(null, 50).getLocation();
                 if (sign == null
-                        || !(sign.getBlock().getType() == Material.SIGN || sign.getBlock().getType() == Material.SIGN_POST)) {
+                        || (sign.getBlock().getType() != Material.WALL_SIGN && sign.getBlock().getType() != Material.SIGN_POST)) {
                     sender.sendMessage(ChatColor.RED + "You must be targeting a sign.");
                     return true;
                 }

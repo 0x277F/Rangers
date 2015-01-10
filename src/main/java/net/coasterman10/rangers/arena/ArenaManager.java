@@ -1,6 +1,7 @@
 package net.coasterman10.rangers.arena;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,9 +50,18 @@ public class ArenaManager {
     public boolean addArena(String name, ArenaType type) {
         if (!arenas.containsKey(name)) {
             File arenaFile = new File(arenaFolder, name + ".yml");
+            if (!arenaFile.exists()) {
+                arenaFile.mkdirs();
+                try {
+                    arenaFile.createNewFile();
+                } catch (IOException e) {
+                    plugin.getLogger().severe("Could not create config file for arena \"" + name + "\"");
+                }
+            }
             FileConfigAccessor config = new FileConfigAccessor(arenaFile);
             Arena arena = type.newInstance(name, config, plugin);
             arena.load();
+            arena.save();
             arenas.put(name, arena);
             Bukkit.getPluginManager().registerEvents(arena, plugin);
             return true;

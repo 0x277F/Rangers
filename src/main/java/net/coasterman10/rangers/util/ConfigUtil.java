@@ -6,7 +6,6 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.WorldCreator;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.Vector;
 
@@ -173,7 +172,7 @@ public class ConfigUtil {
         if (coordinates.length >= 4) {
             world = Bukkit.getWorld(coordinates[0]);
             if (world == null)
-                world = Bukkit.createWorld(new WorldCreator(coordinates[0]).generator(new EmptyChunkGenerator()));
+                return null;
             try {
                 x = Double.parseDouble(coordinates[1]);
                 y = Double.parseDouble(coordinates[2]);

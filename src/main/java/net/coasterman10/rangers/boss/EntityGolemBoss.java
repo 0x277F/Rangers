@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Random;
 
 import me.confuser.barapi.BarAPI;
+import net.minecraft.server.v1_7_R3.DamageSource;
 import net.minecraft.server.v1_7_R3.Entity;
 import net.minecraft.server.v1_7_R3.EntityIronGolem;
 import net.minecraft.server.v1_7_R3.EntityPlayer;
@@ -63,7 +64,7 @@ public class EntityGolemBoss extends EntityIronGolem {
         this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, true));
         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget(this, EntityPlayer.class, 0, false));
         this.setCustomName("Kalkara");
-        getBukkitEntity().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 1, true), true);
+        getBukkitEntity().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 1, true));
         random = new Random();
     }
 
@@ -75,8 +76,7 @@ public class EntityGolemBoss extends EntityIronGolem {
     @Override
     public void aC() {
         super.aC();
-        this.getAttributeInstance(GenericAttributes.e).setValue(15.0D);// 15 Attack Damage
-        this.getAttributeInstance(GenericAttributes.d).setValue(0.700000000417D);// Speed - Not sure exactly what this
+        this.getAttributeInstance(GenericAttributes.d).setValue(0.4D);// Speed - Not sure exactly what this
                                                                                  // will do.
         this.getAttributeInstance(GenericAttributes.b).setValue(10.0D);// Will target players within 10 blocks
         this.getAttributeInstance(GenericAttributes.a).setValue(40.0D);// 40 health.
@@ -85,7 +85,24 @@ public class EntityGolemBoss extends EntityIronGolem {
 
     @Override
     public boolean n(Entity entity) {// Called whenever this entity damages another entity
-        boolean flag = super.n(entity);
+        try {
+            Field br = EntityIronGolem.class.getDeclaredField("br");
+            br.setAccessible(true);
+            br.set(this, 10);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return super.n(entity);
+        }
+
+        this.world.broadcastEntityEffect(this, (byte) 4);
+        boolean flag = entity.damageEntity(DamageSource.mobAttack(this), 15);
+
+        if (flag) {
+            entity.motY += 0.4000000059604645D;
+        }
+
+        this.makeSound("mob.irongolem.throw", 1.0F, 1.0F);
+
         if (tick == Integer.MAX_VALUE)// First attack after spawn
             tick = 0;
         if (random.nextInt(3) == 0) {// 1 out of 4 chance
@@ -109,12 +126,15 @@ public class EntityGolemBoss extends EntityIronGolem {
             this.fireBreath();
             tick = 0;
         }
-        BarAPI.setHealth(this.match.player, this.getHealth());
+
+        if (match != null) {
+            BarAPI.setHealth(this.match.player, this.getHealth());
+        }
     }
-    
+
     @Override
     public CraftIronGolem getBukkitEntity() {
-        return (CraftIronGolem) this.bukkitEntity;
+        return (CraftIronGolem) super.getBukkitEntity();
     }
 
     public void launch() {

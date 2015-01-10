@@ -28,6 +28,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -275,6 +276,15 @@ public class PlayerListener implements Listener {
         if (e.getEntity() instanceof Player) {
             if (!RangersPlayer.getPlayer((Player) e.getEntity()).isPlaying()) {
                 e.setCancelled(true);
+            }
+        }
+    }
+    
+    @EventHandler
+    public void onFoodLevelChange(FoodLevelChangeEvent e) {
+        if (e.getEntity() instanceof Player) {
+            if (!RangersPlayer.getPlayer((Player) e.getEntity()).isPlaying()) {
+                e.setFoodLevel(20);
             }
         }
     }

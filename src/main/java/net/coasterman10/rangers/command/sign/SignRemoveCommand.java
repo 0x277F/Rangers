@@ -18,7 +18,7 @@ public class SignRemoveCommand implements Subcommand {
 
     @Override
     public String getName() {
-        return "add";
+        return "remove";
     }
 
     @Override
@@ -43,13 +43,13 @@ public class SignRemoveCommand implements Subcommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        if (args.length != 2) {
+        if (args.length > 0) {
             return false;
         } else {
             @SuppressWarnings("deprecation")
             Location sign = ((Player) sender).getTargetBlock(null, 50).getLocation();
             if (sign == null
-                    || !(sign.getBlock().getType() == Material.SIGN || sign.getBlock().getType() == Material.SIGN_POST)) {
+                    || (sign.getBlock().getType() != Material.WALL_SIGN && sign.getBlock().getType() != Material.SIGN_POST)) {
                 sender.sendMessage(ChatColor.RED + "You must be targeting a sign.");
             } else {
                 signManager.removeSign(sign);

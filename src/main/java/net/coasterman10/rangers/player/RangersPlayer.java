@@ -44,7 +44,7 @@ public class RangersPlayer {
             players.put(player.getUniqueId(), new RangersPlayer(player));
         }
     }
-    
+
     public static void setAllowedDrops(Collection<Material> allowedDrops) {
         RangersPlayer.allowedDrops = allowedDrops;
     }
@@ -96,7 +96,9 @@ public class RangersPlayer {
     }
 
     public void joinArena(Arena arena) {
-        quit();
+        if (isInArena()) {
+            quit();
+        }
         if (arena.addPlayer(this)) {
             this.arena = arena;
         }
@@ -226,12 +228,12 @@ public class RangersPlayer {
         bukkitPlayer.removePotionEffect(PotionEffectType.INVISIBILITY);
         cloaked = false;
     }
-    
+
     public void setCanDoubleJump(boolean canDoubleJump) {
         setDoubleJumpReady(canDoubleJump);
         this.canDoubleJump = canDoubleJump;
     }
-    
+
     public void setDoubleJumpReady(boolean ready) {
         doubleJumpReady = ready;
         if (ready) {
@@ -244,11 +246,11 @@ public class RangersPlayer {
             bukkitPlayer.setAllowFlight(false);
         }
     }
-    
+
     public boolean canDoubleJump() {
         return canDoubleJump;
     }
-    
+
     public boolean isDoubleJumpReady() {
         return doubleJumpReady;
     }

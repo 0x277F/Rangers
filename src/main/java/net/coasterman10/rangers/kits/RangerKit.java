@@ -42,7 +42,7 @@ public class RangerKit implements Kit {
         if (player.getData().getUpgradeSelection("ranger.secondary").equals("throwingknife")) {
             inv.setItem(
                     2,
-                    new ItemStackBuilder(Material.TRIPWIRE_HOOK, 3).setDisplayName(
+                    new ItemStackBuilder(Material.TRIPWIRE_HOOK).setDisplayName(
                             ChatColor.YELLOW + "Throwing Knife " + ChatColor.GREEN + "READY").build());
         }
         if (player.getData().getUpgradeSelection("ranger.secondary").equals("strikers")) {
