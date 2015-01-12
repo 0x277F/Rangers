@@ -4,6 +4,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import net.coasterman10.rangers.arena.Arena;
+import net.coasterman10.rangers.arena.BossfightArena;
 import net.coasterman10.rangers.game.GameState;
 
 import org.bukkit.ChatColor;
@@ -41,7 +42,10 @@ public class ArenaStatusSign extends ArenaSign {
                 break;
             case RUNNING:
                 setLine(2, "Running");
-                setLine(3, formatTime(arena.getSeconds()));
+                // Ugly hack
+                if (!(arena instanceof BossfightArena)) {
+                    setLine(3, formatTime(arena.getSeconds()));
+                }
                 break;
             case ENDING:
                 setLine(2, "Restarting in");

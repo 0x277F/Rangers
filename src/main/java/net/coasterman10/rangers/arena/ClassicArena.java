@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Random;
 
 import me.confuser.barapi.BarAPI;
+import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.game.GameScoreboard;
 import net.coasterman10.rangers.game.GameState;
 import net.coasterman10.rangers.game.GameStateTasks;
@@ -35,7 +36,6 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffectType;
 
 public class ClassicArena extends Arena {
@@ -46,7 +46,7 @@ public class ClassicArena extends Arena {
     protected GameScoreboard scoreboard = new GameScoreboard();
     private EndingType ending = null;
 
-    public ClassicArena(String name, FileConfigAccessor config, Plugin plugin) {
+    public ClassicArena(String name, FileConfigAccessor config, Rangers plugin) {
         super(name, config, plugin);
 
         registerStateTasks(GameState.LOBBY, new LobbyState());
@@ -98,7 +98,7 @@ public class ClassicArena extends Arena {
             heads.clear();
         }
         for (RangersPlayer player : players) {
-            if (player.isPlaying())
+            if (player.isPlaying() || SpectateAPI.isSpectator(player.getBukkitPlayer()))
                 player.teleport(lobbySpawn);
             player.setCanDoubleJump(false);
             player.resetPlayer();
@@ -212,6 +212,7 @@ public class ClassicArena extends Arena {
             setState(GameState.LOBBY);
         } else if (player.isPlaying()) {
             player.dropHead();
+            player.dropInventory();
         }
     }
 

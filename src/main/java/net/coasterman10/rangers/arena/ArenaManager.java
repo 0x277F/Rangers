@@ -7,18 +7,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.util.FileConfigAccessor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.plugin.Plugin;
 
 public class ArenaManager {
-    private final Plugin plugin;
+    private final Rangers plugin;
     private File arenaFolder;
     private Map<String, Arena> arenas = new HashMap<>();
 
-    public ArenaManager(Plugin plugin, File arenaFolder) {
+    public ArenaManager(Rangers plugin, File arenaFolder) {
         this.plugin = plugin;
         this.arenaFolder = arenaFolder;
     }

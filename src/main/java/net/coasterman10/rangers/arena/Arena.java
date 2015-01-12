@@ -7,6 +7,7 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import net.coasterman10.rangers.Rangers;
 import net.coasterman10.rangers.game.GameState;
 import net.coasterman10.rangers.game.GameStateTasks;
 import net.coasterman10.rangers.game.RangersTeam;
@@ -22,7 +23,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public abstract class Arena implements Listener {
@@ -37,14 +37,14 @@ public abstract class Arena implements Listener {
     protected Collection<RangersPlayer> players = new HashSet<>();
     protected int seconds;
 
-    public Arena(String name, FileConfigAccessor config, Plugin plugin) {
+    public Arena(String name, FileConfigAccessor config, Rangers plugin) {
         this.name = name;
         this.config = config;
         Bukkit.getPluginManager().registerEvents(this, plugin);
         new UpdateTask().runTaskTimer(plugin, 0L, 20L);
         state = GameState.LOBBY;
     }
-    
+
     public void load() {
         config.reload();
         ConfigurationSection conf = getConfig();
@@ -164,7 +164,13 @@ public abstract class Arena implements Listener {
             player.sendMessage(ChatColor.GOLD + "You are already in this game.");
             return false;
         } else if (players.size() >= getMaxPlayers()) {
-            player.sendMessage(ChatColor.RED + "This game is full!");
+            // Ugly hack
+            if (this instanceof BossfightArena) {
+                player.sendMessage(ChatColor.DARK_RED
+                        + "Kalkara is a busy killing other players, please wait your turn to be slaughtered.");
+            } else {
+                player.sendMessage(ChatColor.RED + "This game is full!");
+            }
             return false;
         } else {
             players.add(player);
@@ -187,7 +193,7 @@ public abstract class Arena implements Listener {
             return true;
         }
     }
-    
+
     public final void broadcast(String message) {
         for (RangersPlayer player : players) {
             player.sendMessage(message);
@@ -213,7 +219,10 @@ public abstract class Arena implements Listener {
     protected final void setState(GameState state) {
         if (this.state != state) {
             this.state = state;
-            stateTasks.get(state).start();
+            GameStateTasks tasks = stateTasks.get(state);
+            if (tasks != null) {
+                tasks.start();
+            }
         }
     }
 
@@ -231,8 +240,9 @@ public abstract class Arena implements Listener {
         @Override
         public void run() {
             GameStateTasks tasks = stateTasks.get(state);
-            if (tasks != null)
+            if (tasks != null) {
                 tasks.onSecond();
+            }
         }
     }
 }

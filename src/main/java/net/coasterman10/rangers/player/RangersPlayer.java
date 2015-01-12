@@ -109,6 +109,7 @@ public class RangersPlayer {
             arena.removePlayer(this);
             arena = null;
         }
+        setCanDoubleJump(false);
         state = PlayerState.LOBBY;
         team = null;
         type = null;

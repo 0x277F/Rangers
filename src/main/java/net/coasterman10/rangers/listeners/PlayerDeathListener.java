@@ -22,7 +22,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.MetadataValue;
@@ -35,15 +34,6 @@ public class PlayerDeathListener implements Listener {
 
     public PlayerDeathListener(Plugin plugin) {
         this.plugin = plugin;
-    }
-
-    @EventHandler
-    public void onLeave(PlayerQuitEvent e) {
-        RangersPlayer player = RangersPlayer.getPlayer(e.getPlayer());
-        if (player.isPlaying() && player.getArena() instanceof ClassicArena) {
-            player.dropHead();
-            player.dropInventory();
-        }
     }
 
     @EventHandler
