@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import net.coasterman10.rangers.Rangers;
+import net.coasterman10.rangers.boss.EntityGolemBoss;
 import net.coasterman10.rangers.game.GameState;
 import net.coasterman10.rangers.player.RangersPlayer;
 import net.coasterman10.rangers.player.RangersPlayer.PlayerState;
@@ -13,6 +14,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Sign;
+import org.bukkit.craftbukkit.v1_7_R3.entity.CraftEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -266,6 +268,9 @@ public class PlayerListener implements Listener {
             if (!RangersPlayer.getPlayer((Player) e.getEntity()).isPlaying()) {
                 e.setCancelled(true);
             }
+        }
+        else if (((CraftEntity)e.getEntity()).getHandle() instanceof EntityGolemBoss && (e.getCause() == EntityDamageEvent.DamageCause.LAVA || e.getCause() == EntityDamageEvent.DamageCause.LAVA)){
+            e.setCancelled(true);
         }
     }
     

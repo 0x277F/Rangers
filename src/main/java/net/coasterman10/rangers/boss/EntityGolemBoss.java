@@ -23,6 +23,7 @@ import net.minecraft.server.v1_7_R3.PathfinderGoalRandomStroll;
 import net.minecraft.server.v1_7_R3.PathfinderGoalSelector;
 import net.minecraft.server.v1_7_R3.World;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_7_R3.entity.CraftIronGolem;
@@ -57,13 +58,11 @@ public class EntityGolemBoss extends EntityIronGolem {
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(2, new PathfinderGoalMeleeAttack(this, EntityPlayer.class, 1.0D, false));
         this.goalSelector.a(5, new PathfinderGoalMoveTowardsRestriction(this, 1.0D));
-        this.goalSelector.a(6, new PathfinderGoalMoveThroughVillage(this, 1.0D, false));
-        this.goalSelector.a(7, new PathfinderGoalRandomStroll(this, 1.0D));
         this.goalSelector.a(8, new PathfinderGoalLookAtPlayer(this, EntityPlayer.class, 8.0F));
-        this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
         this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, true));
         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget(this, EntityPlayer.class, 0, false));
         this.setCustomName("Kalkara");
+        this.setCustomNameVisible(true);
         getBukkitEntity().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 1, true));
         random = new Random();
     }
@@ -116,13 +115,16 @@ public class EntityGolemBoss extends EntityIronGolem {
         super.e();
         tick++;
 
-        if (tick == 400) {// Twenty Seconds
+        if (tick == 200) {// Ten Seconds
+            Bukkit.getLogger().info("Boss has reached 200 ticks, preparing to jump.");
             this.launch();
         }
-        if (tick == 415) {
+        if (tick == 215) {
+            Bukkit.getLogger().info("Boss has reached 215 ticks, preparing to smash.");
             this.smash();
         }
-        if (tick == 515) {
+        if (tick == 315) {
+            Bukkit.getLogger().info("Boss has reached 315 ticks, preparing to breathe fire.");
             this.fireBreath();
             tick = 0;
         }
